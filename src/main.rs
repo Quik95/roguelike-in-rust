@@ -10,6 +10,7 @@ use RunState::PreRun;
 use visibility_system::VisibilitySystem;
 
 use crate::damage_system::DamageSystem;
+use crate::gamelog::GameLog;
 use crate::melee_combat_system::MeleeCombatSystem;
 use crate::player::RunState::{AwaitingInput, MonsterTurn, PlayerTurn};
 
@@ -22,6 +23,8 @@ mod rect;
 mod visibility_system;
 mod melee_combat_system;
 mod damage_system;
+mod gui;
+mod gamelog;
 
 pub struct State {
     ecs: World,
@@ -92,14 +95,17 @@ impl GameState for State {
                 ctx.set(pos.x, pos.y, render.fg, render.bg, render.glyph);
             }
         }
+
+        gui::draw_ui(&self.ecs, ctx);
     }
 }
 
 fn main() -> rltk::BError {
     use rltk::RltkBuilder;
-    let context = RltkBuilder::simple80x50()
+    let mut context = RltkBuilder::simple80x50()
         .with_title("Roguelike Tutorial")
         .build()?;
+    context.with_post_scanlines(true);
 
     let mut gs = State {
         ecs: World::new(),
@@ -187,6 +193,7 @@ fn main() -> rltk::BError {
     gs.ecs.insert(Point::new(player_x, player_y));
     gs.ecs.insert(player_entity);
     gs.ecs.insert(PreRun);
+    gs.ecs.insert(GameLog{entries: vec!["Welcome to Rusty Roguelike".to_string()]});
 
     rltk::main_loop(context, gs)
 }
