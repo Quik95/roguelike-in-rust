@@ -4,7 +4,6 @@ use specs::prelude::*;
 use crate::{
     components::{Player, Position, Viewshed},
     map::Map,
-    player,
 };
 
 pub struct VisibilitySystem {}
