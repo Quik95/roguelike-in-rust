@@ -1,8 +1,7 @@
-use std::process::id;
-use rltk::{BLACK, MAGENTA, RandomNumberGenerator, RGB, to_cp437};
+use rltk::{BLACK, CYAN, MAGENTA, ORANGE, PINK, RandomNumberGenerator, RGB, to_cp437};
 use specs::{Builder, Entities, Entity, World, WorldExt};
 
-use crate::components::{BlocksTile, CombatStats, Item, Monster, Name, Player, Position, Potion, Renderable, Viewshed};
+use crate::components::{AreaOfEffect, BlocksTile, CombatStats, Confusion, Consumable, InflictsDamage, Item, Monster, Name, Player, Position, ProvidesHealing, Ranged, Renderable, Viewshed};
 use crate::map::{Map, MAPWIDTH};
 use crate::rect::Rect;
 
@@ -101,8 +100,19 @@ pub fn spawn_room(ecs: &mut World, rng: &mut RandomNumberGenerator, room: &Rect)
         for idx in item_spawn_points.iter() {
             let x = *idx % MAPWIDTH as i32;
             let y = *idx / MAPWIDTH as i32;
-            health_potion(ecs, x, y);
+            random_item(ecs, rng, x, y);
         }
+    }
+}
+
+fn random_item(ecs: &mut World, rng: &mut RandomNumberGenerator, x: i32, y: i32) {
+    let roll = rng.roll_dice(1, 4);
+    match roll  {
+        1 => health_potion(ecs, x, y),
+        2 => magic_missile_scroll(ecs, x, y),
+        3 => fireball_scroll(ecs, x, y),
+        4 => confusion_scroll(ecs, x, y),
+        _ => panic!("This should not happen. Rolled: {roll}")
     }
 }
 
@@ -118,6 +128,63 @@ fn health_potion(ecs: &mut World, x: i32, y: i32) {
         })
         .with(Name{name: "Health Potion".to_string()})
         .with(Item{})
-        .with(Potion{heal_amount: 8})
+        // disable for testing 😛
+        // .with(Consumable{})
+        .with(ProvidesHealing {heal_amount: 8})
+        .build();
+}
+
+fn magic_missile_scroll(ecs: &mut World, x: i32, y: i32) {
+    ecs
+        .create_entity()
+        .with(Position{x, y})
+        .with(Renderable{
+            glyph: to_cp437(')'),
+            fg: RGB::named(CYAN),
+            bg: RGB::named(BLACK),
+            render_order: 2
+        })
+        .with(Name{name: "Magic Missile Scroll".to_string()})
+        .with(Item{})
+        .with(Consumable{})
+        .with(Ranged{range: 6})
+        .with(InflictsDamage{damage: 8})
+        .build();
+}
+
+fn fireball_scroll(ecs: &mut World, x: i32, y: i32) {
+    ecs
+        .create_entity()
+        .with(Position{x, y})
+        .with(Renderable{
+            glyph: to_cp437(')'),
+            fg: RGB::named(ORANGE) ,
+            bg: RGB::named(BLACK),
+            render_order: 2
+        })
+        .with(Name{name: "Fireball Scroll".to_string()})
+        .with(Item{})
+        .with(Consumable{})
+        .with(Ranged{range: 6})
+        .with(InflictsDamage{damage: 20})
+        .with(AreaOfEffect{radius: 3})
+        .build();
+}
+
+fn confusion_scroll(ecs: &mut World, x: i32, y: i32) {
+    ecs
+        .create_entity()
+        .with(Position{x, y})
+        .with(Renderable{
+            glyph: to_cp437(')'),
+            fg: RGB::named(PINK),
+            bg: RGB::named(BLACK),
+            render_order: 2
+        })
+        .with(Name{name: "Confusion Scroll".to_string()})
+        .with(Item{})
+        .with(Consumable{})
+        .with(Ranged{range: 6})
+        .with(Confusion{turns: 4})
         .build();
 }

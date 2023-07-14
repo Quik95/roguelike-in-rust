@@ -14,7 +14,8 @@ pub enum RunState {
     PlayerTurn,
     MonsterTurn,
     ShowInventory,
-    ShowDropItem
+    ShowDropItem,
+    ShowTargeting {range: i32, item: Entity}
 }
 
 impl Player {
