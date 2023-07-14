@@ -25,9 +25,9 @@ pub struct Map {
     pub tile_content: Vec<Vec<Entity>>,
 }
 
-const MAPWIDTH: usize = 80;
-const MAPHEIGHT: usize = 43;
-const MAPCOUNT: usize = MAPHEIGHT * MAPWIDTH;
+pub const MAPWIDTH: usize = 80;
+pub const MAPHEIGHT: usize = 43;
+pub const MAPCOUNT: usize = MAPHEIGHT * MAPWIDTH;
 
 impl Map {
     pub const fn xy_idx(x: i32, y: i32) -> usize {
@@ -54,7 +54,7 @@ impl Map {
         }
     }
 
-    pub fn new_map_rooms_and_corridors() -> Self {
+    pub fn new_map_rooms_and_corridors(rng: &mut RandomNumberGenerator) -> Self {
         let mut map = Self {
             tiles: vec![TileType::Wall; MAPCOUNT],
             revealed_tiles: vec![false; MAPCOUNT],
@@ -69,8 +69,6 @@ impl Map {
         const MAX_ROOMS: i32 = 30;
         const MIN_SIZE: i32 = 6;
         const MAX_SIZE: i32 = 10;
-
-        let mut rng = RandomNumberGenerator::new();
 
         for _ in 0..MAX_ROOMS {
             let w = rng.range(MIN_SIZE, MAX_SIZE);
