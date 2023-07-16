@@ -3,17 +3,19 @@ use specs::{World, WorldExt, Entity};
 use std::{
     cmp::{max, min},
 };
+use serde::{Deserialize, Serialize};
 
 use crate::{
     rect::Rect,
 };
 
-#[derive(PartialEq, Eq, Copy, Clone)]
+#[derive(PartialEq, Serialize, Deserialize, Eq, Copy, Clone)]
 pub enum TileType {
     Wall,
     Floor,
 }
 
+#[derive(Default, Serialize, Deserialize, Clone)]
 pub struct Map {
     pub tiles: Vec<TileType>,
     pub rooms: Vec<Rect>,
@@ -22,6 +24,9 @@ pub struct Map {
     pub revealed_tiles: Vec<bool>,
     pub visible_tiles: Vec<bool>,
     pub blocked: Vec<bool>,
+
+    #[serde(skip_serializing)]
+    #[serde(skip_deserializing)]
     pub tile_content: Vec<Vec<Entity>>,
 }
 
@@ -54,7 +59,7 @@ impl Map {
         }
     }
 
-    pub fn new_map_rooms_and_corridors(rng: &mut RandomNumberGenerator) -> Self {
+    pub fn new_map_rooms_and_corridors(ecs: &mut World) -> Self {
         let mut map = Self {
             tiles: vec![TileType::Wall; MAPCOUNT],
             revealed_tiles: vec![false; MAPCOUNT],
@@ -65,6 +70,8 @@ impl Map {
             width: 80,
             height: 50,
         };
+
+        let mut rng = ecs.write_resource::<RandomNumberGenerator>();
 
         const MAX_ROOMS: i32 = 30;
         const MIN_SIZE: i32 = 6;

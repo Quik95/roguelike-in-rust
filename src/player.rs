@@ -1,7 +1,8 @@
 use rltk::{Point, VirtualKeyCode};
 use specs::prelude::*;
 use crate::gamelog::GameLog;
-use crate::player::RunState::{ShowDropItem, ShowInventory};
+use crate::gui;
+use crate::player::RunState::{SaveGame, ShowDropItem, ShowInventory};
 
 use super::components::*;
 use super::map::Map;
@@ -15,7 +16,9 @@ pub enum RunState {
     MonsterTurn,
     ShowInventory,
     ShowDropItem,
-    ShowTargeting {range: i32, item: Entity}
+    ShowTargeting {range: i32, item: Entity},
+    MainMenu{ menu_selection: gui::MainMenuSelection},
+    SaveGame,
 }
 
 impl Player {
@@ -85,6 +88,7 @@ impl Player {
                 VirtualKeyCode::G => Self::get_item(&mut gs.ecs),
                 VirtualKeyCode::I => return ShowInventory,
                 VirtualKeyCode::D => return ShowDropItem,
+                VirtualKeyCode::Escape => return SaveGame,
                 VirtualKeyCode::Q => ctx.quit(),
                 _ => return RunState::AwaitingInput,
             },

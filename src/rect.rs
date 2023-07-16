@@ -1,3 +1,6 @@
+use serde::{Deserialize, Serialize};
+
+#[derive(PartialEq, Eq, Serialize, Deserialize, Copy, Clone)]
 pub struct Rect {
     pub x1: i32,
     pub x2: i32,
@@ -6,7 +9,7 @@ pub struct Rect {
 }
 
 impl Rect {
-    pub fn new(x: i32, y: i32, w: i32, h: i32) -> Self {
+    pub const fn new(x: i32, y: i32, w: i32, h: i32) -> Self {
         Self {
             x1: x,
             y1: y,
