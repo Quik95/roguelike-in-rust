@@ -4,7 +4,7 @@ use std::path::Path;
 
 use specs::{Builder, Entity, Join, World, WorldExt};
 use specs::error::NoError;
-use specs::saveload::{MarkedBuilder, SerializeComponents, DeserializeComponents, SimpleMarker, SimpleMarkerAllocator};
+use specs::saveload::{DeserializeComponents, MarkedBuilder, SerializeComponents, SimpleMarker, SimpleMarkerAllocator};
 
 use crate::components::{SerializationHelper, SerializeMe};
 use crate::components::*;

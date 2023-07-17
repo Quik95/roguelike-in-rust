@@ -1,10 +1,9 @@
-use rltk::console;
-use specs::{Entities, ReadStorage, WriteStorage, System, Join, WriteExpect};
+use specs::{Entities, Join, ReadStorage, System, WriteExpect, WriteStorage};
 
-use crate::components::{SufferDamage, WantsToMelee, Name, CombatStats};
+use crate::components::{CombatStats, Name, SufferDamage, WantsToMelee};
 use crate::gamelog::GameLog;
 
-pub struct MeleeCombatSystem{}
+pub struct MeleeCombatSystem {}
 
 impl<'a> System<'a> for MeleeCombatSystem {
     type SystemData = (
@@ -32,8 +31,8 @@ impl<'a> System<'a> for MeleeCombatSystem {
                 if target_stats.hp > 0 {
                     let target_name = names.get(wants_melee.target).unwrap();
                     let damage = i32::max(0, stats.power - target_stats.defense);
-                    if damage == 0{
-                            log.entries.push(format!("{} is unable to hurt {}", &name.name, &target_name.name));
+                    if damage == 0 {
+                        log.entries.push(format!("{} is unable to hurt {}", &name.name, &target_name.name));
                     } else {
                         log.entries.push(format!("{} hits {}, for {} hp.", &name.name, &target_name.name, damage));
                         SufferDamage::new_damage(&mut inflict_damage, wants_melee.target, damage)

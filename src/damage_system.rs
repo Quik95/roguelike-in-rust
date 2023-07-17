@@ -1,15 +1,15 @@
 use rltk::console;
-use specs::{WriteStorage, System, Join, WorldExt, World};
+use specs::{Join, System, World, WorldExt, WriteStorage};
 
 use crate::components::{CombatStats, Name, Player, SufferDamage};
 use crate::gamelog::GameLog;
 
-pub struct DamageSystem{}
+pub struct DamageSystem {}
 
 impl<'a> System<'a> for DamageSystem {
     type SystemData = (
-            WriteStorage<'a, CombatStats>,
-            WriteStorage<'a, SufferDamage>
+        WriteStorage<'a, CombatStats>,
+        WriteStorage<'a, SufferDamage>
     );
 
     fn run(&mut self, data: Self::SystemData) {
@@ -42,7 +42,7 @@ pub fn delete_the_dead(ecs: &mut World) {
                             log.entries.push(format!("{} is dead", &victim_name.name));
                         }
                         dead.push(entity);
-                    },
+                    }
                     Some(_) => console::log("You are dead")
                 }
             }

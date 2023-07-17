@@ -104,7 +104,7 @@ pub fn spawn_room(ecs: &mut World, room: &Rect) {
     for idx in monster_spawn_points.iter() {
         let x = *idx % MAPWIDTH as i32;
         let y = *idx / MAPWIDTH as i32;
-        random_monster(ecs,x, y);
+        random_monster(ecs, x, y);
     }
 
     for idx in item_spawn_points.iter() {

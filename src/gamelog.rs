@@ -1,3 +1,3 @@
-pub struct GameLog{
-    pub entries: Vec<String>
+pub struct GameLog {
+    pub entries: Vec<String>,
 }

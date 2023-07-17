@@ -1,8 +1,10 @@
 use rltk::{Point, VirtualKeyCode};
 use specs::prelude::*;
+
 use crate::gamelog::GameLog;
 use crate::gui;
-use crate::player::RunState::{SaveGame, ShowDropItem, ShowInventory};
+use crate::map::TileType;
+use crate::player::RunState::{NextLevel, SaveGame, ShowDropItem, ShowInventory};
 
 use super::components::*;
 use super::map::Map;
@@ -16,9 +18,10 @@ pub enum RunState {
     MonsterTurn,
     ShowInventory,
     ShowDropItem,
-    ShowTargeting {range: i32, item: Entity},
-    MainMenu{ menu_selection: gui::MainMenuSelection},
+    ShowTargeting { range: i32, item: Entity },
+    MainMenu { menu_selection: gui::MainMenuSelection },
     SaveGame,
+    NextLevel,
 }
 
 impl Player {
@@ -89,6 +92,11 @@ impl Player {
                 VirtualKeyCode::I => return ShowInventory,
                 VirtualKeyCode::D => return ShowDropItem,
                 VirtualKeyCode::Escape => return SaveGame,
+                VirtualKeyCode::Period => {
+                    if Self::try_next_level(&mut gs.ecs) {
+                        return NextLevel;
+                    }
+                }
                 VirtualKeyCode::Q => ctx.quit(),
                 _ => return RunState::AwaitingInput,
             },
@@ -98,7 +106,7 @@ impl Player {
     }
 
     fn get_item(ecs: &mut World) {
-       let player_pos = ecs.fetch::<Point> ();
+        let player_pos = ecs.fetch::<Point>();
         let player_entity = ecs.fetch::<Entity>();
         let entities = ecs.entities();
         let items = ecs.read_storage::<Item>();
@@ -112,12 +120,25 @@ impl Player {
             }
         }
 
-        match target_item    {
+        match target_item {
             None => gamelog.entries.push("There is nothing here to pick up.".to_string()),
             Some(item) => {
                 let mut pickup = ecs.write_storage::<WantsToPickupItem>();
-                pickup.insert(*player_entity, WantsToPickupItem{collected_by: *player_entity, item}).expect("Unable to insert want to pickup");
+                pickup.insert(*player_entity, WantsToPickupItem { collected_by: *player_entity, item }).expect("Unable to insert want to pickup");
             }
         }
+    }
+
+    fn try_next_level(ecs: &mut World) -> bool {
+        let player_pos = ecs.fetch::<Point>();
+        let map = ecs.fetch::<Map>();
+        let player_idx = Map::xy_idx(player_pos.x, player_pos.y);
+        return if map.tiles[player_idx] == TileType::DownStairs {
+            true
+        } else {
+            let mut gamelog = ecs.fetch_mut::<GameLog>();
+            gamelog.entries.push("There is no way down from here.".to_string());
+            false
+        };
     }
 }

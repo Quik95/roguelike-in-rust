@@ -127,5 +127,5 @@ pub struct SerializeMe;
 
 #[derive(Component, Serialize, Deserialize, Clone)]
 pub struct SerializationHelper {
-    pub map: super::map::Map
+    pub map: super::map::Map,
 }

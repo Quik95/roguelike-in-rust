@@ -35,10 +35,10 @@ pub fn main_menu(gs: &mut State, ctx: &mut Rltk) -> MainMenuResult {
         }
 
         match ctx.key {
-            None => return NoSelection {selected: selection},
+            None => return NoSelection { selected: selection },
             Some(key) => {
                 match key {
-                    VirtualKeyCode::Escape => return NoSelection {selected: selection},
+                    VirtualKeyCode::Escape => return NoSelection { selected: selection },
                     VirtualKeyCode::Up => {
                         let mut newselection;
                         match selection {
@@ -49,7 +49,7 @@ pub fn main_menu(gs: &mut State, ctx: &mut Rltk) -> MainMenuResult {
                         if newselection == LoadGame && !save_exists {
                             newselection = NewGame;
                         }
-                        return NoSelection {selected: newselection}
+                        return NoSelection { selected: newselection };
                     }
                     VirtualKeyCode::Down => {
                         let mut newselection;
@@ -61,10 +61,10 @@ pub fn main_menu(gs: &mut State, ctx: &mut Rltk) -> MainMenuResult {
                         if newselection == LoadGame && !save_exists {
                             newselection = Quit;
                         }
-                        return NoSelection {selected: newselection}
+                        return NoSelection { selected: newselection };
                     }
-                    VirtualKeyCode::Return => return Selected {selected: selection},
-                    _ => return NoSelection {selected: selection},
+                    VirtualKeyCode::Return => return Selected { selected: selection },
+                    _ => return NoSelection { selected: selection },
                 }
             }
         }

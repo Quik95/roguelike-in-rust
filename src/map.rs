@@ -1,18 +1,18 @@
-use rltk::{Algorithm2D, BaseMap, Point, RandomNumberGenerator, Rltk, SmallVec, RGB};
-use specs::{World, WorldExt, Entity};
 use std::{
     cmp::{max, min},
 };
-use serde::{Deserialize, Serialize};
 
-use crate::{
-    rect::Rect,
-};
+use rltk::{Algorithm2D, BaseMap, Point, RandomNumberGenerator, RGB, Rltk, SmallVec, to_cp437};
+use serde::{Deserialize, Serialize};
+use specs::{Entity, World, WorldExt};
+
+use crate::rect::Rect;
 
 #[derive(PartialEq, Serialize, Deserialize, Eq, Copy, Clone)]
 pub enum TileType {
     Wall,
     Floor,
+    DownStairs,
 }
 
 #[derive(Default, Serialize, Deserialize, Clone)]
@@ -24,6 +24,7 @@ pub struct Map {
     pub revealed_tiles: Vec<bool>,
     pub visible_tiles: Vec<bool>,
     pub blocked: Vec<bool>,
+    pub depth: i32,
 
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]
@@ -59,7 +60,7 @@ impl Map {
         }
     }
 
-    pub fn new_map_rooms_and_corridors(ecs: &mut World) -> Self {
+    pub fn new_map_rooms_and_corridors(new_depth: i32) -> Self {
         let mut map = Self {
             tiles: vec![TileType::Wall; MAPCOUNT],
             revealed_tiles: vec![false; MAPCOUNT],
@@ -69,9 +70,10 @@ impl Map {
             rooms: Vec::new(),
             width: 80,
             height: 50,
+            depth: new_depth,
         };
 
-        let mut rng = ecs.write_resource::<RandomNumberGenerator>();
+        let mut rng = RandomNumberGenerator::new();
 
         const MAX_ROOMS: i32 = 30;
         const MIN_SIZE: i32 = 6;
@@ -108,13 +110,17 @@ impl Map {
             }
         }
 
+        let stairs_position = map.rooms[map.rooms.len() - 1].center();
+        let stairs_idx = Self::xy_idx(stairs_position.0, stairs_position.1);
+        map.tiles[stairs_idx] = TileType::DownStairs;
+
         map
     }
 
     fn apply_horizontal_tunnel(&mut self, x1: i32, x2: i32, y: i32) {
         for x in min(x1, x2)..=max(x1, x2) {
             let idx = Self::xy_idx(x, y);
-            if idx > 0 && idx < MAPCOUNT{
+            if idx > 0 && idx < MAPCOUNT {
                 self.tiles[idx] = TileType::Floor;
             }
         }
@@ -123,7 +129,7 @@ impl Map {
     fn apply_vertical_tunnel(&mut self, y1: i32, y2: i32, x: i32) {
         for y in min(y1, y2)..=max(y1, y2) {
             let idx = Self::xy_idx(x, y);
-            if idx > 0 && idx < MAPCOUNT{
+            if idx > 0 && idx < MAPCOUNT {
                 self.tiles[idx] = TileType::Floor;
             }
         }
@@ -156,6 +162,10 @@ impl Map {
                     TileType::Wall => {
                         glyph = rltk::to_cp437('#');
                         fg = RGB::from_f32(0., 1.0, 0.);
+                    }
+                    TileType::DownStairs => {
+                        glyph = to_cp437('>');
+                        fg = RGB::from_f32(0.0, 1.0, 1.);
                     }
                 }
                 if !map.visible_tiles[idx] {
