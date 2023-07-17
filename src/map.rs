@@ -2,7 +2,7 @@ use std::{
     cmp::{max, min},
 };
 
-use rltk::{Algorithm2D, BaseMap, Point, RandomNumberGenerator, RGB, Rltk, SmallVec, to_cp437};
+use rltk::{Algorithm2D, BaseMap, FontCharType, Point, RandomNumberGenerator, RGB, Rltk, SmallVec, to_cp437};
 use serde::{Deserialize, Serialize};
 use specs::{Entity, World, WorldExt};
 
@@ -160,7 +160,7 @@ impl Map {
                         fg = RGB::from_f32(0.0, 0.5, 0.5);
                     }
                     TileType::Wall => {
-                        glyph = rltk::to_cp437('#');
+                        glyph = Self::wall_glyph(&*map, x, y);
                         fg = RGB::from_f32(0., 1.0, 0.);
                     }
                     TileType::DownStairs => {
@@ -181,6 +181,40 @@ impl Map {
                 y += 1;
             }
         }
+    }
+
+    fn wall_glyph(map: &Map, x: i32, y: i32) -> FontCharType {
+       if x < 1 || x > map.width-2 || y < 1 || y > map.height- 2i32 {return 35 as FontCharType}
+        let mut mask : u8 = 0;
+
+        if Self::is_revealed_and_wall(map, x, y-1){mask += 1;}
+        if Self::is_revealed_and_wall(map, x, y+1){mask += 2;}
+        if Self::is_revealed_and_wall(map, x-1, y){mask += 4;}
+        if Self::is_revealed_and_wall(map, x+1, y){mask += 8;}
+         match mask {
+             0 => 9,
+             1 => 186,
+                2 => 186,
+                3 => 186,
+                4 => 205,
+                5 => 188,
+                6 => 187,
+                7 => 185,
+                8 => 205,
+                9 => 200,
+                10 => 201,
+                11 => 204,
+                12 => 205,
+                13 => 202,
+                14 => 203,
+                15 => 206,
+                _ => 35
+         }
+    }
+
+    fn is_revealed_and_wall(map: &Self, x: i32, y: i32) -> bool {
+        let idx = Self::xy_idx(x, y);
+        map.tiles[idx] == TileType::Wall && map.revealed_tiles[idx]
     }
 }
 
