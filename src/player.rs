@@ -4,7 +4,7 @@ use specs::prelude::*;
 use crate::gamelog::GameLog;
 use crate::gui;
 use crate::map::TileType;
-use crate::player::RunState::{NextLevel, PlayerTurn, SaveGame, ShowDropItem, ShowInventory};
+use crate::player::RunState::{NextLevel, PlayerTurn, SaveGame, ShowDropItem, ShowInventory, ShowRemoveItem};
 
 use super::components::*;
 use super::map::Map;
@@ -22,6 +22,8 @@ pub enum RunState {
     MainMenu { menu_selection: gui::MainMenuSelection },
     SaveGame,
     NextLevel,
+    ShowRemoveItem,
+    GameOver,
 }
 
 impl Player {
@@ -98,6 +100,7 @@ impl Player {
                     }
                 }
                 VirtualKeyCode::Numpad5 | VirtualKeyCode::Space => return Self::skip_turn(&mut gs.ecs),
+                VirtualKeyCode::R => return ShowRemoveItem,
                 VirtualKeyCode::Q => ctx.quit(),
                 _ => return RunState::AwaitingInput,
             },
@@ -153,7 +156,7 @@ impl Player {
         let mut can_heal = true;
         let viewshed = viewshed_components.get(*player_entity).unwrap();
         for tile in viewshed.visible_tiles.iter() {
-            let idx= Map::xy_idx(tile.x, tile.y);
+            let idx = Map::xy_idx(tile.x, tile.y);
             for entity_id in worldmap_resource.tile_content[idx].iter() {
                 let mob = monsters.get(*entity_id);
                 match mob {

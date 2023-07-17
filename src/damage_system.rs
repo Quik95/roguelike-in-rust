@@ -1,8 +1,8 @@
-use rltk::console;
 use specs::{Join, System, World, WorldExt, WriteStorage};
 
 use crate::components::{CombatStats, Name, Player, SufferDamage};
 use crate::gamelog::GameLog;
+use crate::player::RunState;
 
 pub struct DamageSystem {}
 
@@ -43,7 +43,10 @@ pub fn delete_the_dead(ecs: &mut World) {
                         }
                         dead.push(entity);
                     }
-                    Some(_) => console::log("You are dead")
+                    Some(_) => {
+                        let mut runstate = ecs.write_resource::<RunState>();
+                        *runstate = RunState::GameOver;
+                    }
                 }
             }
         }
