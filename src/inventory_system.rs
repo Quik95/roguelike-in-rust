@@ -1,7 +1,7 @@
 use rltk::{BLACK, MAGENTA, ORANGE, RED};
 use specs::{Entities, Entity, Join, ReadExpect, ReadStorage, System, WriteExpect, WriteStorage};
 
-use crate::components::{AreaOfEffect, CombatStats, Confusion, Consumable, Equippable, Equipped, InBackpack, InflictsDamage, Name, Position, ProvidesHealing, SufferDamage, WantsToDropItem, WantsToPickupItem, WantsToRemoveItem, WantsToUseItem};
+use crate::components::{AreaOfEffect, CombatStats, Confusion, Consumable, Equippable, Equipped, HungerClock, HungerState, InBackpack, InflictsDamage, Name, Position, ProvidesFood, ProvidesHealing, SufferDamage, WantsToDropItem, WantsToPickupItem, WantsToRemoveItem, WantsToUseItem};
 use crate::gamelog::GameLog;
 use crate::map::Map;
 use crate::particle_system::ParticleBuilder;
@@ -55,11 +55,13 @@ impl<'a> System<'a> for ItemUseSystem {
         WriteStorage<'a, Equipped>,
         WriteStorage<'a, InBackpack>,
         WriteExpect<'a, ParticleBuilder>,
-        ReadStorage<'a, Position>
+        ReadStorage<'a, Position>,
+        ReadStorage<'a, ProvidesFood>,
+        WriteStorage<'a, HungerClock>
     );
 
     fn run(&mut self, data: Self::SystemData) {
-        let (player_entity, mut gamelog, entities, mut wants_item, names, healing, inflict_damage, mut combat_stats, consumables, map, mut suffer_damage, aoe, mut confused, equippable, mut equipped, mut backpack, mut particle_builder, positions) = data;
+        let (player_entity, mut gamelog, entities, mut wants_item, names, healing, inflict_damage, mut combat_stats, consumables, map, mut suffer_damage, aoe, mut confused, equippable, mut equipped, mut backpack, mut particle_builder, positions, provides_food, mut hunger_clock) = data;
 
         for (entity, useitem) in (&entities, &wants_item).join() {
             let mut used_item = true;
@@ -186,6 +188,19 @@ impl<'a> System<'a> for ItemUseSystem {
             for mob in add_confusion.iter() {
                 confused.insert(mob.0, Confusion { turns: mob.1 }).expect("Unable to insert.");
             }
+
+            let item_edible = provides_food.get(useitem.item);
+            if let Some(_) = item_edible {
+               used_item = true;
+                let target = targets[0];
+                let hc = hunger_clock.get_mut(target);
+                if let Some(hc) = hc {
+                    hc.state = HungerState::WellFed;
+                    hc.duration = 20;
+                    gamelog.entries.push(format!("You eat the {}.", names.get(useitem.item).unwrap().name));
+                }
+            }
+
         }
 
         wants_item.clear();

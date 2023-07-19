@@ -1,10 +1,10 @@
 use std::collections::{hash_map, HashMap};
 
-use rltk::{BLACK, CYAN, MAGENTA, ORANGE, PINK, RandomNumberGenerator, RGB, to_cp437, YELLOW};
+use rltk::{BLACK, CYAN, GREEN, MAGENTA, ORANGE, PINK, RandomNumberGenerator, RGB, to_cp437, YELLOW};
 use specs::{Builder, Entity, World, WorldExt};
 use specs::saveload::{MarkedBuilder, SimpleMarker};
 
-use crate::components::{AreaOfEffect, BlocksTile, CombatStats, Confusion, Consumable, DefenseBonus, EquipmentSlot, Equippable, InflictsDamage, Item, MeleePowerBonus, Monster, Name, Player, Position, ProvidesHealing, Ranged, Renderable, SerializeMe, Viewshed};
+use crate::components::{AreaOfEffect, BlocksTile, CombatStats, Confusion, Consumable, DefenseBonus, EquipmentSlot, Equippable, HungerClock, HungerState, InflictsDamage, Item, MeleePowerBonus, Monster, Name, Player, Position, ProvidesFood, ProvidesHealing, Ranged, Renderable, SerializeMe, Viewshed};
 use crate::map::MAPWIDTH;
 use crate::random_table::RandomTable;
 use crate::rect::Rect;
@@ -26,6 +26,7 @@ pub fn player(ecs: &mut World, player_x: i32, player_y: i32) -> Entity {
         .with(Viewshed { visible_tiles: Vec::new(), range: 8, dirty: true })
         .with(Name { name: "Player".to_string() })
         .with(CombatStats { max_hp: 30, hp: 30, defense: 2, power: 5 })
+        .with(HungerClock{state: HungerState::WellFed, duration: 20})
         .marked::<SimpleMarker<SerializeMe>>()
         .build()
 }
@@ -108,6 +109,7 @@ pub fn spawn_room(ecs: &mut World, room: &Rect, map_depth: i32) {
             "Shield" => shield(ecs, x, y),
             "Longsword" => longsword(ecs, x, y),
             "Tower Shield" => tower_shield(ecs, x, y),
+            "Rations" => rations(ecs, x, y),
             name => panic!("Tried to spawn an unknown entity with name {name}.")
         }
     }
@@ -217,6 +219,7 @@ fn room_table(map_depth: i32) -> RandomTable {
         .add("Shield", 3)
         .add("Longsword", map_depth - 1)
         .add("Tower Shield", map_depth - 1)
+        .add("Rations", 10)
 }
 
 fn dagger(ecs: &mut World, x: i32, y: i32) {
@@ -283,6 +286,23 @@ fn tower_shield(ecs: &mut World, x: i32, y: i32) {
         .with(Item {})
         .with(Equippable { slot: EquipmentSlot::Shield })
         .with(DefenseBonus { defense: 3 })
+        .marked::<SimpleMarker<SerializeMe>>()
+        .build();
+}
+
+fn rations(ecs: &mut World, x: i32, y: i32) {
+    ecs.create_entity()
+        .with(Position { x, y })
+        .with(Renderable {
+            glyph: to_cp437('%'),
+            fg: RGB::named(GREEN),
+            bg: RGB::named(BLACK),
+            render_order: 2,
+        })
+        .with(Name { name: "Rations".to_string() })
+        .with(Item {})
+        .with(ProvidesFood{})
+        .with(Consumable{})
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
 }

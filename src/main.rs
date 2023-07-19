@@ -34,6 +34,7 @@ mod menu;
 mod saveload_system;
 mod random_table;
 mod particle_system;
+mod hunger_system;
 
 pub struct State {
     ecs: World,
@@ -70,6 +71,9 @@ impl State {
 
         let mut particles = particle_system::ParticleSpawnSystem {};
         particles.run_now(&self.ecs);
+
+        let mut hunger = hunger_system::HungerSystem {};
+        hunger.run_now(&self.ecs);
 
         self.ecs.maintain();
     }
@@ -400,6 +404,8 @@ fn main() -> rltk::BError {
     gs.ecs.register::<DefenseBonus>();
     gs.ecs.register::<WantsToRemoveItem>();
     gs.ecs.register::<ParticleLifetime>();
+    gs.ecs.register::<HungerClock>();
+    gs.ecs.register::<ProvidesFood>();
 
     gs.ecs.insert(SimpleMarkerAllocator::<SerializeMe>::new());
     gs.ecs.insert(PreRun);

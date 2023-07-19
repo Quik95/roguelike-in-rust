@@ -166,6 +166,14 @@ impl Player {
             }
         }
 
+        let hunger_clock = ecs.read_storage::<HungerClock>();
+        let hc = hunger_clock.get(*player_entity);
+        if let Some(hc) = hc {
+            match hc.state {
+                HungerState::Hungry | HungerState::Starving => can_heal = false,
+                _ => {}
+            }
+        }
         if can_heal {
             let mut health_components = ecs.write_storage::<CombatStats>();
             let player_hp = health_components.get_mut(*player_entity).unwrap();
