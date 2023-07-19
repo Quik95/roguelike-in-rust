@@ -1,10 +1,11 @@
 use rltk::{BLACK, MAGENTA, ORANGE, RED};
 use specs::{Entities, Entity, Join, ReadExpect, ReadStorage, System, WriteExpect, WriteStorage};
 
-use crate::components::{AreaOfEffect, CombatStats, Confusion, Consumable, Equippable, Equipped, HungerClock, HungerState, InBackpack, InflictsDamage, Name, Position, ProvidesFood, ProvidesHealing, SufferDamage, WantsToDropItem, WantsToPickupItem, WantsToRemoveItem, WantsToUseItem};
+use crate::components::{AreaOfEffect, CombatStats, Confusion, Consumable, Equippable, Equipped, HungerClock, HungerState, InBackpack, InflictsDamage, MagicMapper, Name, Position, ProvidesFood, ProvidesHealing, SufferDamage, WantsToDropItem, WantsToPickupItem, WantsToRemoveItem, WantsToUseItem};
 use crate::gamelog::GameLog;
 use crate::map::Map;
 use crate::particle_system::ParticleBuilder;
+use crate::player::RunState;
 
 pub struct ItemCollectionSystem {}
 
@@ -47,7 +48,7 @@ impl<'a> System<'a> for ItemUseSystem {
         ReadStorage<'a, InflictsDamage>,
         WriteStorage<'a, CombatStats>,
         ReadStorage<'a, Consumable>,
-        ReadExpect<'a, Map>,
+        WriteExpect<'a, Map>,
         WriteStorage<'a, SufferDamage>,
         ReadStorage<'a, AreaOfEffect>,
         WriteStorage<'a, Confusion>,
@@ -57,11 +58,13 @@ impl<'a> System<'a> for ItemUseSystem {
         WriteExpect<'a, ParticleBuilder>,
         ReadStorage<'a, Position>,
         ReadStorage<'a, ProvidesFood>,
-        WriteStorage<'a, HungerClock>
+        WriteStorage<'a, HungerClock>,
+        ReadStorage<'a, MagicMapper>,
+        WriteExpect<'a, RunState>
     );
 
     fn run(&mut self, data: Self::SystemData) {
-        let (player_entity, mut gamelog, entities, mut wants_item, names, healing, inflict_damage, mut combat_stats, consumables, map, mut suffer_damage, aoe, mut confused, equippable, mut equipped, mut backpack, mut particle_builder, positions, provides_food, mut hunger_clock) = data;
+        let (player_entity, mut gamelog, entities, mut wants_item, names, healing, inflict_damage, mut combat_stats, consumables, mut map, mut suffer_damage, aoe, mut confused, equippable, mut equipped, mut backpack, mut particle_builder, positions, provides_food, mut hunger_clock, magic_mapper,mut runstate) = data;
 
         for (entity, useitem) in (&entities, &wants_item).join() {
             let mut used_item = true;
@@ -199,6 +202,13 @@ impl<'a> System<'a> for ItemUseSystem {
                     hc.duration = 20;
                     gamelog.entries.push(format!("You eat the {}.", names.get(useitem.item).unwrap().name));
                 }
+            }
+
+            let is_mapper = magic_mapper.get(useitem.item);
+            if is_mapper.is_some() {
+                used_item = true;
+                gamelog.entries.push("The map is revealed to you!".to_string());
+                *runstate = RunState::MagicMapReveal{row: 0};
             }
 
         }

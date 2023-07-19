@@ -182,16 +182,16 @@ impl Map {
 
             // Move the coordinates
             x += 1;
-            if x > 79 {
+            if x > MAPWIDTH as i32 - 1 {
                 x = 0;
                 y += 1;
             }
         }
     }
 
-    fn wall_glyph(map: &Map, x: i32, y: i32) -> FontCharType {
-        if x < 1 || x > map.width - 2 || y < 1 || y > map.height - 2i32
-            { return 35 as FontCharType; }
+    fn wall_glyph(map: &Self, x: i32, y: i32) -> FontCharType {
+        if x < 1 || x > map.width - 2 || y < 1 || y > map.height - 2
+        { return 35 as FontCharType; }
         let mut mask: u8 = 0;
 
         if Self::is_revealed_and_wall(map, x, y - 1) { mask += 1; }
@@ -221,7 +221,10 @@ impl Map {
 
     fn is_revealed_and_wall(map: &Self, x: i32, y: i32) -> bool {
         let idx = Self::xy_idx(x, y);
-        map.tiles[idx] == TileType::Wall && map.revealed_tiles[idx]
+        map.tiles
+            .get(idx)
+            .map_or(false,
+                    |tile| map.tiles[idx] == TileType::Wall && map.revealed_tiles[idx])
     }
 }
 

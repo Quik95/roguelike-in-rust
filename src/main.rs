@@ -14,6 +14,7 @@ use visibility_system::VisibilitySystem;
 use crate::damage_system::DamageSystem;
 use crate::gamelog::GameLog;
 use crate::inventory_system::{ItemCollectionSystem, ItemDropSystem, ItemRemoveSystem, ItemUseSystem};
+use crate::map::{MAPHEIGHT, MAPWIDTH};
 use crate::melee_combat_system::MeleeCombatSystem;
 use crate::player::RunState::*;
 
@@ -253,7 +254,10 @@ impl GameState for State {
             PlayerTurn => {
                 self.run_systems();
                 self.ecs.maintain();
-                newrunstate = MonsterTurn;
+                match *self.ecs.fetch::<RunState>() {
+                    MagicMapReveal {..} => newrunstate = MagicMapReveal{ row: 0 },
+                    _ => newrunstate = MonsterTurn,
+                }
             }
             MonsterTurn => {
                 self.run_systems();
@@ -352,6 +356,18 @@ impl GameState for State {
                     }
                 }
             }
+            MagicMapReveal {row} => {
+                let mut map = self.ecs.fetch_mut::<Map>();
+                for x in 0..MAPWIDTH {
+                    let idx = Map::xy_idx(x as i32, row);
+                    map.revealed_tiles[idx] = true;
+                }
+                if row as usize == MAPHEIGHT - 1 {
+                    newrunstate = MonsterTurn;
+                } else {
+                    newrunstate = MagicMapReveal { row: row + 1 };
+                }
+            }
         }
         {
             let mut runwriter = self.ecs.write_resource::<RunState>();
@@ -406,6 +422,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<ParticleLifetime>();
     gs.ecs.register::<HungerClock>();
     gs.ecs.register::<ProvidesFood>();
+    gs.ecs.register::<MagicMapper>();
 
     gs.ecs.insert(SimpleMarkerAllocator::<SerializeMe>::new());
     gs.ecs.insert(PreRun);
