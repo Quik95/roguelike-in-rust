@@ -36,6 +36,7 @@ mod saveload_system;
 mod random_table;
 mod particle_system;
 mod hunger_system;
+mod rex_assets;
 
 pub struct State {
     ecs: World,
@@ -429,6 +430,7 @@ fn main() -> rltk::BError {
     gs.ecs.insert(GameLog { entries: vec!["Welcome to Rusty Roguelike".to_string()] });
     gs.ecs.insert(rng);
     gs.ecs.insert(particle_system::ParticleBuilder::new());
+    gs.ecs.insert(rex_assets::RexAssets::new());
 
     let map = Map::new_map_rooms_and_corridors(1);
     let (player_x, player_y) = map.rooms[0].center();

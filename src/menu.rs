@@ -1,38 +1,48 @@
-use rltk::{BLACK, MAGENTA, RGB, Rltk, VirtualKeyCode, WHITE, YELLOW};
+use rltk::{BLACK, CYAN, GRAY, MAGENTA, RGB, Rltk, VirtualKeyCode, WHEAT, WHITE, YELLOW};
 
 use crate::gui::MainMenuResult;
 use crate::gui::MainMenuResult::*;
 use crate::gui::MainMenuSelection::*;
 use crate::player::RunState::*;
 use crate::player::RunState;
+use crate::rex_assets::RexAssets;
 use crate::State;
 
 pub fn main_menu(gs: &mut State, ctx: &mut Rltk) -> MainMenuResult {
     let save_exists = super::saveload_system::does_save_exist();
     let runstate = gs.ecs.fetch::<RunState>();
+    let assets = gs.ecs.fetch::<RexAssets>();
+    ctx.render_xp_sprite(&assets.menu, 0, 0);
 
-    ctx.print_color_centered(15, RGB::named(YELLOW), RGB::named(BLACK), "Rust Roguelike Tutorial");
+    ctx.draw_box_double(24, 18, 31, 10, RGB::named(WHEAT), RGB::named(BLACK));
+    ctx.print_color_centered(20, RGB::named(YELLOW), RGB::named(BLACK), "Rust Roguelike Tutorial");
+    ctx.print_color_centered(21, RGB::named(CYAN), RGB::named(BLACK), "by Herbert Wolverson");
+    ctx.print_color_centered(22, RGB::named(GRAY), RGB::named(BLACK), "Use Up/Down Arrows and Enter");
 
+    let mut y = 24;
     if let MainMenu { menu_selection: selection } = *runstate {
         if selection == NewGame {
-            ctx.print_color_centered(24, RGB::named(MAGENTA), RGB::named(BLACK), "Begin New Game");
+            ctx.print_color_centered(y, RGB::named(MAGENTA), RGB::named(BLACK), "Begin New Game");
         } else {
-            ctx.print_color_centered(24, RGB::named(WHITE), RGB::named(BLACK), "Begin New Game");
+            ctx.print_color_centered(y, RGB::named(WHITE), RGB::named(BLACK), "Begin New Game");
         }
+        y += 1;
 
         if save_exists {
             if selection == LoadGame {
-                ctx.print_color_centered(25, RGB::named(MAGENTA), RGB::named(BLACK), "Load Game");
+                ctx.print_color_centered(y, RGB::named(MAGENTA), RGB::named(BLACK), "Load Game");
             } else {
-                ctx.print_color_centered(25, RGB::named(WHITE), RGB::named(BLACK), "Load Game");
+                ctx.print_color_centered(y, RGB::named(WHITE), RGB::named(BLACK), "Load Game");
             }
         }
+        y += 1;
 
         if selection == Quit {
-            ctx.print_color_centered(26, RGB::named(MAGENTA), RGB::named(BLACK), "Quit");
+            ctx.print_color_centered(y, RGB::named(MAGENTA), RGB::named(BLACK), "Quit");
         } else {
-            ctx.print_color_centered(26, RGB::named(WHITE), RGB::named(BLACK), "Quit");
+            ctx.print_color_centered(y, RGB::named(WHITE), RGB::named(BLACK), "Quit");
         }
+        y += 1;
 
         match ctx.key {
             None => return NoSelection { selected: selection },
