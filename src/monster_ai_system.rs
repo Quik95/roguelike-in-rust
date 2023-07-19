@@ -5,7 +5,7 @@ use crate::{
     components::{Monster, Position, Viewshed, WantsToMelee},
     map::Map, player::RunState,
 };
-use crate::components::Confusion;
+use crate::components::{Confusion, EntityMoved};
 use crate::particle_system::ParticleBuilder;
 
 pub struct MonsterAI {}
@@ -22,7 +22,8 @@ impl<'a> System<'a> for MonsterAI {
         WriteStorage<'a, Position>,
         WriteStorage<'a, WantsToMelee>,
         WriteStorage<'a, Confusion>,
-        WriteExpect<'a, ParticleBuilder>
+        WriteExpect<'a, ParticleBuilder>,
+        WriteStorage<'a, EntityMoved>
     );
 
     fn run(&mut self, data: Self::SystemData) {
@@ -37,7 +38,8 @@ impl<'a> System<'a> for MonsterAI {
             mut position,
             mut wants_to_melee,
             mut confused,
-            mut particle_builder
+            mut particle_builder,
+            mut entity_moved
         ) = data;
 
         if *runstate != RunState::MonsterTurn { return; }
@@ -80,6 +82,7 @@ impl<'a> System<'a> for MonsterAI {
                         idx = Map::xy_idx(pos.x, pos.y);
                         map.blocked[idx] = true;
                         viewshed.dirty = true;
+                        entity_moved.insert(entity, EntityMoved {}).expect("Unable to insert marker");
                     }
                 }
             }

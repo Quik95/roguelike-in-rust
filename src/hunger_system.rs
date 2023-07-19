@@ -1,21 +1,22 @@
-use specs::{Entities, Entity, Join, ReadExpect, ReadStorage, System, WriteExpect, WriteStorage};
+use specs::{Entities, Entity, Join, ReadExpect, System, WriteExpect, WriteStorage};
+
 use crate::components::{HungerClock, SufferDamage};
+use crate::components::HungerState::*;
 use crate::gamelog::GameLog;
 use crate::player::RunState;
 use crate::player::RunState::*;
-use crate::components::HungerState::*;
 
-pub struct HungerSystem{}
+pub struct HungerSystem {}
 
 impl<'a> System<'a> for HungerSystem {
-   type SystemData = (
-    Entities<'a>,
-       WriteStorage<'a, HungerClock>,
-       ReadExpect<'a, Entity>,
-       ReadExpect<'a, RunState>,
-       WriteStorage<'a, SufferDamage>,
-       WriteExpect<'a, GameLog>
-   );
+    type SystemData = (
+        Entities<'a>,
+        WriteStorage<'a, HungerClock>,
+        ReadExpect<'a, Entity>,
+        ReadExpect<'a, RunState>,
+        WriteStorage<'a, SufferDamage>,
+        WriteExpect<'a, GameLog>
+    );
 
     fn run(&mut self, data: Self::SystemData) {
         let (
@@ -32,22 +33,22 @@ impl<'a> System<'a> for HungerSystem {
 
             match *runstate {
                 PlayerTurn => {
-                   if entity == *player_entity {
-                       proceed = true;
-                   }
+                    if entity == *player_entity {
+                        proceed = true;
+                    }
                 }
                 MonsterTurn => {
                     if entity != *player_entity {
                         proceed = true;
                     }
                 }
-                _  => proceed = false
+                _ => proceed = false
             }
 
             if !proceed { continue; }
 
             clock.duration -= 1;
-            if clock.duration >= 1 {continue}
+            if clock.duration >= 1 { continue; }
 
             match clock.state {
                 WellFed => {

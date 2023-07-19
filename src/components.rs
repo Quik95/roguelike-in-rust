@@ -159,7 +159,7 @@ pub struct WantsToRemoveItem {
     pub item: Entity,
 }
 
-#[derive(Component,Serialize, Deserialize , Clone)]
+#[derive(Component, Serialize, Deserialize, Clone)]
 pub struct ParticleLifetime {
     pub lifetime_ms: f32,
 }
@@ -174,7 +174,19 @@ pub struct HungerClock {
 }
 
 #[derive(Component, Serialize, Deserialize, Clone)]
-pub struct ProvidesFood{}
+pub struct ProvidesFood {}
 
 #[derive(Component, Debug, Serialize, Deserialize, Clone)]
-pub struct MagicMapper{}
+pub struct MagicMapper {}
+
+#[derive(Component, Debug, Serialize, Deserialize, Clone)]
+pub struct Hidden {}
+
+#[derive(Component, Debug, Serialize, Deserialize, Clone)]
+pub struct EntryTrigger {}
+
+#[derive(Component, Debug, Serialize, Deserialize, Clone)]
+pub struct EntityMoved {}
+
+#[derive(Component, Debug, Serialize, Deserialize, Clone)]
+pub struct SingleActivation {}

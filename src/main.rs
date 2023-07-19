@@ -37,6 +37,7 @@ mod random_table;
 mod particle_system;
 mod hunger_system;
 mod rex_assets;
+mod trigger_system;
 
 pub struct State {
     ecs: World,
@@ -76,6 +77,9 @@ impl State {
 
         let mut hunger = hunger_system::HungerSystem {};
         hunger.run_now(&self.ecs);
+
+        let mut triggers = trigger_system::TriggerSystem {};
+        triggers.run_now(&self.ecs);
 
         self.ecs.maintain();
     }
@@ -228,11 +232,12 @@ impl GameState for State {
                 {
                     let positions = self.ecs.read_storage::<Position>();
                     let renderables = self.ecs.read_storage::<Renderable>();
+                    let hidden = self.ecs.read_storage::<Hidden>();
                     let map = self.ecs.fetch::<Map>();
 
-                    let data = (&positions, &renderables).join()
+                    let data = (&positions, &renderables, !&hidden).join()
                         .sorted_by(|&a, &b| b.1.render_order.cmp(&a.1.render_order));
-                    for (pos, render) in data {
+                    for (pos, render, _hidden) in data {
                         let idx = Map::xy_idx(pos.x, pos.y);
                         if map.visible_tiles[idx] {
                             ctx.set(pos.x, pos.y, render.fg, render.bg, render.glyph);
@@ -256,7 +261,7 @@ impl GameState for State {
                 self.run_systems();
                 self.ecs.maintain();
                 match *self.ecs.fetch::<RunState>() {
-                    MagicMapReveal {..} => newrunstate = MagicMapReveal{ row: 0 },
+                    MagicMapReveal { .. } => newrunstate = MagicMapReveal { row: 0 },
                     _ => newrunstate = MonsterTurn,
                 }
             }
@@ -357,7 +362,7 @@ impl GameState for State {
                     }
                 }
             }
-            MagicMapReveal {row} => {
+            MagicMapReveal { row } => {
                 let mut map = self.ecs.fetch_mut::<Map>();
                 for x in 0..MAPWIDTH {
                     let idx = Map::xy_idx(x as i32, row);
@@ -424,6 +429,10 @@ fn main() -> rltk::BError {
     gs.ecs.register::<HungerClock>();
     gs.ecs.register::<ProvidesFood>();
     gs.ecs.register::<MagicMapper>();
+    gs.ecs.register::<Hidden>();
+    gs.ecs.register::<EntryTrigger>();
+    gs.ecs.register::<EntityMoved>();
+    gs.ecs.register::<SingleActivation>();
 
     gs.ecs.insert(SimpleMarkerAllocator::<SerializeMe>::new());
     gs.ecs.insert(PreRun);

@@ -37,6 +37,7 @@ impl Player {
         let combat_stats = ecs.read_storage::<CombatStats>();
         let entities = ecs.entities();
         let mut wants_to_melee = ecs.write_storage::<WantsToMelee>();
+        let mut entity_moved = ecs.write_storage::<EntityMoved>();
 
         for (entity, _player, pos, viewshed) in (&entities, &mut players, &mut positions, &mut viewsheds).join() {
             if pos.x + delta_x < 1 || pos.x + delta_x > map.width - 1 || pos.y + delta_y < 1 || pos.y + delta_y > map.height - 1 {
@@ -58,6 +59,7 @@ impl Player {
                 viewshed.dirty = true;
                 ppos.x = pos.x;
                 ppos.y = pos.y;
+                entity_moved.insert(entity, EntityMoved {}).expect("Unable to insert marker");
             }
         }
     }

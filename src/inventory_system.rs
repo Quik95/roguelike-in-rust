@@ -64,7 +64,7 @@ impl<'a> System<'a> for ItemUseSystem {
     );
 
     fn run(&mut self, data: Self::SystemData) {
-        let (player_entity, mut gamelog, entities, mut wants_item, names, healing, inflict_damage, mut combat_stats, consumables, mut map, mut suffer_damage, aoe, mut confused, equippable, mut equipped, mut backpack, mut particle_builder, positions, provides_food, mut hunger_clock, magic_mapper,mut runstate) = data;
+        let (player_entity, mut gamelog, entities, mut wants_item, names, healing, inflict_damage, mut combat_stats, consumables, mut map, mut suffer_damage, aoe, mut confused, equippable, mut equipped, mut backpack, mut particle_builder, positions, provides_food, mut hunger_clock, magic_mapper, mut runstate) = data;
 
         for (entity, useitem) in (&entities, &wants_item).join() {
             let mut used_item = true;
@@ -194,7 +194,7 @@ impl<'a> System<'a> for ItemUseSystem {
 
             let item_edible = provides_food.get(useitem.item);
             if let Some(_) = item_edible {
-               used_item = true;
+                used_item = true;
                 let target = targets[0];
                 let hc = hunger_clock.get_mut(target);
                 if let Some(hc) = hc {
@@ -208,9 +208,8 @@ impl<'a> System<'a> for ItemUseSystem {
             if is_mapper.is_some() {
                 used_item = true;
                 gamelog.entries.push("The map is revealed to you!".to_string());
-                *runstate = RunState::MagicMapReveal{row: 0};
+                *runstate = RunState::MagicMapReveal { row: 0 };
             }
-
         }
 
         wants_item.clear();

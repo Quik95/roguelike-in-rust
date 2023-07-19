@@ -66,7 +66,7 @@ impl<'a> System<'a> for MeleeCombatSystem {
                             rltk::RGB::named(ORANGE),
                             rltk::RGB::named(BLACK),
                             rltk::to_cp437('‼'),
-                            200.0
+                            200.0,
                         );
                     }
                     let hc = hunger_clock.get(entity);
