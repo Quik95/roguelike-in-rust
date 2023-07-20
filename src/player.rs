@@ -25,6 +25,7 @@ pub enum RunState {
     ShowRemoveItem,
     GameOver,
     MagicMapReveal { row: i32 },
+    MapGeneration,
 }
 
 impl Player {
