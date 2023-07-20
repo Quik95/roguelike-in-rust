@@ -64,10 +64,9 @@ impl<'a> System<'a> for ItemUseSystem {
     );
 
     fn run(&mut self, data: Self::SystemData) {
-        let (player_entity, mut gamelog, entities, mut wants_item, names, healing, inflict_damage, mut combat_stats, consumables, mut map, mut suffer_damage, aoe, mut confused, equippable, mut equipped, mut backpack, mut particle_builder, positions, provides_food, mut hunger_clock, magic_mapper, mut runstate) = data;
+        let (player_entity, mut gamelog, entities, mut wants_item, names, healing, inflict_damage, mut combat_stats, consumables, map, mut suffer_damage, aoe, mut confused, equippable, mut equipped, mut backpack, mut particle_builder, positions, provides_food, mut hunger_clock, magic_mapper, mut runstate) = data;
 
         for (entity, useitem) in (&entities, &wants_item).join() {
-            let mut used_item = true;
             let mut targets = Vec::new();
             match useitem.target {
                 None => { targets.push(*player_entity) }
@@ -139,7 +138,6 @@ impl<'a> System<'a> for ItemUseSystem {
                         if entity == *player_entity {
                             gamelog.entries.push(format!("You drink the {}, healing {} hp.", names.get(useitem.item).unwrap().name, healer.heal_amount));
                         }
-                        used_item = true;
 
                         let pos = positions.get(*target);
                         if let Some(pos) = pos {
@@ -151,7 +149,6 @@ impl<'a> System<'a> for ItemUseSystem {
 
             let item_damages = inflict_damage.get(useitem.item);
             if let Some(damage) = item_damages {
-                used_item = false;
                 for mob in targets.iter() {
                     SufferDamage::new_damage(&mut suffer_damage, *mob, damage.damage);
                     if entity == *player_entity {
@@ -164,7 +161,6 @@ impl<'a> System<'a> for ItemUseSystem {
                             particle_builder.request(pos.x, pos.y, rltk::RGB::named(RED), rltk::RGB::named(BLACK), rltk::to_cp437('‼'), 200.0);
                         }
                     }
-                    used_item = true;
                 }
             }
 
@@ -172,7 +168,6 @@ impl<'a> System<'a> for ItemUseSystem {
             {
                 let causes_confusion = confused.get(useitem.item);
                 if let Some(confusion) = causes_confusion {
-                    used_item = false;
                     for mob in targets.iter() {
                         add_confusion.push((*mob, confusion.turns));
                         if entity == *player_entity {
@@ -193,8 +188,7 @@ impl<'a> System<'a> for ItemUseSystem {
             }
 
             let item_edible = provides_food.get(useitem.item);
-            if let Some(_) = item_edible {
-                used_item = true;
+            if item_edible.is_some() {
                 let target = targets[0];
                 let hc = hunger_clock.get_mut(target);
                 if let Some(hc) = hc {
@@ -206,7 +200,6 @@ impl<'a> System<'a> for ItemUseSystem {
 
             let is_mapper = magic_mapper.get(useitem.item);
             if is_mapper.is_some() {
-                used_item = true;
                 gamelog.entries.push("The map is revealed to you!".to_string());
                 *runstate = RunState::MagicMapReveal { row: 0 };
             }

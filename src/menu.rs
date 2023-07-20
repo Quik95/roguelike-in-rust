@@ -42,7 +42,6 @@ pub fn main_menu(gs: &mut State, ctx: &mut Rltk) -> MainMenuResult {
         } else {
             ctx.print_color_centered(y, RGB::named(WHITE), RGB::named(BLACK), "Quit");
         }
-        y += 1;
 
         match ctx.key {
             None => return NoSelection { selected: selection },

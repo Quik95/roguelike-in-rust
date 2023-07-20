@@ -38,6 +38,7 @@ mod particle_system;
 mod hunger_system;
 mod rex_assets;
 mod trigger_system;
+mod map_builders;
 
 pub struct State {
     ecs: World,
@@ -130,20 +131,21 @@ impl State {
             self.ecs.delete_entity(target).expect("Unable to delete");
         }
 
-        let worldmap;
+        let mut builder;
         let current_depth;
+        let player_start;
         {
             let mut worldmap_resource = self.ecs.write_resource::<Map>();
             current_depth = worldmap_resource.depth;
-            *worldmap_resource = Map::new_map_rooms_and_corridors(current_depth + 1);
-            worldmap = worldmap_resource.clone();
+            builder = map_builders::random_builder(current_depth + 1);
+            builder.build_map();
+            *worldmap_resource = builder.get_map();
+            player_start = builder.get_starting_position();
         }
 
-        for room in worldmap.rooms.iter().skip(1) {
-            spawner::spawn_room(&mut self.ecs, room, current_depth + 1);
-        }
+        builder.spawn_entities(&mut self.ecs);
 
-        let (player_x, player_y) = worldmap.rooms[0].center();
+        let (player_x, player_y) = (player_start.x, player_start.y);
         let mut player_position = self.ecs.write_resource::<Point>();
         *player_position = Point::new(player_x, player_y);
         let mut position_components = self.ecs.write_storage::<Position>();
@@ -181,18 +183,19 @@ impl State {
             self.ecs.delete_entity(*del).expect("Deletion failed");
         }
 
-        let worldmap;
+        let ppos;
+        let mut builder;
         {
             let mut worldmap_resource = self.ecs.write_resource::<Map>();
-            *worldmap_resource = Map::new_map_rooms_and_corridors(1);
-            worldmap = worldmap_resource.clone();
+            builder = map_builders::random_builder(1);
+            builder.build_map();
+            *worldmap_resource = builder.get_map();
+            ppos = builder.get_starting_position();
         }
 
-        for room in worldmap.rooms.iter().skip(1) {
-            spawner::spawn_room(&mut self.ecs, room, 1);
-        }
+        builder.spawn_entities(&mut self.ecs);
 
-        let (player_x, player_y) = worldmap.rooms[0].center();
+        let (player_x, player_y) = (ppos.x, ppos.y);
         let player_entity = spawner::player(&mut self.ecs, player_x, player_y);
         let mut player_position = self.ecs.write_resource::<Point>();
         *player_position = Point::new(player_x, player_y);
@@ -395,7 +398,7 @@ fn main() -> rltk::BError {
         ecs: World::new(),
     };
 
-    let mut rng = RandomNumberGenerator::new();
+    let rng = RandomNumberGenerator::new();
 
     gs.ecs.register::<Position>();
     gs.ecs.register::<Renderable>();
@@ -441,14 +444,15 @@ fn main() -> rltk::BError {
     gs.ecs.insert(particle_system::ParticleBuilder::new());
     gs.ecs.insert(rex_assets::RexAssets::new());
 
-    let map = Map::new_map_rooms_and_corridors(1);
-    let (player_x, player_y) = map.rooms[0].center();
+    let mut builder = map_builders::random_builder(1);
+    builder.build_map();
+    let map = builder.get_map();
+    let ppos = builder.get_starting_position();
+    let (player_x, player_y) = (ppos.x, ppos.y);
 
     let player_entity = spawner::player(&mut gs.ecs, player_x, player_y);
 
-    for room in map.rooms.iter().skip(1) {
-        spawner::spawn_room(&mut gs.ecs, room, 1);
-    }
+    builder.spawn_entities(&mut gs.ecs);
 
     gs.ecs.insert(map);
     gs.ecs.insert(Point::new(player_x, player_y));

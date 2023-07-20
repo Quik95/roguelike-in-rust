@@ -6,8 +6,8 @@ pub struct RandomEntry {
 }
 
 impl RandomEntry {
-    pub fn new<S: ToString>(name: S, weight: i32) -> RandomEntry {
-        RandomEntry { name: name.to_string(), weight }
+    pub fn new<S: ToString>(name: S, weight: i32) -> Self {
+        Self { name: name.to_string(), weight }
     }
 }
 

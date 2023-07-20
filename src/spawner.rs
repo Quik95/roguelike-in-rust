@@ -10,7 +10,6 @@ use crate::random_table::RandomTable;
 use crate::rect::Rect;
 
 const MAX_MONSTERS: i32 = 4;
-const MAX_ITEMS: i32 = 2;
 
 pub fn player(ecs: &mut World, player_x: i32, player_y: i32) -> Entity {
     ecs
@@ -29,18 +28,6 @@ pub fn player(ecs: &mut World, player_x: i32, player_y: i32) -> Entity {
         .with(HungerClock { state: HungerState::WellFed, duration: 20 })
         .marked::<SimpleMarker<SerializeMe>>()
         .build()
-}
-
-pub fn random_monster(ecs: &mut World, x: i32, y: i32) {
-    let roll: i32;
-    {
-        let mut rng = ecs.write_resource::<RandomNumberGenerator>();
-        roll = rng.roll_dice(1, 2);
-    }
-    match roll {
-        1 => { orc(ecs, x, y) }
-        _ => { goblin(ecs, x, y) }
-    }
 }
 
 fn orc(ecs: &mut World, x: i32, y: i32) {
@@ -82,8 +69,8 @@ pub fn spawn_room(ecs: &mut World, room: &Rect, map_depth: i32) {
             let mut added = false;
             let mut tries = 0;
             while !added && tries < 20 {
-                let x = (room.x1 + rng.roll_dice(1, i32::abs(room.x2 - room.x1)));
-                let y = (room.y1 + rng.roll_dice(1, i32::abs(room.y2 - room.y1)));
+                let x = room.x1 + rng.roll_dice(1, i32::abs(room.x2 - room.x1));
+                let y = room.y1 + rng.roll_dice(1, i32::abs(room.y2 - room.y1));
                 let idx = ((y * MAPWIDTH as i32) + x) as usize;
                 if let hash_map::Entry::Vacant(e) = spawn_points.entry(idx) {
                     e.insert(spawn_table.roll(&mut rng));
@@ -114,21 +101,6 @@ pub fn spawn_room(ecs: &mut World, room: &Rect, map_depth: i32) {
             "Bear Trap" => bear_trap(ecs, x, y),
             name => panic!("Tried to spawn an unknown entity with name {name}.")
         }
-    }
-}
-
-fn random_item(ecs: &mut World, x: i32, y: i32) {
-    let roll: i32;
-    {
-        let mut rng = ecs.write_resource::<RandomNumberGenerator>();
-        roll = rng.roll_dice(1, 4);
-    }
-    match roll {
-        1 => health_potion(ecs, x, y),
-        2 => magic_missile_scroll(ecs, x, y),
-        3 => fireball_scroll(ecs, x, y),
-        4 => confusion_scroll(ecs, x, y),
-        _ => panic!("This should not happen. Rolled: {roll}")
     }
 }
 

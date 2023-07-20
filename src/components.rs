@@ -130,7 +130,7 @@ pub struct SerializationHelper {
     pub map: super::map::Map,
 }
 
-#[derive(PartialEq, Copy, Clone, Serialize, Deserialize)]
+#[derive(PartialEq, Eq, Copy, Clone, Serialize, Deserialize)]
 pub enum EquipmentSlot { Melee, Shield }
 
 #[derive(Component, Serialize, Deserialize, Clone)]
@@ -164,10 +164,10 @@ pub struct ParticleLifetime {
     pub lifetime_ms: f32,
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq)]
 pub enum HungerState { WellFed, Normal, Hungry, Starving }
 
-#[derive(Component, Serialize, Deserialize, Copy, Clone, PartialEq)]
+#[derive(Component, Serialize, Deserialize, Copy, Clone, PartialEq, Eq)]
 pub struct HungerClock {
     pub state: HungerState,
     pub duration: i32,
