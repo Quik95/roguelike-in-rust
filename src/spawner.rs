@@ -5,7 +5,7 @@ use specs::{Builder, Entity, World, WorldExt};
 use specs::saveload::{MarkedBuilder, SimpleMarker};
 
 use crate::components::{AreaOfEffect, BlocksTile, CombatStats, Confusion, Consumable, DefenseBonus, EntryTrigger, EquipmentSlot, Equippable, Hidden, HungerClock, HungerState, InflictsDamage, Item, MagicMapper, MeleePowerBonus, Monster, Name, Player, Position, ProvidesFood, ProvidesHealing, Ranged, Renderable, SerializeMe, Viewshed};
-use crate::map::MAPWIDTH;
+use crate::map::{Map, MAPWIDTH, TileType};
 use crate::random_table::RandomTable;
 use crate::rect::Rect;
 
@@ -58,49 +58,64 @@ fn monster<S: ToString>(ecs: &mut World, x: i32, y: i32, glyph: rltk::FontCharTy
 }
 
 pub fn spawn_room(ecs: &mut World, room: &Rect, map_depth: i32) {
-    let spawn_table = room_table(map_depth);
-    let mut spawn_points: HashMap<usize, String> = HashMap::new();
-
+    let mut possible_targets: Vec<usize> = Vec::new();
     {
-        let mut rng = ecs.write_resource::<RandomNumberGenerator>();
-        let num_spawns = rng.roll_dice(1, MAX_MONSTERS + 3) + (map_depth - 1) - 3;
-
-        for _i in 0..num_spawns {
-            let mut added = false;
-            let mut tries = 0;
-            while !added && tries < 20 {
-                let x = room.x1 + rng.roll_dice(1, i32::abs(room.x2 - room.x1));
-                let y = room.y1 + rng.roll_dice(1, i32::abs(room.y2 - room.y1));
-                let idx = ((y * MAPWIDTH as i32) + x) as usize;
-                if let hash_map::Entry::Vacant(e) = spawn_points.entry(idx) {
-                    e.insert(spawn_table.roll(&mut rng));
-                    added = true;
-                } else {
-                    tries += 1;
+        let map = ecs.fetch::<Map   >();
+        for y in room.y1+1..room.y2 {
+            for x in room.x1+1..room.x2 {
+                let idx = Map::xy_idx(x, y);
+                if map.tiles[idx]==TileType::Floor {
+                    possible_targets.push(idx);
                 }
             }
         }
     }
-    for spawn in spawn_points.iter() {
-        let x = (*spawn.0 % MAPWIDTH) as i32;
-        let y = (*spawn.0 / MAPWIDTH) as i32;
 
-        match spawn.1.as_ref() {
-            "Goblin" => goblin(ecs, x, y),
-            "Orc" => orc(ecs, x, y),
-            "Health Potion" => health_potion(ecs, x, y),
-            "Fireball Scroll" => fireball_scroll(ecs, x, y),
-            "Confusion Scroll" => confusion_scroll(ecs, x, y),
-            "Magic Missile Scroll" => magic_missile_scroll(ecs, x, y),
-            "Dagger" => dagger(ecs, x, y),
-            "Shield" => shield(ecs, x, y),
-            "Longsword" => longsword(ecs, x, y),
-            "Tower Shield" => tower_shield(ecs, x, y),
-            "Rations" => rations(ecs, x, y),
-            "Magic Mapping Scroll" => magic_mapping_scroll(ecs, x, y),
-            "Bear Trap" => bear_trap(ecs, x, y),
-            name => panic!("Tried to spawn an unknown entity with name {name}.")
+    spawn_region(ecs, &possible_targets, map_depth);
+}
+
+pub fn spawn_region(ecs: &mut World, area: &[usize], map_depth: i32) {
+    let spawn_table = room_table(map_depth);
+    let mut spawn_points = HashMap::new();
+    let mut areas = Vec::from(area);
+
+    {
+        let mut rng = ecs.write_resource::<RandomNumberGenerator    >();
+        let num_spawns = i32::min(areas.len() as i32, rng.roll_dice(1, MAX_MONSTERS+3) + (map_depth-1)- 3);
+        if num_spawns == 0 {return;}
+
+        for _i in 0..num_spawns {
+            let array_index = if areas.len() == 1 {0usize} else {(rng.roll_dice(1, areas.len() as i32) - 1) as usize};
+            let map_idx = areas[array_index];
+            spawn_points.insert(map_idx, spawn_table.roll(&mut rng));
+            areas.remove(array_index);
         }
+    }
+
+    for spawn in spawn_points.iter() {
+        spawn_entity(ecs, &spawn);
+    }
+}
+
+fn spawn_entity(ecs: &mut World, spawn: &(&usize, &String)) {
+    let x = (*spawn.0 % MAPWIDTH) as i32;
+    let y = (*spawn.0 / MAPWIDTH) as i32;
+
+    match spawn.1.as_ref() {
+        "Goblin" => goblin(ecs, x, y),
+        "Orc" => orc(ecs, x, y),
+        "Health Potion" => health_potion(ecs, x, y),
+        "Fireball Scroll" => fireball_scroll(ecs, x, y),
+        "Confusion Scroll" => confusion_scroll(ecs, x, y),
+        "Magic Missile Scroll" => magic_missile_scroll(ecs, x, y),
+        "Dagger" => dagger(ecs, x, y),
+        "Shield" => shield(ecs, x, y),
+        "Longsword" => longsword(ecs, x, y),
+        "Tower Shield" => tower_shield(ecs, x, y),
+        "Rations" => rations(ecs, x, y),
+        "Magic Mapping Scroll" => magic_mapping_scroll(ecs, x, y),
+        "Bear Trap" => bear_trap(ecs, x, y),
+        name => panic!("Tried to spawn an unknown entity with name {name}.")
     }
 }
 
