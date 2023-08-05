@@ -17,34 +17,6 @@ pub struct BspDungeonBuilder {
 }
 
 impl MapBuilder for BspDungeonBuilder {
-    fn get_map(&self) -> Map {
-        self.map.clone()
-    }
-
-    fn get_starting_position(&mut self) -> Position {
-        self.starting_position.clone()
-    }
-
-    fn get_snapshot_history(&self) -> Vec<Map> {
-        self.history.clone()
-    }
-
-    fn spawn_entities(&mut self, ecs: &mut World) {
-        for room in self.rooms.iter().skip(1) {
-            spawner::spawn_room(ecs, room, self.depth);
-        }
-    }
-
-    fn take_snapshot(&mut self) {
-        if SHOW_MAPGEN_VISUALIZER {
-            let mut snapshot = self.map.clone();
-            for v in snapshot.revealed_tiles.iter_mut() {
-                *v = true;
-            }
-            self.history.push(snapshot);
-        }
-    }
-
     fn build_map(&mut self) {
        let mut rng = RandomNumberGenerator::new();
 
@@ -87,6 +59,34 @@ impl MapBuilder for BspDungeonBuilder {
         let stairs = self.rooms[self.rooms.len()-1].center();
         let stairs_idx = Map::xy_idx(stairs.0, stairs.1);
         self.map.tiles[stairs_idx] = TileType::DownStairs;
+    }
+
+    fn spawn_entities(&mut self, ecs: &mut World) {
+        for room in self.rooms.iter().skip(1) {
+            spawner::spawn_room(ecs, room, self.depth);
+        }
+    }
+
+    fn get_map(&self) -> Map {
+        self.map.clone()
+    }
+
+    fn get_starting_position(&mut self) -> Position {
+        self.starting_position.clone()
+    }
+
+    fn get_snapshot_history(&self) -> Vec<Map> {
+        self.history.clone()
+    }
+
+    fn take_snapshot(&mut self) {
+        if SHOW_MAPGEN_VISUALIZER {
+            let mut snapshot = self.map.clone();
+            for v in snapshot.revealed_tiles.iter_mut() {
+                *v = true;
+            }
+            self.history.push(snapshot);
+        }
     }
 }
 
