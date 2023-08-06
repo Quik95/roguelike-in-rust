@@ -30,9 +30,8 @@ pub trait MapBuilder {
 }
 
 pub fn random_builder(new_depth: i32) -> Box<dyn MapBuilder> {
-    return  Box::new(DlaBuilder::walk_outwards(new_depth));
     let mut rng = RandomNumberGenerator::new();
-    let builder = rng.roll_dice(1, 12);
+    let builder = rng.roll_dice(1, 14);
     match builder {
         1 => Box::new(SimpleMapBuilder::new(new_depth)),
         2 => Box::new(BspDungeonBuilder::new(new_depth)),
@@ -46,6 +45,8 @@ pub fn random_builder(new_depth: i32) -> Box<dyn MapBuilder> {
         10 => Box::new(DlaBuilder::walk_outwards(new_depth)),
         11 => Box::new(DlaBuilder::central_attractor(new_depth)),
         12 => Box::new(DlaBuilder::insectoid(new_depth)),
+        13 => Box::new(DrunkardsWalkBuilder::fat_passages(new_depth)),
+        14 => Box::new(DrunkardsWalkBuilder::fearful_symmetry(new_depth)),
         _ => unreachable!("Ups your forgot to add a builder.")
     }
 }
