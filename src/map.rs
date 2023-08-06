@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use rltk::{Algorithm2D, BaseMap, FontCharType, Point, RGB, Rltk, SmallVec, to_cp437};
 use serde::{Deserialize, Serialize};
-use specs::{Entity, World};
+use specs::Entity;
 
 #[derive(PartialEq, Serialize, Deserialize, Eq, Copy, Clone)]
 pub enum TileType {

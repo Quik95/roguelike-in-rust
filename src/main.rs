@@ -47,7 +47,7 @@ pub struct State {
     mapgen_next_state: Option<RunState>,
     mapgen_history: Vec<Map>,
     mapgen_index: usize,
-    mapgen_timer: f32
+    mapgen_timer: f32,
 }
 
 impl State {
@@ -408,10 +408,10 @@ fn main() -> rltk::BError {
 
     let mut gs = State {
         ecs: World::new(),
-        mapgen_next_state: Some(MainMenu {menu_selection: gui::MainMenuSelection::NewGame }),
+        mapgen_next_state: Some(MainMenu { menu_selection: gui::MainMenuSelection::NewGame }),
         mapgen_index: 0,
         mapgen_history: Vec::new(),
-        mapgen_timer: 0.0
+        mapgen_timer: 0.0,
     };
 
     gs.ecs.register::<Position>();
@@ -458,7 +458,7 @@ fn main() -> rltk::BError {
     gs.ecs.insert(RandomNumberGenerator::new());
     let player_entity = spawner::player(&mut gs.ecs, 0, 0);
     gs.ecs.insert(player_entity);
-    gs.ecs.insert(MapGeneration{});
+    gs.ecs.insert(MapGeneration {});
     gs.ecs.insert(GameLog { entries: vec!["Welcome to Rusty Roguelike".to_string()] });
     gs.ecs.insert(particle_system::ParticleBuilder::new());
     gs.ecs.insert(rex_assets::RexAssets::new());

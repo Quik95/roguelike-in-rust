@@ -1,11 +1,12 @@
 use rltk::RandomNumberGenerator;
 use specs::World;
+
+use crate::{SHOW_MAPGEN_VISUALIZER, spawner};
 use crate::components::Position;
 use crate::map::{Map, TileType};
+use crate::map_builders::common::apply_room_to_map;
 use crate::map_builders::MapBuilder;
 use crate::rect::Rect;
-use crate::{SHOW_MAPGEN_VISUALIZER, spawner};
-use crate::map_builders::common::apply_room_to_map;
 
 pub struct BspDungeonBuilder {
     map: Map,
@@ -18,10 +19,10 @@ pub struct BspDungeonBuilder {
 
 impl MapBuilder for BspDungeonBuilder {
     fn build_map(&mut self) {
-       let mut rng = RandomNumberGenerator::new();
+        let mut rng = RandomNumberGenerator::new();
 
         self.rects.clear();
-        self.rects.push(Rect::new(2, 2, self.map.width-5, self.map.height-5));
+        self.rects.push(Rect::new(2, 2, self.map.width - 5, self.map.height - 5));
         let first_room = self.rects[0];
         self.add_subrects(first_room);
 
@@ -37,16 +38,16 @@ impl MapBuilder for BspDungeonBuilder {
                 self.take_snapshot();
             }
 
-            n_rooms+= 1;
+            n_rooms += 1;
         }
 
         let start = self.rooms[0].center();
         self.starting_position = Position { x: start.0, y: start.1 };
 
         self.rooms.sort_by(|a, b| a.x1.cmp(&b.x1));
-        for i in 0..self.rooms.len()-1 {
+        for i in 0..self.rooms.len() - 1 {
             let room = self.rooms[i];
-            let next_room = self.rooms[i+1];
+            let next_room = self.rooms[i + 1];
             let start_x = room.x1 + (rng.roll_dice(1, i32::abs(room.x1 - room.x2)) - 1);
             let start_y = room.y1 + (rng.roll_dice(1, i32::abs(room.y1 - room.y2)) - 1);
             let end_x = next_room.x1 + (rng.roll_dice(1, i32::abs(next_room.x1 - next_room.x2)) - 1);
@@ -56,7 +57,7 @@ impl MapBuilder for BspDungeonBuilder {
             self.take_snapshot();
         }
 
-        let stairs = self.rooms[self.rooms.len()-1].center();
+        let stairs = self.rooms[self.rooms.len() - 1].center();
         let stairs_idx = Map::xy_idx(stairs.0, stairs.1);
         self.map.tiles[stairs_idx] = TileType::DownStairs;
     }
@@ -92,30 +93,30 @@ impl MapBuilder for BspDungeonBuilder {
 
 impl BspDungeonBuilder {
     pub fn new(new_depth: i32) -> Self {
-       Self {
-              map: Map::new(new_depth),
-              starting_position: Position { x: 0, y: 0 },
-              depth: new_depth,
-              rooms: Vec::new(),
-              history: Vec::new(),
-              rects: Vec::new(),
-       }
+        Self {
+            map: Map::new(new_depth),
+            starting_position: Position { x: 0, y: 0 },
+            depth: new_depth,
+            rooms: Vec::new(),
+            history: Vec::new(),
+            rects: Vec::new(),
+        }
     }
 
     fn add_subrects(&mut self, rect: Rect) {
         let width = i32::abs(rect.x1 - rect.x2);
         let height = i32::abs(rect.y1 - rect.y2);
-        let half_width = i32::max(width/2, 1);
-        let half_height = i32::max(height/2, 1);
+        let half_width = i32::max(width / 2, 1);
+        let half_height = i32::max(height / 2, 1);
 
         self.rects.push(Rect::new(rect.x1, rect.y1, half_width, half_height));
-        self.rects.push(Rect::new(rect.x1, rect.y1+half_height, half_width, half_height));
-        self.rects.push(Rect::new(rect.x1+half_width, rect.y1, half_width, half_height));
-        self.rects.push(Rect::new(rect.x1+half_width, rect.y1+half_height, half_width, half_height));
+        self.rects.push(Rect::new(rect.x1, rect.y1 + half_height, half_width, half_height));
+        self.rects.push(Rect::new(rect.x1 + half_width, rect.y1, half_width, half_height));
+        self.rects.push(Rect::new(rect.x1 + half_width, rect.y1 + half_height, half_width, half_height));
     }
 
     fn get_random_rect(&mut self, rng: &mut RandomNumberGenerator) -> Rect {
-        if self.rects.len() == 1 { return  self.rects[0]; }
+        if self.rects.len() == 1 { return self.rects[0]; }
         let idx = (rng.roll_dice(1, self.rects.len() as i32) - 1) as usize;
         self.rects[idx]
     }
@@ -147,10 +148,10 @@ impl BspDungeonBuilder {
 
         for y in expanded.y1..=expanded.y2 {
             for x in expanded.x1..=expanded.x2 {
-                if x > self.map.width - 2 {can_build = false}
-                if y > self.map.height - 2 {can_build = false}
-                if x < 1 {can_build = false}
-                if y < 1 {can_build = false}
+                if x > self.map.width - 2 { can_build = false }
+                if y > self.map.height - 2 { can_build = false }
+                if x < 1 { can_build = false }
+                if y < 1 { can_build = false }
                 if can_build {
                     let idx = Map::xy_idx(x, y);
                     if self.map.tiles[idx] != TileType::Wall { can_build = false }
@@ -166,10 +167,7 @@ impl BspDungeonBuilder {
         let mut y = y1;
 
         while x != x2 || y != y2 {
-            if x < x2 { x += 1; }
-            else if x > x2 { x -= 1; }
-            else if y < y2 { y += 1; }
-            else if y > y2 { y -= 1; }
+            if x < x2 { x += 1; } else if x > x2 { x -= 1; } else if y < y2 { y += 1; } else if y > y2 { y -= 1; }
 
             let idx = Map::xy_idx(x, y);
             self.map.tiles[idx] = TileType::Floor;

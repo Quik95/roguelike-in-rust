@@ -1,4 +1,4 @@
-use std::collections::{hash_map, HashMap};
+use std::collections::HashMap;
 
 use rltk::{BLACK, CYAN, CYAN3, GREEN, MAGENTA, ORANGE, PINK, RandomNumberGenerator, RGB, to_cp437, YELLOW};
 use specs::{Builder, Entity, World, WorldExt};
@@ -60,11 +60,11 @@ fn monster<S: ToString>(ecs: &mut World, x: i32, y: i32, glyph: rltk::FontCharTy
 pub fn spawn_room(ecs: &mut World, room: &Rect, map_depth: i32) {
     let mut possible_targets: Vec<usize> = Vec::new();
     {
-        let map = ecs.fetch::<Map   >();
-        for y in room.y1+1..room.y2 {
-            for x in room.x1+1..room.x2 {
+        let map = ecs.fetch::<Map>();
+        for y in room.y1 + 1..room.y2 {
+            for x in room.x1 + 1..room.x2 {
                 let idx = Map::xy_idx(x, y);
-                if map.tiles[idx]==TileType::Floor {
+                if map.tiles[idx] == TileType::Floor {
                     possible_targets.push(idx);
                 }
             }
@@ -80,12 +80,12 @@ pub fn spawn_region(ecs: &mut World, area: &[usize], map_depth: i32) {
     let mut areas = Vec::from(area);
 
     {
-        let mut rng = ecs.write_resource::<RandomNumberGenerator    >();
-        let num_spawns = i32::min(areas.len() as i32, rng.roll_dice(1, MAX_MONSTERS+3) + (map_depth-1)- 3);
-        if num_spawns == 0 {return;}
+        let mut rng = ecs.write_resource::<RandomNumberGenerator>();
+        let num_spawns = i32::min(areas.len() as i32, rng.roll_dice(1, MAX_MONSTERS + 3) + (map_depth - 1) - 3);
+        if num_spawns == 0 { return; }
 
         for _i in 0..num_spawns {
-            let array_index = if areas.len() == 1 {0usize} else {(rng.roll_dice(1, areas.len() as i32) - 1) as usize};
+            let array_index = if areas.len() == 1 { 0usize } else { (rng.roll_dice(1, areas.len() as i32) - 1) as usize };
             let map_idx = areas[array_index];
             spawn_points.insert(map_idx, spawn_table.roll(&mut rng));
             areas.remove(array_index);

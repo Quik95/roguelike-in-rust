@@ -38,10 +38,10 @@ impl MazeBuilder {
     pub(crate) fn build(&mut self) {
         let mut rng = RandomNumberGenerator::new();
 
-        let mut grid = Grid::new((self.map.width / 2)-2, (self.map.height / 2)-2, &mut rng);
+        let mut grid = Grid::new((self.map.width / 2) - 2, (self.map.height / 2) - 2, &mut rng);
         grid.generate_maze(self);
 
-        self.starting_position = Position {x: 2, y: 2};
+        self.starting_position = Position { x: 2, y: 2 };
         let mut start_idx = Map::xy_idx(self.starting_position.x, self.starting_position.y);
         self.take_snapshot();
 

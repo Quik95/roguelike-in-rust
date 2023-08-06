@@ -26,7 +26,7 @@ pub struct DrunkardSettings {
     pub drunken_lifetime: i32,
     pub floor_percent: f32,
     pub brush_size: i32,
-    pub symmetry: Symmetry
+    pub symmetry: Symmetry,
 }
 
 impl MapBuilder for DrunkardsWalkBuilder {
@@ -81,7 +81,7 @@ impl DrunkardsWalkBuilder {
             drunken_lifetime: 400,
             floor_percent: 0.5,
             brush_size: 1,
-            symmetry: Symmetry::None
+            symmetry: Symmetry::None,
         };
 
         Self::new(new_depth, settings)
@@ -94,7 +94,7 @@ impl DrunkardsWalkBuilder {
             floor_percent: 0.5,
 
             brush_size: 1,
-            symmetry: Symmetry::None
+            symmetry: Symmetry::None,
         };
 
         Self::new(new_depth, settings)
@@ -106,7 +106,7 @@ impl DrunkardsWalkBuilder {
             drunken_lifetime: 100,
             floor_percent: 0.4,
             brush_size: 1,
-            symmetry: Symmetry::None
+            symmetry: Symmetry::None,
         };
 
         Self::new(new_depth, settings)

@@ -77,9 +77,9 @@ impl DlaBuilder {
     pub fn walk_inwards(new_depth: i32) -> Self {
         Self {
             algorithm: DLAAlgorithm::WalkInwards,
-           brush_size: 1,
+            brush_size: 1,
             symmetry: Symmetry::None,
-           ..Self::new(new_depth)
+            ..Self::new(new_depth)
         }
     }
 
@@ -158,9 +158,9 @@ impl DlaBuilder {
                         let stagger_direction = rng.roll_dice(1, 4);
                         match stagger_direction {
                             1 => { if digger_x > 2 { digger_x -= 1; } }
-                            2 => { if digger_x < self.map.width-2 { digger_x += 1; } }
-                            3 => { if digger_y > 2 { digger_y -=1; } }
-                            _ => { if digger_y < self.map.height-2 { digger_y += 1; } }
+                            2 => { if digger_x < self.map.width - 2 { digger_x += 1; } }
+                            3 => { if digger_y > 2 { digger_y -= 1; } }
+                            _ => { if digger_y < self.map.height - 2 { digger_y += 1; } }
                         }
                         digger_idx = Map::xy_idx(digger_x, digger_y);
                     }

@@ -10,6 +10,7 @@ use crate::map_builders::dla::DlaBuilder;
 use crate::map_builders::drunkard::DrunkardsWalkBuilder;
 use crate::map_builders::maze::MazeBuilder;
 use crate::map_builders::simple_map::SimpleMapBuilder;
+use crate::map_builders::voronoi::VoronoiCellBuilder;
 
 mod simple_map;
 mod common;
@@ -19,6 +20,7 @@ mod cellular_automata;
 mod drunkard;
 mod maze;
 mod dla;
+mod voronoi;
 
 pub trait MapBuilder {
     fn build_map(&mut self);
@@ -31,7 +33,7 @@ pub trait MapBuilder {
 
 pub fn random_builder(new_depth: i32) -> Box<dyn MapBuilder> {
     let mut rng = RandomNumberGenerator::new();
-    let builder = rng.roll_dice(1, 14);
+    let builder = rng.roll_dice(1, 17);
     match builder {
         1 => Box::new(SimpleMapBuilder::new(new_depth)),
         2 => Box::new(BspDungeonBuilder::new(new_depth)),
@@ -47,6 +49,9 @@ pub fn random_builder(new_depth: i32) -> Box<dyn MapBuilder> {
         12 => Box::new(DlaBuilder::insectoid(new_depth)),
         13 => Box::new(DrunkardsWalkBuilder::fat_passages(new_depth)),
         14 => Box::new(DrunkardsWalkBuilder::fearful_symmetry(new_depth)),
+        15 => Box::new(VoronoiCellBuilder::pythagoras(new_depth)),
+        16 => Box::new(VoronoiCellBuilder::manhattan(new_depth)),
+        17 => Box::new(VoronoiCellBuilder::chebyshev(new_depth)),
         _ => unreachable!("Ups your forgot to add a builder.")
     }
 }

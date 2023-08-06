@@ -1,12 +1,12 @@
 use rltk::RandomNumberGenerator;
 use specs::World;
 
+use crate::{SHOW_MAPGEN_VISUALIZER, spawner};
 use crate::components::Position;
 use crate::map::{Map, TileType};
 use crate::map_builders::common::*;
 use crate::map_builders::MapBuilder;
 use crate::rect::Rect;
-use crate::{SHOW_MAPGEN_VISUALIZER, spawner};
 
 pub struct SimpleMapBuilder {
     map: Map,
