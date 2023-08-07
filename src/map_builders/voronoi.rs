@@ -6,6 +6,7 @@ use specs::World;
 use crate::{SHOW_MAPGEN_VISUALIZER, spawner};
 use crate::components::Position;
 use crate::map::{Map, TileType};
+use crate::map_builders::common::{generate_voronoi_spawn_regions, remove_unreachable_areas_returning_most_distant};
 use crate::map_builders::MapBuilder;
 
 #[derive(Eq, PartialEq, Copy, Clone)]
@@ -143,5 +144,21 @@ impl VoronoiCellBuilder {
             }
             self.take_snapshot();
         }
+
+        self.starting_position = Position { x: self.map.width / 2, y: self.map.height / 2 };
+        let mut start_idx = Map::xy_idx(self.starting_position.x, self.starting_position.y);
+        while self.map.tiles[start_idx] != TileType::Floor {
+            self.starting_position.x -= 1;
+            start_idx = Map::xy_idx(self.starting_position.x, self.starting_position.y);
+        }
+        self.take_snapshot();
+
+        let exit_tile = remove_unreachable_areas_returning_most_distant(&mut self.map, start_idx);
+        self.take_snapshot();
+
+        self.map.tiles[exit_tile] = TileType::DownStairs;
+        self.take_snapshot();
+
+        self.noise_areas = generate_voronoi_spawn_regions(&self.map, &mut rng);
     }
 }
