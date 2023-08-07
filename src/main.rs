@@ -175,7 +175,7 @@ impl State {
 
         let current_depth;
         {
-            let mut worldmap_resource = self.ecs.write_resource::<Map>();
+            let worldmap_resource = self.ecs.write_resource::<Map>();
             current_depth = worldmap_resource.depth;
         }
         self.generate_world_map(current_depth + 1);
@@ -381,7 +381,7 @@ impl GameState for State {
                 Map::draw_map(&self.mapgen_history[self.mapgen_index], ctx);
 
                 self.mapgen_timer += ctx.frame_time_ms;
-                if self.mapgen_timer > 300.0 {
+                if self.mapgen_timer > 30.0 {
                     self.mapgen_timer = 0.0;
                     self.mapgen_index += 1;
                     if self.mapgen_index >= self.mapgen_history.len() {

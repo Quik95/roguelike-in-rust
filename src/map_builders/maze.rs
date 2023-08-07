@@ -42,7 +42,7 @@ impl MazeBuilder {
         grid.generate_maze(self);
 
         self.starting_position = Position { x: 2, y: 2 };
-        let mut start_idx = Map::xy_idx(self.starting_position.x, self.starting_position.y);
+        let start_idx = Map::xy_idx(self.starting_position.x, self.starting_position.y);
         self.take_snapshot();
 
         let exit_tile = remove_unreachable_areas_returning_most_distant(&mut self.map, start_idx);

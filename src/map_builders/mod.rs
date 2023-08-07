@@ -11,6 +11,7 @@ use crate::map_builders::drunkard::DrunkardsWalkBuilder;
 use crate::map_builders::maze::MazeBuilder;
 use crate::map_builders::simple_map::SimpleMapBuilder;
 use crate::map_builders::voronoi::VoronoiCellBuilder;
+use crate::map_builders::waveform_collapse::WaveformCollapseBuilder;
 
 mod simple_map;
 mod common;
@@ -21,6 +22,7 @@ mod drunkard;
 mod maze;
 mod dla;
 mod voronoi;
+mod waveform_collapse;
 
 pub trait MapBuilder {
     fn build_map(&mut self);
@@ -33,8 +35,8 @@ pub trait MapBuilder {
 
 pub fn random_builder(new_depth: i32) -> Box<dyn MapBuilder> {
     let mut rng = RandomNumberGenerator::new();
-    let builder = rng.roll_dice(1, 17);
-    match builder {
+    let builder = rng.roll_dice(1, 18);
+    let mut result: Box<dyn MapBuilder> = match builder {
         1 => Box::new(SimpleMapBuilder::new(new_depth)),
         2 => Box::new(BspDungeonBuilder::new(new_depth)),
         3 => Box::new(BspInteriorBuilder::new(new_depth)),
@@ -52,6 +54,13 @@ pub fn random_builder(new_depth: i32) -> Box<dyn MapBuilder> {
         15 => Box::new(VoronoiCellBuilder::pythagoras(new_depth)),
         16 => Box::new(VoronoiCellBuilder::manhattan(new_depth)),
         17 => Box::new(VoronoiCellBuilder::chebyshev(new_depth)),
+        18 => Box::new(WaveformCollapseBuilder::test_map(new_depth)),
         _ => unreachable!("Ups your forgot to add a builder.")
+    };
+
+    if rng.roll_dice(1, 3) == 1 {
+        result = Box::new(WaveformCollapseBuilder::derived_map(new_depth, result));
     }
+
+    result
 }

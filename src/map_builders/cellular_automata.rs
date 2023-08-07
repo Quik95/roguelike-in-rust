@@ -9,8 +9,6 @@ use crate::map::{Map, TileType};
 use crate::map_builders::common::{generate_voronoi_spawn_regions, remove_unreachable_areas_returning_most_distant};
 use crate::map_builders::MapBuilder;
 
-const MIN_ROOM_SIZE: i32 = 8;
-
 pub struct CellularAutomataBuilder {
     map: Map,
     starting_position: Position,
@@ -104,7 +102,7 @@ impl CellularAutomataBuilder {
         }
 
         self.starting_position = Position { x: self.map.width / 2, y: self.map.height / 2 };
-        let mut start_idx = Map::xy_idx(self.starting_position.x, self.starting_position.y);
+        let start_idx = Map::xy_idx(self.starting_position.x, self.starting_position.y);
 
         let exit_tile = remove_unreachable_areas_returning_most_distant(&mut self.map, start_idx);
         self.take_snapshot();

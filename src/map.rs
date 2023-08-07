@@ -4,7 +4,7 @@ use rltk::{Algorithm2D, BaseMap, FontCharType, Point, RGB, Rltk, SmallVec, to_cp
 use serde::{Deserialize, Serialize};
 use specs::Entity;
 
-#[derive(PartialEq, Serialize, Deserialize, Eq, Copy, Clone)]
+#[derive(PartialEq, Serialize, Deserialize, Eq, Copy, Clone, Hash)]
 pub enum TileType {
     Wall,
     Floor,
