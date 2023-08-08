@@ -21,15 +21,15 @@ pub const SILLY_SIMPLE: PrefabRoom = PrefabRoom {
     width: 6,
     height: 6,
     first_depth: 0,
-    last_depth: 100
+    last_depth: 100,
 };
 pub const SILLY_SIMPLE_MAP: &str = r#"       ^  ^    #          ###       "#;
 
-pub const CHECKERBOARD:PrefabRoom = PrefabRoom {
+pub const CHECKERBOARD: PrefabRoom = PrefabRoom {
     template: CHECKERBOARD_MAP,
     width: 6,
     height: 6,
     first_depth: 0,
-    last_depth: 100
+    last_depth: 100,
 };
 pub const CHECKERBOARD_MAP: &str = r#"       g#%#  #!#   ^# #             "#;

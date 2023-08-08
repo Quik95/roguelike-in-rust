@@ -1,172 +1,129 @@
-use std::collections::HashMap;
-
 use rltk::{LineAlg, RandomNumberGenerator};
 
-use crate::{SHOW_MAPGEN_VISUALIZER, spawner};
 use crate::components::Position;
 use crate::map::{Map, TileType};
-use crate::map_builders::common::{generate_voronoi_spawn_regions, paint, remove_unreachable_areas_returning_most_distant, Symmetry};
-use crate::map_builders::MapBuilder;
+use crate::map_builders::{BuilderMap, InitialMapBuilder};
+use crate::map_builders::common::{paint, Symmetry};
 
 #[derive(PartialEq, Eq, Copy, Clone)]
 pub enum DLAAlgorithm { WalkInwards, WalkOutwards, CentralAttractor }
 
 pub struct DlaBuilder {
-    map: Map,
-    starting_position: Position,
-    depth: i32,
-    history: Vec<Map>,
-    noise_areas: HashMap<i32, Vec<usize>>,
     algorithm: DLAAlgorithm,
     brush_size: i32,
     symmetry: Symmetry,
     floor_percent: f32,
-    spawn_list: Vec<(usize, String)>,
 }
 
-impl MapBuilder for DlaBuilder {
-    fn build_map(&mut self) {
-        self.build()
-    }
-
-    fn get_map(&self) -> Map {
-        self.map.clone()
-    }
-
-    fn get_starting_position(&mut self) -> Position {
-        self.starting_position.clone()
-    }
-
-    fn get_snapshot_history(&self) -> Vec<Map> {
-        self.history.clone()
-    }
-
-    fn take_snapshot(&mut self) {
-        if SHOW_MAPGEN_VISUALIZER {
-            let mut snapshot = self.map.clone();
-            for v in snapshot.revealed_tiles.iter_mut() {
-                *v = true;
-            }
-            self.history.push(snapshot);
-        }
-    }
-
-    fn get_spawn_list(&self) -> &Vec<(usize, String)> {
-        &self.spawn_list
+impl InitialMapBuilder for DlaBuilder {
+    fn build_map(&mut self, rng: &mut RandomNumberGenerator, build_data: &mut BuilderMap) {
+        self.build(rng, build_data);
     }
 }
 
 impl DlaBuilder {
-    pub fn new(new_depth: i32) -> Self {
+    fn new() -> Self {
         Self {
-            map: Map::new(new_depth),
-            starting_position: Position { x: 0, y: 0 },
-            depth: new_depth,
-            history: Vec::new(),
-            noise_areas: HashMap::new(),
             algorithm: DLAAlgorithm::WalkInwards,
-            brush_size: 1,
+            brush_size: 2,
             symmetry: Symmetry::None,
             floor_percent: 0.25,
-            spawn_list: Vec::new(),
         }
     }
 
-    pub fn walk_inwards(new_depth: i32) -> Self {
-        Self {
+    pub fn walk_inwards() -> Box<Self> {
+        Box::new(Self {
             algorithm: DLAAlgorithm::WalkInwards,
             brush_size: 1,
             symmetry: Symmetry::None,
-            ..Self::new(new_depth)
-        }
+            ..Self::new()
+        })
     }
 
-    pub fn walk_outwards(new_depth: i32) -> Self {
-        Self {
+    pub fn walk_outwards() -> Box<Self> {
+        Box::new(Self {
             algorithm: DLAAlgorithm::WalkOutwards,
             brush_size: 2,
             symmetry: Symmetry::None,
-            ..Self::new(new_depth)
-        }
+            ..Self::new()
+        })
     }
 
-    pub fn central_attractor(new_depth: i32) -> Self {
-        Self {
+    pub fn central_attractor() -> Box<Self> {
+        Box::new(Self {
             algorithm: DLAAlgorithm::CentralAttractor,
             brush_size: 2,
             symmetry: Symmetry::None,
-            ..Self::new(new_depth)
-        }
+            ..Self::new()
+        })
     }
 
-    pub fn insectoid(new_depth: i32) -> Self {
-        Self {
+    pub fn insectoid() -> Box<Self> {
+        Box::new(Self {
             algorithm: DLAAlgorithm::CentralAttractor,
             brush_size: 2,
             symmetry: Symmetry::Horizontal,
-            ..Self::new(new_depth)
-        }
+            ..Self::new()
+        })
     }
 
 
-    fn build(&mut self) {
-        let mut rng = RandomNumberGenerator::new();
+    fn build(&mut self, rng: &mut RandomNumberGenerator, build_data: &mut BuilderMap) {
+        let starting_position = Position { x: build_data.map.width / 2, y: build_data.map.height / 2 };
+        let start_idx = Map::xy_idx(starting_position.x, starting_position.y);
+        build_data.take_snapshot();
+        build_data.map.tiles[start_idx] = TileType::Floor;
+        build_data.map.tiles[start_idx - 1] = TileType::Floor;
+        build_data.map.tiles[start_idx + 1] = TileType::Floor;
+        build_data.map.tiles[start_idx - build_data.map.width as usize] = TileType::Floor;
+        build_data.map.tiles[start_idx + build_data.map.width as usize] = TileType::Floor;
 
-        self.starting_position = Position { x: self.map.width / 2, y: self.map.height / 2 };
-        let start_idx = Map::xy_idx(self.starting_position.x, self.starting_position.y);
-        self.take_snapshot();
-        self.map.tiles[start_idx] = TileType::Floor;
-        self.map.tiles[start_idx - 1] = TileType::Floor;
-        self.map.tiles[start_idx + 1] = TileType::Floor;
-        self.map.tiles[start_idx - self.map.width as usize] = TileType::Floor;
-        self.map.tiles[start_idx + self.map.width as usize] = TileType::Floor;
-
-        let total_tiles = self.map.width * self.map.height;
+        let total_tiles = build_data.map.width * build_data.map.height;
         let desired_floor_tiles = (self.floor_percent * total_tiles as f32) as usize;
-        let mut floor_tile_count = self.map.tiles.iter().filter(|a| **a == TileType::Floor).count();
+        let mut floor_tile_count = build_data.map.tiles.iter().filter(|a| **a == TileType::Floor).count();
 
         while floor_tile_count < desired_floor_tiles {
             match self.algorithm {
                 DLAAlgorithm::WalkInwards => {
-                    let mut digger_x = rng.roll_dice(1, self.map.width - 3) + 1;
-                    let mut digger_y = rng.roll_dice(1, self.map.height - 3) + 1;
+                    let mut digger_x = rng.roll_dice(1, build_data.map.width - 3) + 1;
+                    let mut digger_y = rng.roll_dice(1, build_data.map.height - 3) + 1;
                     let mut prev_x = digger_x;
                     let mut prev_y = digger_y;
                     let mut digger_idx = Map::xy_idx(digger_x, digger_y);
-                    while self.map.tiles[digger_idx] == TileType::Wall {
+                    while build_data.map.tiles[digger_idx] == TileType::Wall {
                         prev_x = digger_x;
                         prev_y = digger_y;
                         let stagger_direction = rng.roll_dice(1, 4);
                         match stagger_direction {
                             1 => { if digger_x > 2 { digger_x -= 1; } }
-                            2 => { if digger_x < self.map.width - 2 { digger_x += 1; } }
+                            2 => { if digger_x < build_data.map.width - 2 { digger_x += 1; } }
                             3 => { if digger_y > 2 { digger_y -= 1; } }
-                            4 => { if digger_y < self.map.height - 2 { digger_y += 1; } }
+                            4 => { if digger_y < build_data.map.height - 2 { digger_y += 1; } }
                             _ => unreachable!()
                         }
                         digger_idx = Map::xy_idx(digger_x, digger_y);
                     }
-                    paint(&mut self.map, self.symmetry, self.brush_size, prev_x, prev_y);
+                    paint(&mut build_data.map, self.symmetry, self.brush_size, prev_x, prev_y);
                 }
                 DLAAlgorithm::WalkOutwards => {
-                    let mut digger_x = self.starting_position.x;
-                    let mut digger_y = self.starting_position.y;
+                    let mut digger_x = starting_position.x;
+                    let mut digger_y = starting_position.y;
                     let mut digger_idx = Map::xy_idx(digger_x, digger_y);
-                    while self.map.tiles[digger_idx] == TileType::Floor {
+                    while build_data.map.tiles[digger_idx] == TileType::Floor {
                         let stagger_direction = rng.roll_dice(1, 4);
                         match stagger_direction {
                             1 => { if digger_x > 2 { digger_x -= 1; } }
-                            2 => { if digger_x < self.map.width - 2 { digger_x += 1; } }
+                            2 => { if digger_x < build_data.map.width - 2 { digger_x += 1; } }
                             3 => { if digger_y > 2 { digger_y -= 1; } }
-                            _ => { if digger_y < self.map.height - 2 { digger_y += 1; } }
+                            _ => { if digger_y < build_data.map.height - 2 { digger_y += 1; } }
                         }
                         digger_idx = Map::xy_idx(digger_x, digger_y);
                     }
-                    paint(&mut self.map, self.symmetry, self.brush_size, digger_x, digger_y);
+                    paint(&mut build_data.map, self.symmetry, self.brush_size, digger_x, digger_y);
                 }
                 DLAAlgorithm::CentralAttractor => {
-                    let mut digger_x = rng.roll_dice(1, self.map.width - 3) + 1;
-                    let mut digger_y = rng.roll_dice(1, self.map.height - 3) + 1;
+                    let mut digger_x = rng.roll_dice(1, build_data.map.width - 3) + 1;
+                    let mut digger_y = rng.roll_dice(1, build_data.map.height - 3) + 1;
                     let mut prev_x = digger_x;
                     let mut prev_y = digger_y;
                     let mut digger_idx = Map::xy_idx(digger_x, digger_y);
@@ -174,10 +131,10 @@ impl DlaBuilder {
                     let mut path = rltk::line2d(
                         LineAlg::Bresenham,
                         rltk::Point::new(digger_x, digger_y),
-                        rltk::Point::new(self.starting_position.x, self.starting_position.y),
+                        rltk::Point::new(starting_position.x, starting_position.y),
                     );
 
-                    while self.map.tiles[digger_idx] == TileType::Wall && !path.is_empty() {
+                    while build_data.map.tiles[digger_idx] == TileType::Wall && !path.is_empty() {
                         prev_x = digger_x;
                         prev_y = digger_y;
                         digger_x = path[0].x;
@@ -185,24 +142,11 @@ impl DlaBuilder {
                         path.remove(0);
                         digger_idx = Map::xy_idx(digger_x, digger_y);
                     }
-                    paint(&mut self.map, self.symmetry, self.brush_size, prev_x, prev_y);
+                    paint(&mut build_data.map, self.symmetry, self.brush_size, prev_x, prev_y);
                 }
             }
-            floor_tile_count = self.map.tiles.iter().filter(|a| **a == TileType::Floor).count();
-            self.take_snapshot();
-
-
-        }
-        let exit_tile = remove_unreachable_areas_returning_most_distant(&mut self.map, start_idx);
-        self.take_snapshot();
-
-        self.map.tiles[exit_tile] = TileType::DownStairs;
-        self.take_snapshot();
-
-        self.noise_areas = generate_voronoi_spawn_regions(&self.map, &mut rng);
-
-        for area in self.noise_areas.iter() {
-            spawner::spawn_region(&self.map, &mut rng, area.1, self.depth, &mut self.spawn_list);
+            floor_tile_count = build_data.map.tiles.iter().filter(|a| **a == TileType::Floor).count();
+            build_data.take_snapshot();
         }
     }
 }

@@ -1,22 +1,22 @@
 #[derive(Eq, PartialEq, Copy, Clone)]
-pub enum HorizontalPlacement{Left, Center, Right}
+pub enum HorizontalPlacement { Left, Center, Right }
 
 #[derive(Eq, PartialEq, Copy, Clone)]
-pub enum VerticalPlacement{Top, Center, Bottom}
+pub enum VerticalPlacement { Top, Center, Bottom }
 
 #[derive(Eq, PartialEq, Copy, Clone)]
 pub struct PrefabSection {
     pub template: &'static str,
     pub width: usize,
     pub height: usize,
-    pub placement: (HorizontalPlacement, VerticalPlacement)
+    pub placement: (HorizontalPlacement, VerticalPlacement),
 }
 
-pub const UNDERGROUND_FORT: PrefabSection = PrefabSection{
+pub const UNDERGROUND_FORT: PrefabSection = PrefabSection {
     template: RIGHT_FORT,
     width: 15,
     height: 43,
-    placement: (HorizontalPlacement::Right, VerticalPlacement::Top)
+    placement: (HorizontalPlacement::Right, VerticalPlacement::Top),
 };
 
 const RIGHT_FORT: &str = include_str!("./underground_fort.txt");
