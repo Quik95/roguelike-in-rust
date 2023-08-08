@@ -57,10 +57,9 @@ fn monster<S: ToString>(ecs: &mut World, x: i32, y: i32, glyph: rltk::FontCharTy
         .build();
 }
 
-pub fn spawn_room(ecs: &mut World, room: &Rect, map_depth: i32) {
+pub fn spawn_room(map: &Map, rng: &mut RandomNumberGenerator, room: &Rect, map_depth: i32, spawn_list: &mut Vec<(usize, String)>) {
     let mut possible_targets: Vec<usize> = Vec::new();
     {
-        let map = ecs.fetch::<Map>();
         for y in room.y1 + 1..room.y2 {
             for x in room.x1 + 1..room.x2 {
                 let idx = Map::xy_idx(x, y);
@@ -71,33 +70,32 @@ pub fn spawn_room(ecs: &mut World, room: &Rect, map_depth: i32) {
         }
     }
 
-    spawn_region(ecs, &possible_targets, map_depth);
+    spawn_region(map, rng, &possible_targets, map_depth, spawn_list);
 }
 
-pub fn spawn_region(ecs: &mut World, area: &[usize], map_depth: i32) {
+pub fn spawn_region(map: &Map, rng: &mut RandomNumberGenerator, area: &[usize], map_depth: i32, spawn_list: &mut Vec<(usize, String)>) {
     let spawn_table = room_table(map_depth);
     let mut spawn_points = HashMap::new();
     let mut areas = Vec::from(area);
 
     {
-        let mut rng = ecs.write_resource::<RandomNumberGenerator>();
         let num_spawns = i32::min(areas.len() as i32, rng.roll_dice(1, MAX_MONSTERS + 3) + (map_depth - 1) - 3);
         if num_spawns == 0 { return; }
 
         for _i in 0..num_spawns {
             let array_index = if areas.len() == 1 { 0usize } else { (rng.roll_dice(1, areas.len() as i32) - 1) as usize };
             let map_idx = areas[array_index];
-            spawn_points.insert(map_idx, spawn_table.roll(&mut rng));
+            spawn_points.insert(map_idx, spawn_table.roll(rng));
             areas.remove(array_index);
         }
     }
 
     for spawn in spawn_points.iter() {
-        spawn_entity(ecs, &spawn);
+        spawn_list.push((*spawn.0, spawn.1.to_string()));
     }
 }
 
-fn spawn_entity(ecs: &mut World, spawn: &(&usize, &String)) {
+pub fn spawn_entity(ecs: &mut World, spawn: &(&usize, &String)) {
     let x = (*spawn.0 % MAPWIDTH) as i32;
     let y = (*spawn.0 / MAPWIDTH) as i32;
 
@@ -131,8 +129,7 @@ fn health_potion(ecs: &mut World, x: i32, y: i32) {
         })
         .with(Name { name: "Health Potion".to_string() })
         .with(Item {})
-        // disable for testing 😛
-        // .with(Consumable{})
+        .with(Consumable {})
         .with(ProvidesHealing { heal_amount: 8 })
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
@@ -210,7 +207,7 @@ fn room_table(map_depth: i32) -> RandomTable {
         .add("Tower Shield", map_depth - 1)
         .add("Rations", 10)
         .add("Magic Mapping Scroll", 2)
-        .add("Bear Trap", 2)
+        .add("Bear Trap", 5)
 }
 
 fn dagger(ecs: &mut World, x: i32, y: i32) {

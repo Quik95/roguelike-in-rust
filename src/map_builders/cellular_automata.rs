@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
 use rltk::RandomNumberGenerator;
-use specs::World;
 
 use crate::{SHOW_MAPGEN_VISUALIZER, spawner};
 use crate::components::Position;
@@ -15,17 +14,12 @@ pub struct CellularAutomataBuilder {
     depth: i32,
     history: Vec<Map>,
     noise_areas: HashMap<i32, Vec<usize>>,
+    spawn_list: Vec<(usize, String)>,
 }
 
 impl MapBuilder for CellularAutomataBuilder {
     fn build_map(&mut self) {
         self.build()
-    }
-
-    fn spawn_entities(&mut self, ecs: &mut World) {
-        for area in self.noise_areas.iter() {
-            spawner::spawn_region(ecs, area.1, self.depth);
-        }
     }
 
     fn get_map(&self) -> Map {
@@ -49,6 +43,10 @@ impl MapBuilder for CellularAutomataBuilder {
             self.history.push(snapshot);
         }
     }
+
+    fn get_spawn_list(&self) -> &Vec<(usize, String)> {
+        &self.spawn_list
+    }
 }
 
 impl CellularAutomataBuilder {
@@ -59,6 +57,7 @@ impl CellularAutomataBuilder {
             depth: new_depth,
             history: Vec::new(),
             noise_areas: HashMap::new(),
+            spawn_list: Vec::new()
         }
     }
 
@@ -111,5 +110,9 @@ impl CellularAutomataBuilder {
         self.take_snapshot();
 
         self.noise_areas = generate_voronoi_spawn_regions(&self.map, &mut rng);
+
+        for area in self.noise_areas.iter() {
+            spawner::spawn_region(&self.map, &mut rng, area.1, self.depth, &mut self.spawn_list);
+        }
     }
 }
