@@ -1,24 +1,29 @@
+use std::collections::HashSet;
+
 use itertools::Itertools;
-use rltk::{console, XpFile};
+use rltk::{console, RandomNumberGenerator, XpFile};
 
 use crate::components::Position;
 use crate::map::{Map, TileType};
 use crate::map_builders::common::remove_unreachable_areas_returning_most_distant;
 use crate::map_builders::MapBuilder;
 use crate::map_builders::prefab_builder::prefab_level::PrefabLevel;
+use crate::map_builders::prefab_builder::prefab_rooms::{CHECKERBOARD, SILLY_SIMPLE, TOTALLY_NOT_A_TRAP};
 use crate::map_builders::prefab_builder::prefab_section::{
-    HorizontalPlacement, PrefabSection, UNDERGROUND_FORT, VerticalPlacement,
+    HorizontalPlacement, PrefabSection, VerticalPlacement
 };
 use crate::SHOW_MAPGEN_VISUALIZER;
 
-mod prefab_level;
-mod prefab_section;
+pub mod prefab_level;
+pub mod prefab_section;
+pub mod prefab_rooms;
 
 #[derive(Eq, PartialEq, Clone)]
 pub enum PrefabMode {
     RexLevel { template: &'static str },
     Constant { level: PrefabLevel },
     Sectional { section: PrefabSection },
+    RoomVaults,
 }
 
 pub struct PrefabBuilder {
@@ -64,17 +69,43 @@ impl MapBuilder for PrefabBuilder {
 }
 
 impl PrefabBuilder {
-    pub fn new(new_depth: i32, previous_builder: Option<Box<dyn MapBuilder>>) -> Self {
+    fn new(new_depth: i32, previous_builder: Option<Box<dyn MapBuilder>>) -> Self {
         Self {
             map: Map::new(new_depth),
             starting_position: Position { x: 0, y: 0 },
             depth: new_depth,
             history: Vec::new(),
-            mode: PrefabMode::Sectional {
-                section: UNDERGROUND_FORT,
-            },
+            mode: PrefabMode::RoomVaults,
             spawn_list: Vec::new(),
             previous_builder,
+        }
+    }
+
+    pub fn rex_level(new_depth: i32, template: &'static str) -> Self {
+        Self {
+            mode: PrefabMode::RexLevel { template },
+            ..Self::new(new_depth, None)
+        }
+    }
+
+    pub fn constant(new_depth: i32, level: PrefabLevel) -> Self {
+        Self {
+            mode: PrefabMode::Constant { level },
+            ..Self::new(new_depth, None)
+        }
+    }
+
+    pub fn sectional(new_depth: i32, section: PrefabSection, previous_builder: Box<dyn MapBuilder>) -> Self {
+        Self {
+            mode: PrefabMode::Sectional { section },
+            ..Self::new(new_depth, Some(previous_builder))
+        }
+    }
+
+    pub fn vaults(new_depth: i32, previous_builder: Box<dyn MapBuilder>) -> Self {
+        Self {
+            mode: PrefabMode::RoomVaults,
+            ..Self::new(new_depth, Some(previous_builder))
         }
     }
 
@@ -169,23 +200,9 @@ impl PrefabBuilder {
         };
 
         // Build the map
-        let prev_builder = self.previous_builder.as_mut().unwrap();
-        prev_builder.build_map();
-        self.starting_position = prev_builder.get_starting_position();
-        self.map = prev_builder.get_map().clone();
-        for e in prev_builder.get_spawn_list().iter() {
-            let idx = e.0;
-            let x = idx as i32 % self.map.width;
-            let y = idx as i32 / self.map.width;
-            if x < chunk_x
-                || x > (chunk_x + section.width as i32)
-                || y < chunk_y
-                || y > (chunk_y + section.height as i32)
-            {
-                self.spawn_list.push((idx, e.1.to_string()))
-            }
-        }
-        self.take_snapshot();
+        self.apply_previous_iteration(|x, y, e| {
+            x < chunk_x || x > (chunk_x + section.width as i32) || y < chunk_y || y > (chunk_y + section.height as i32)
+        });
 
         let mut i = 0;
         for ty in 0..section.height {
@@ -198,6 +215,9 @@ impl PrefabBuilder {
                     let idx = Map::xy_idx(tx as i32 + chunk_x, ty as i32 + chunk_y);
                     if let Some(&c) = string_vec.get(i) {
                         self.char_to_map(c, idx);
+                    } else {
+                        eprintln!("Broken template detected for y: {ty}, x: {tx}, using empty tile.");
+                        self.char_to_map(' ', idx);
                     }
                 }
                 i += 1;
@@ -206,11 +226,127 @@ impl PrefabBuilder {
         self.take_snapshot();
     }
 
+    fn apply_previous_iteration<F>(&mut self, mut filter: F)
+        where F: FnMut(i32, i32, &(usize, String)) -> bool {
+        let prev_builder = self.previous_builder.as_mut().unwrap();
+        prev_builder.build_map();
+        self.starting_position = prev_builder.get_starting_position();
+        self.map = prev_builder.get_map().clone();
+        for e in prev_builder.get_spawn_list().iter() {
+            let idx = e.0;
+            let x = idx as i32 % self.map.width;
+            let y = idx as i32 / self.map.width;
+            if filter(x, y, e) {
+                self.spawn_list.push((idx, e.1.to_string()));
+            }
+        }
+        self.take_snapshot();
+    }
+
+    fn apply_room_vaults(&mut self) {
+        let mut rng = RandomNumberGenerator::new();
+        self.apply_previous_iteration(|_, _, _| true);
+
+        let vault_roll = rng.roll_dice(1, 6) + self.depth;
+        if vault_roll < 4 { return; }
+
+        let master_vault_list = vec![TOTALLY_NOT_A_TRAP, SILLY_SIMPLE, CHECKERBOARD];
+
+        for vault in master_vault_list.iter() {
+            assert_eq!(vault.template.len(), vault.width * vault.height, "This template is broken: {}", vault.template);
+        }
+
+        let mut possible_vaults = master_vault_list
+            .iter()
+            .filter(|v| self.depth >= v.first_depth && self.depth <= v.last_depth)
+            .collect_vec();
+
+        if possible_vaults.is_empty() { return; }
+
+        let n_vaults = i32::min(rng.roll_dice(1, 3), possible_vaults.len() as i32);
+        let mut used_tiles = HashSet::new();
+
+        for _ in 0..n_vaults {
+            let vault_index = if possible_vaults.len() == 1 { 0 } else { (rng.roll_dice(1, possible_vaults.len() as i32) - 1) as usize };
+            let vault = possible_vaults[vault_index];
+
+            let mut vault_positions = Vec::new();
+            let mut idx = 0usize;
+
+            loop {
+                let x = (idx % self.map.width as usize) as i32;
+                let y = (idx / self.map.width as usize) as i32;
+
+                if x > 1
+                    && (x + vault.width as i32) < self.map.width - 2
+                    && y > 1
+                    && (y + vault.height as i32) < self.map.height - 2 {
+                    let mut possible = true;
+                    for ty in 0..vault.height as i32 {
+                        for tx in 0..vault.width as i32 {
+                            let idx = Map::xy_idx(tx + x, ty + y);
+                            if self.map.tiles[idx] != TileType::Floor {
+                                possible = false;
+                            }
+                            if used_tiles.contains(&idx) {
+                                possible = false;
+                            }
+                        }
+                    }
+
+                    if possible {
+                        vault_positions.push(Position { x, y });
+                        break;
+                    }
+                }
+
+                idx += 1;
+                if idx >= self.map.tiles.len() - 1 { break; }
+            }
+
+            if !vault_positions.is_empty() {
+                let pos_idx = if vault_positions.len() == 1 { 0 } else { (rng.roll_dice(1, vault_positions.len() as i32) - 1) as usize };
+                let pos = &vault_positions[pos_idx];
+
+                let chunk_x = pos.x;
+                let chunk_y = pos.y;
+
+                let width = self.map.width;
+                let height = self.map.height;
+                self.spawn_list.retain(|e| {
+                    let idx = e.0 as i32;
+                    let x = idx % width;
+                    let y = idx / height;
+                    x < chunk_x || x > chunk_x + vault.width as i32 || y < chunk_y || y > chunk_y + vault.height as i32
+                });
+
+                let string_vec = Self::read_ascii_to_vec(vault.template);
+                let mut i = 0;
+                for ty in 0..vault.height {
+                    for tx in 0..vault.width {
+                        let idx = Map::xy_idx(tx as i32 + chunk_x, ty as i32 + chunk_y);
+                        if let Some(&c) = string_vec.get(i) {
+                            self.char_to_map(c, idx);
+                            used_tiles.insert(idx);
+                        } else {
+                            eprintln!("Recovered out-of-bounds: i: {i}, tx: {tx}, ty: {ty}!!");
+                        }
+                        i += 1;
+                    }
+                }
+
+                self.take_snapshot();
+                possible_vaults.remove(vault_index);
+            }
+        }
+    }
+
     fn build(&mut self) {
         match self.mode {
             PrefabMode::RexLevel { template } => self.load_rex_map(&template),
             PrefabMode::Constant { level } => self.load_ascii_map(&level),
-            PrefabMode::Sectional { section } => self.apply_section(&section)
+            PrefabMode::Sectional { section } => self.apply_section(&section),
+            PrefabMode::RoomVaults => self.apply_room_vaults()
         }
         self.take_snapshot();
 

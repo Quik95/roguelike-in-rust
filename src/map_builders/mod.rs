@@ -9,6 +9,8 @@ use crate::map_builders::cellular_automata::CellularAutomataBuilder;
 use crate::map_builders::dla::DlaBuilder;
 use crate::map_builders::drunkard::DrunkardsWalkBuilder;
 use crate::map_builders::maze::MazeBuilder;
+use crate::map_builders::prefab_builder::prefab_level::WFC_POPULATED;
+use crate::map_builders::prefab_builder::prefab_section::UNDERGROUND_FORT;
 use crate::map_builders::prefab_builder::PrefabBuilder;
 use crate::map_builders::simple_map::SimpleMapBuilder;
 use crate::map_builders::voronoi::VoronoiCellBuilder;
@@ -44,7 +46,7 @@ pub trait MapBuilder {
 
 pub fn random_builder(new_depth: i32) -> Box<dyn MapBuilder> {
     let mut rng = RandomNumberGenerator::new();
-    let builder = rng.roll_dice(1, 17);
+    let builder = rng.roll_dice(1, 18);
     let mut result: Box<dyn MapBuilder> = match builder {
         1 => Box::new(SimpleMapBuilder::new(new_depth)),
         2 => Box::new(BspDungeonBuilder::new(new_depth)),
@@ -63,12 +65,19 @@ pub fn random_builder(new_depth: i32) -> Box<dyn MapBuilder> {
         15 => Box::new(VoronoiCellBuilder::pythagoras(new_depth)),
         16 => Box::new(VoronoiCellBuilder::manhattan(new_depth)),
         17 => Box::new(VoronoiCellBuilder::chebyshev(new_depth)),
+        18 => Box::new(PrefabBuilder::constant(new_depth, WFC_POPULATED)),
         _ => unreachable!("Ups your forgot to add a builder."),
     };
 
     if rng.roll_dice(1, 3) == 1 {
         result = Box::new(WaveformCollapseBuilder::derived_map(new_depth, result));
     }
+
+    if rng.roll_dice(1, 20) == 1 {
+        result = Box::new(PrefabBuilder::sectional(new_depth, UNDERGROUND_FORT, result));
+    }
+
+    result = Box::new(PrefabBuilder::vaults(new_depth, result));
 
     result
 }

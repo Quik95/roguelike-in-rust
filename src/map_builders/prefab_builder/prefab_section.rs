@@ -1,5 +1,3 @@
-use crate::map_builders::common::Symmetry::Horizontal;
-
 #[derive(Eq, PartialEq, Copy, Clone)]
 pub enum HorizontalPlacement{Left, Center, Right}
 
@@ -16,20 +14,9 @@ pub struct PrefabSection {
 
 pub const UNDERGROUND_FORT: PrefabSection = PrefabSection{
     template: RIGHT_FORT,
-    width: 14,
+    width: 15,
     height: 43,
     placement: (HorizontalPlacement::Right, VerticalPlacement::Top)
 };
 
-const RIGHT_FORT : &str = "
-  ######
-  ## ###
-    ^
-    ^
-  ## ###
-  ## ###
-    ^
-    ^
-  ## ###
-  ######
-";
+const RIGHT_FORT: &str = include_str!("./underground_fort.txt");
