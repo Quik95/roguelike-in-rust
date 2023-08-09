@@ -9,7 +9,7 @@ pub struct DrunkardsWalkBuilder {
     settings: DrunkardSettings,
 }
 
-#[derive(PartialEq, Copy, Clone)]
+#[derive(PartialEq, Eq, Copy, Clone)]
 pub enum DrunkSpawnMode { StartingPoint, Random }
 
 pub struct DrunkardSettings {

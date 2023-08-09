@@ -1,9 +1,6 @@
 use std::collections::HashSet;
 
-use rltk::{console, RandomNumberGenerator};
-
-use crate::map::Map;
-use crate::map_builders::waveform_collapse::common::MapChunk;
+use super::{Map, MapChunk};
 
 pub struct Solver {
     constraints: Vec<MapChunk>,
@@ -12,14 +9,15 @@ pub struct Solver {
     chunks_x: usize,
     chunks_y: usize,
     remaining: Vec<(usize, i32)>,
-    pub possible: bool,
+    // (index, # neighbors)
+    pub possible: bool
 }
 
 impl Solver {
     pub fn new(constraints: Vec<MapChunk>, chunk_size: i32, map: &Map) -> Self {
         let chunks_x = (map.width / chunk_size) as usize;
         let chunks_y = (map.height / chunk_size) as usize;
-        let mut remaining = Vec::new();
+        let mut remaining: Vec<(usize, i32)> = Vec::new();
         for i in 0..(chunks_x * chunks_y) {
             remaining.push((i, 0));
         }
@@ -31,7 +29,7 @@ impl Solver {
             chunks_x,
             chunks_y,
             remaining,
-            possible: true,
+            possible: true
         }
     }
 
@@ -46,37 +44,48 @@ impl Solver {
             let left_idx = self.chunk_idx(chunk_x - 1, chunk_y);
             match self.chunks[left_idx] {
                 None => {}
-                Some(_) => { neighbors += 1; }
+                Some(_) => {
+                    neighbors += 1;
+                }
             }
         }
+
         if chunk_x < self.chunks_x - 1 {
             let right_idx = self.chunk_idx(chunk_x + 1, chunk_y);
             match self.chunks[right_idx] {
                 None => {}
-                Some(_) => { neighbors += 1; }
+                Some(_) => {
+                    neighbors += 1;
+                }
             }
         }
+
         if chunk_y > 0 {
-            let left_idx = self.chunk_idx(chunk_x, chunk_y - 1);
-            match self.chunks[left_idx] {
+            let up_idx = self.chunk_idx(chunk_x, chunk_y - 1);
+            match self.chunks[up_idx] {
                 None => {}
-                Some(_) => { neighbors += 1; }
+                Some(_) => {
+                    neighbors += 1;
+                }
             }
         }
+
         if chunk_y < self.chunks_y - 1 {
             let down_idx = self.chunk_idx(chunk_x, chunk_y + 1);
             match self.chunks[down_idx] {
                 None => {}
-                Some(_) => { neighbors += 1; }
+                Some(_) => {
+                    neighbors += 1;
+                }
             }
         }
-
         neighbors
     }
 
-    pub fn iteration(&mut self, map: &mut Map, rng: &mut RandomNumberGenerator) -> bool {
+    pub fn iteration(&mut self, map: &mut Map, rng: &mut super::RandomNumberGenerator) -> bool {
         if self.remaining.is_empty() { return true; }
 
+        // Populate the neighbor count of the remaining list
         let mut remain_copy = self.remaining.clone();
         let mut neighbors_exist = false;
         for r in remain_copy.iter_mut() {
@@ -90,6 +99,7 @@ impl Solver {
         remain_copy.sort_by(|a, b| b.1.cmp(&a.1));
         self.remaining = remain_copy;
 
+        // Pick a random chunk we haven't dealt with yet and get its index, remove from remaining list
         let remaining_index = if !neighbors_exist {
             (rng.roll_dice(1, self.remaining.len() as i32) - 1) as usize
         } else {
@@ -111,6 +121,17 @@ impl Solver {
                 Some(nt) => {
                     neighbors += 1;
                     options.push(self.constraints[nt].compatible_with[3].clone());
+                }
+            }
+        }
+
+        if chunk_x < self.chunks_x - 1 {
+            let right_idx = self.chunk_idx(chunk_x + 1, chunk_y);
+            match self.chunks[right_idx] {
+                None => {}
+                Some(nt) => {
+                    neighbors += 1;
+                    options.push(self.constraints[nt].compatible_with[2].clone());
                 }
             }
         }
@@ -138,6 +159,7 @@ impl Solver {
         }
 
         if neighbors == 0 {
+            // There is nothing nearby, so we can have anything!
             let new_chunk_idx = (rng.roll_dice(1, self.constraints.len() as i32) - 1) as usize;
             self.chunks[chunk_index] = Some(new_chunk_idx);
             let left_x = chunk_x as i32 * self.chunk_size;
@@ -145,7 +167,8 @@ impl Solver {
             let top_y = chunk_y as i32 * self.chunk_size;
             let bottom_y = (chunk_y as i32 + 1) * self.chunk_size;
 
-            let mut i = 0usize;
+
+            let mut i: usize = 0;
             for y in top_y..bottom_y {
                 for x in left_x..right_x {
                     let mapidx = Map::xy_idx(x, y);
@@ -155,14 +178,15 @@ impl Solver {
                 }
             }
         } else {
-            let mut options_to_check = HashSet::new();
+            // There are neighbors, so we try to be compatible with them
+            let mut options_to_check: HashSet<usize> = HashSet::new();
             for o in options.iter() {
                 for i in o.iter() {
                     options_to_check.insert(*i);
                 }
             }
 
-            let mut possible_options = Vec::new();
+            let mut possible_options: Vec<usize> = Vec::new();
             for new_chunk_idx in options_to_check.iter() {
                 let mut possible = true;
                 for o in options.iter() {
@@ -174,23 +198,24 @@ impl Solver {
             }
 
             if possible_options.is_empty() {
-                console::log("Oh no! It's not possible!");
+                rltk::console::log("Oh no! It's not possible!");
                 self.possible = false;
                 return true;
             } else {
                 let new_chunk_idx = if possible_options.len() == 1 { 0 } else { rng.roll_dice(1, possible_options.len() as i32) - 1 };
 
-                self.chunks[chunk_index] = Some(new_chunk_idx as usize);
+                self.chunks[chunk_index] = Some(possible_options[new_chunk_idx as usize]);
                 let left_x = chunk_x as i32 * self.chunk_size;
                 let right_x = (chunk_x as i32 + 1) * self.chunk_size;
                 let top_y = chunk_y as i32 * self.chunk_size;
                 let bottom_y = (chunk_y as i32 + 1) * self.chunk_size;
 
-                let mut i = 0usize;
+
+                let mut i: usize = 0;
                 for y in top_y..bottom_y {
                     for x in left_x..right_x {
                         let mapidx = Map::xy_idx(x, y);
-                        let tile = self.constraints[new_chunk_idx as usize].pattern[i];
+                        let tile = self.constraints[possible_options[new_chunk_idx as usize]].pattern[i];
                         map.tiles[mapidx] = tile;
                         i += 1;
                     }

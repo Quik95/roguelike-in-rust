@@ -1,27 +1,27 @@
 use rltk::RandomNumberGenerator;
 
-use crate::map::Map;
-use crate::map_builders::{BuilderMap, MetaMapBuilder};
-use crate::map_builders::waveform_collapse::common::MapChunk;
-use crate::map_builders::waveform_collapse::constraints::{build_patterns, patterns_to_constraints, render_pattern_to_map};
-use crate::map_builders::waveform_collapse::solver::Solver;
+use common::*;
+use constraints::*;
+use solver::*;
 
-mod constraints;
+use super::{BuilderMap, Map, MetaMapBuilder};
+
 mod common;
+mod constraints;
 mod solver;
 
-#[derive(Eq, PartialEq, Copy, Clone)]
-pub enum WaveformMode { TestMap, Derived }
-
+/// Provides a map builder using the Wave Function Collapse algorithm.
 pub struct WaveformCollapseBuilder {}
 
 impl MetaMapBuilder for WaveformCollapseBuilder {
-    fn build_map(&mut self, rng: &mut RandomNumberGenerator, build_data: &mut BuilderMap) {
+    fn build_map(&mut self, rng: &mut rltk::RandomNumberGenerator, build_data: &mut BuilderMap) {
         self.build(rng, build_data);
     }
 }
 
 impl WaveformCollapseBuilder {
+    /// Constructor for waveform collapse.
+    #[allow(dead_code)]
     pub fn new() -> Box<Self> {
         Box::new(Self {})
     }
@@ -41,7 +41,7 @@ impl WaveformCollapseBuilder {
                 build_data.take_snapshot();
             }
             build_data.take_snapshot();
-            if solver.possible { break; }
+            if solver.possible { break; } // If it has hit an impossible condition, try again
         }
         build_data.spawn_list.clear();
     }
@@ -56,10 +56,12 @@ impl WaveformCollapseBuilder {
 
             x += chunk_size + 1;
             if x + chunk_size > build_data.map.width {
+                // Move to the next row
                 x = 1;
                 y += chunk_size + 1;
 
                 if y + chunk_size > build_data.map.height {
+                    // Move to the next page
                     build_data.take_snapshot();
                     build_data.map = Map::new(0);
 
@@ -70,7 +72,6 @@ impl WaveformCollapseBuilder {
 
             counter += 1;
         }
-
         build_data.take_snapshot();
     }
 }

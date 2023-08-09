@@ -12,8 +12,8 @@ impl MetaMapBuilder for RoomBasedSpawner {
 }
 
 impl RoomBasedSpawner {
-    pub fn new() -> Box<RoomBasedSpawner> {
-        Box::new(RoomBasedSpawner {})
+    pub fn new() -> Box<Self> {
+        Box::new(Self {})
     }
 
     fn build(&mut self, rng: &mut RandomNumberGenerator, build_data: &mut BuilderMap) {

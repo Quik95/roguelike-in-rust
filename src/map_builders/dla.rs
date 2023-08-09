@@ -73,7 +73,7 @@ impl DlaBuilder {
         })
     }
 
-    pub fn heavy_erosion() -> Box<DlaBuilder> {
+    pub fn heavy_erosion() -> Box<Self> {
         Box::new(Self {
             algorithm: DLAAlgorithm::WalkInwards,
             brush_size: 2,

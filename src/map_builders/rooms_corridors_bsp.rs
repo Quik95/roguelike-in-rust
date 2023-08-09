@@ -1,5 +1,5 @@
 use rltk::RandomNumberGenerator;
-use serde::__private::ser::serialize_tagged_newtype;
+
 use crate::map_builders::{BuilderMap, MetaMapBuilder};
 use crate::map_builders::common::draw_corridor;
 

@@ -48,7 +48,7 @@ impl Cell {
         }
     }
 
-    fn remove_walls(&mut self, next: &mut Cell) {
+    fn remove_walls(&mut self, next: &mut Self) {
         let x = self.column - next.column;
         let y = self.row - next.row;
 

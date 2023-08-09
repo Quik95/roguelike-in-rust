@@ -297,7 +297,7 @@ impl PrefabBuilder {
 
     fn build(&mut self, rng: &mut RandomNumberGenerator, build_data: &mut BuilderMap) {
         match self.mode {
-            PrefabMode::RexLevel { template } => self.load_rex_map(&template, build_data),
+            PrefabMode::RexLevel { template } => self.load_rex_map(template, build_data),
             PrefabMode::Constant { level } => self.load_ascii_map(&level, build_data),
             PrefabMode::Sectional { section } => self.apply_sectional(&section, rng, build_data),
             PrefabMode::RoomVaults => self.apply_room_vaults(rng, build_data)

@@ -73,7 +73,7 @@ pub fn spawn_room(map: &Map, rng: &mut RandomNumberGenerator, room: &Rect, map_d
     spawn_region(map, rng, &possible_targets, map_depth, spawn_list);
 }
 
-pub fn spawn_region(map: &Map, rng: &mut RandomNumberGenerator, area: &[usize], map_depth: i32, spawn_list: &mut Vec<(usize, String)>) {
+pub fn spawn_region(_map: &Map, rng: &mut RandomNumberGenerator, area: &[usize], map_depth: i32, spawn_list: &mut Vec<(usize, String)>) {
     let spawn_table = room_table(map_depth);
     let mut spawn_points = HashMap::new();
     let mut areas = Vec::from(area);

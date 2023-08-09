@@ -23,7 +23,7 @@ impl SimpleMapBuilder {
     fn build_rooms(&mut self, rng: &mut RandomNumberGenerator, build_data: &mut BuilderMap) {
         let mut rooms = Vec::new();
 
-        for i in 0..MAX_ROOMS {
+        for _i in 0..MAX_ROOMS {
             let w = rng.range(MIN_SIZE, MAX_SIZE);
             let h = rng.range(MIN_SIZE, MAX_SIZE);
             let x = rng.roll_dice(1, build_data.map.width - w - 1) - 1;
