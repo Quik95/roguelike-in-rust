@@ -2,7 +2,7 @@ use rltk::{LineAlg, RandomNumberGenerator};
 
 use crate::components::Position;
 use crate::map::{Map, TileType};
-use crate::map_builders::{BuilderMap, InitialMapBuilder};
+use crate::map_builders::{BuilderMap, InitialMapBuilder, MetaMapBuilder};
 use crate::map_builders::common::{paint, Symmetry};
 
 #[derive(PartialEq, Eq, Copy, Clone)]
@@ -21,8 +21,14 @@ impl InitialMapBuilder for DlaBuilder {
     }
 }
 
+impl MetaMapBuilder for DlaBuilder {
+    fn build_map(&mut self, rng: &mut RandomNumberGenerator, build_data: &mut BuilderMap) {
+        self.build(rng, build_data);
+    }
+}
+
 impl DlaBuilder {
-    fn new() -> Self {
+    const fn new() -> Self {
         Self {
             algorithm: DLAAlgorithm::WalkInwards,
             brush_size: 2,
@@ -67,6 +73,15 @@ impl DlaBuilder {
         })
     }
 
+    pub fn heavy_erosion() -> Box<DlaBuilder> {
+        Box::new(Self {
+            algorithm: DLAAlgorithm::WalkInwards,
+            brush_size: 2,
+            symmetry: Symmetry::None,
+            floor_percent: 0.35,
+            ..Self::new()
+        })
+    }
 
     fn build(&mut self, rng: &mut RandomNumberGenerator, build_data: &mut BuilderMap) {
         let starting_position = Position { x: build_data.map.width / 2, y: build_data.map.height / 2 };

@@ -2,7 +2,7 @@ use rltk::RandomNumberGenerator;
 
 use crate::components::Position;
 use crate::map::{Map, TileType};
-use crate::map_builders::{BuilderMap, InitialMapBuilder};
+use crate::map_builders::{BuilderMap, InitialMapBuilder, MetaMapBuilder};
 use crate::map_builders::common::{paint, Symmetry};
 
 pub struct DrunkardsWalkBuilder {
@@ -21,6 +21,12 @@ pub struct DrunkardSettings {
 }
 
 impl InitialMapBuilder for DrunkardsWalkBuilder {
+    fn build_map(&mut self, rng: &mut RandomNumberGenerator, build_data: &mut BuilderMap) {
+        self.build(rng, build_data);
+    }
+}
+
+impl MetaMapBuilder for DrunkardsWalkBuilder {
     fn build_map(&mut self, rng: &mut RandomNumberGenerator, build_data: &mut BuilderMap) {
         self.build(rng, build_data);
     }

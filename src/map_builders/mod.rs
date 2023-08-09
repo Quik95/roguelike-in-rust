@@ -19,6 +19,11 @@ use crate::map_builders::prefab_builder::PrefabBuilder;
 use crate::map_builders::room_based_spawner::RoomBasedSpawner;
 use crate::map_builders::room_based_stairs::RoomBasedStairs;
 use crate::map_builders::room_based_starting_position::RoomBasedStartingPosition;
+use crate::map_builders::room_corner_rounding::RoomCornerRounder;
+use crate::map_builders::room_exploder::RoomExploder;
+use crate::map_builders::room_sorter::{RoomSort, RoomSorter};
+use crate::map_builders::rooms_corridors_bsp::BspCorridors;
+use crate::map_builders::rooms_corridors_dogleg::DoglegCorridors;
 use crate::map_builders::simple_map::SimpleMapBuilder;
 use crate::map_builders::voronoi::VoronoiCellBuilder;
 use crate::map_builders::voronoi_spawning::VoronoiSpawning;
@@ -43,6 +48,11 @@ mod area_starting_points;
 mod cull_unreachable;
 mod voronoi_spawning;
 mod distant_exit;
+mod room_exploder;
+mod room_corner_rounding;
+mod rooms_corridors_dogleg;
+mod rooms_corridors_bsp;
+mod room_sorter;
 
 #[derive(Default)]
 pub struct BuilderMap {
@@ -126,17 +136,11 @@ impl BuilderChain {
 
 pub fn random_builder(new_depth: i32, rng: &mut RandomNumberGenerator) -> BuilderChain {
     let mut builder = BuilderChain::new(new_depth);
-    let (random_starter, has_rooms) = random_initial_builder(rng);
-    builder.start_with(random_starter);
-    if has_rooms {
-        builder.with(RoomBasedSpawner::new());
-        builder.with(RoomBasedStairs::new());
-        builder.with(RoomBasedStartingPosition::new());
-    } else {
-        builder.with(AreaStartingPosition::new(XStart::CENTER, YStart::CENTER));
-        builder.with(CullUnreachable::new());
-        builder.with(VoronoiSpawning::new());
-        builder.with(DistantExit::new());
+    let type_roll = rng.roll_dice(1, 2);
+    match type_roll {
+        1 => random_room_builder(rng, &mut builder),
+        2 => random_shape_builder(rng, &mut builder),
+        _ => unreachable!()
     }
 
     if rng.roll_dice(1, 3) == 1 {
@@ -152,29 +156,110 @@ pub fn random_builder(new_depth: i32, rng: &mut RandomNumberGenerator) -> Builde
     builder
 }
 
-pub fn random_initial_builder(rng: &mut RandomNumberGenerator) -> (Box<dyn InitialMapBuilder>, bool) {
-    let builder = rng.roll_dice(1, 18);
-    let result: (Box<dyn InitialMapBuilder>, bool) = match builder {
-        1 => (SimpleMapBuilder::new(), true),
-        2 => (BspDungeonBuilder::new(), true),
-        3 => (BspInteriorBuilder::new(), true),
-        4 => (CellularAutomataBuilder::new(), false),
-        5 => (DrunkardsWalkBuilder::open_area(), false),
-        6 => (DrunkardsWalkBuilder::winding_passages(), false),
-        7 => (DrunkardsWalkBuilder::open_halls(), false),
-        8 => (DrunkardsWalkBuilder::fat_passages(), false),
-        9 => (DrunkardsWalkBuilder::fearful_symmetry(), false),
-        10 => (MazeBuilder::new(), false),
-        11 => (DlaBuilder::walk_inwards(), false),
-        12 => (DlaBuilder::walk_outwards(), false),
-        13 => (DlaBuilder::central_attractor(), false),
-        14 => (DlaBuilder::insectoid(), false),
-        15 => (VoronoiCellBuilder::pythagoras(), false),
-        16 => (VoronoiCellBuilder::manhattan(), false),
-        17 => (VoronoiCellBuilder::chebyshev(), false),
-        18 => (PrefabBuilder::constant(WFC_POPULATED), false),
-        _ => unreachable!("Ups your forgot to add a builder."),
+fn random_room_builder(rng: &mut RandomNumberGenerator, builder: &mut BuilderChain) {
+    let build_roll = rng.roll_dice(1, 3);
+    match build_roll {
+        1 => builder.start_with(SimpleMapBuilder::new()),
+        2 => builder.start_with(BspDungeonBuilder::new()),
+        3 => builder.start_with(BspInteriorBuilder::new()),
+        _ => unreachable!()
+    }
+
+    if build_roll != 3 {
+        let sort_roll = rng.roll_dice(1, 5);
+        match sort_roll {
+            1 => builder.with(RoomSorter::new(RoomSort::LEFTMOST)),
+            2 => builder.with(RoomSorter::new(RoomSort::RIGHTMOST)),
+            3 => builder.with(RoomSorter::new(RoomSort::TOPMOST)),
+            4 => builder.with(RoomSorter::new(RoomSort::BOTTOMMOST)),
+            5 => builder.with(RoomSorter::new(RoomSort::CENTRAL)),
+            _ => unreachable!()
+        }
+
+        let corridor_roll = rng.roll_dice(1, 2);
+        match corridor_roll {
+            1 => builder.with(DoglegCorridors::new()),
+            2 => builder.with(BspCorridors::new()),
+            _ => unreachable!()
+        }
+
+        let modifier_roll = rng.roll_dice(1, 6);
+        match modifier_roll {
+            1 => builder.with(RoomExploder::new()),
+            2 => builder.with(RoomCornerRounder::new()),
+            _ => {}
+        }
+    }
+
+    let start_roll = rng.roll_dice(1, 2);
+    match start_roll {
+        1 => builder.with(RoomBasedStartingPosition::new()),
+        2 => {
+            let (start_x, start_y) = random_start_position(rng);
+            builder.with(AreaStartingPosition::new(start_x, start_y));
+        }
+        _ => unreachable!()
+    }
+
+    let exit_roll = rng.roll_dice(1, 2);
+    match exit_roll {
+        1 => builder.with(RoomBasedStairs::new()),
+        2 => builder.with(DistantExit::new()),
+        _ => unreachable!()
+    }
+
+    let spawn_roll = rng.roll_dice(1, 1);
+    match spawn_roll {
+        1 => builder.with(RoomBasedSpawner::new()),
+        2 => builder.with(VoronoiSpawning::new()),
+        _ => unreachable!()
+    }
+}
+
+fn random_shape_builder(rng: &mut RandomNumberGenerator, builder: &mut BuilderChain) {
+    let builder_roll = rng.roll_dice(1, 17);
+    match builder_roll {
+        1 => builder.start_with(CellularAutomataBuilder::new()),
+        2 => builder.start_with(DrunkardsWalkBuilder::open_area()),
+        3 => builder.start_with(DrunkardsWalkBuilder::open_halls()),
+        4 => builder.start_with(DrunkardsWalkBuilder::winding_passages()),
+        5 => builder.start_with(DrunkardsWalkBuilder::fat_passages()),
+        6 => builder.start_with(DrunkardsWalkBuilder::fearful_symmetry()),
+        7 => builder.start_with(MazeBuilder::new()),
+        8 => builder.start_with(DlaBuilder::walk_inwards()),
+        9 => builder.start_with(DlaBuilder::walk_outwards()),
+        10 => builder.start_with(DlaBuilder::central_attractor()),
+        11 => builder.start_with(DlaBuilder::insectoid()),
+        12 => builder.start_with(VoronoiCellBuilder::pythagoras()),
+        13 => builder.start_with(VoronoiCellBuilder::manhattan()),
+        14 => builder.start_with(VoronoiCellBuilder::chebyshev()),
+        _ => builder.start_with(PrefabBuilder::constant(WFC_POPULATED)),
+    }
+
+    builder.with(AreaStartingPosition::new(XStart::CENTER, YStart::CENTER));
+    builder.with(CullUnreachable::new());
+
+    let (start_x, start_y) = random_start_position(rng);
+    builder.with(AreaStartingPosition::new(start_x, start_y));
+
+    builder.with(VoronoiSpawning::new());
+    builder.with(DistantExit::new());
+}
+
+fn random_start_position(rng: &mut RandomNumberGenerator) -> (XStart, YStart) {
+    let start_x = match rng.roll_dice(1, 3) {
+        1 => XStart::LEFT,
+        2 => XStart::CENTER,
+        3 => XStart::RIGHT,
+        _ => unreachable!()
     };
 
-    result
+    let start_y = match rng.roll_dice(1, 3) {
+        1 => YStart::BOTTOM,
+        2 => YStart::CENTER,
+        3 => YStart::TOP,
+        _ => unreachable!()
+    };
+
+    (start_x, start_y)
 }
