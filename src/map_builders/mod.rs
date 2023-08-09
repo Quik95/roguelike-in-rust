@@ -20,6 +20,7 @@ use crate::map_builders::room_based_spawner::RoomBasedSpawner;
 use crate::map_builders::room_based_stairs::RoomBasedStairs;
 use crate::map_builders::room_based_starting_position::RoomBasedStartingPosition;
 use crate::map_builders::room_corner_rounding::RoomCornerRounder;
+use crate::map_builders::room_corridor_spawner::CorridorSpawner;
 use crate::map_builders::room_draw::RoomDrawer;
 use crate::map_builders::room_exploder::RoomExploder;
 use crate::map_builders::room_sorter::{RoomSort, RoomSorter};
@@ -55,6 +56,9 @@ mod rooms_corridors_dogleg;
 mod rooms_corridors_bsp;
 mod room_sorter;
 mod room_draw;
+mod rooms_corridors_nearest;
+mod rooms_corridors_lines;
+mod room_corridor_spawner;
 
 #[derive(Default)]
 pub struct BuilderMap {
@@ -63,6 +67,7 @@ pub struct BuilderMap {
     pub starting_position: Option<Position>,
     pub rooms: Option<Vec<Rect>>,
     pub history: Vec<Map>,
+    pub corridors: Option<Vec<Vec<usize>>>
 }
 
 impl BuilderMap {
@@ -103,6 +108,7 @@ impl BuilderChain {
                 starting_position: None,
                 rooms: None,
                 history: Vec::new(),
+                corridors: None,
             },
         }
     }
@@ -165,6 +171,11 @@ fn random_room_builder(rng: &mut RandomNumberGenerator, builder: &mut BuilderCha
         2 => builder.start_with(BspDungeonBuilder::new()),
         3 => builder.start_with(BspInteriorBuilder::new()),
         _ => unreachable!()
+    }
+
+    let cspawn_roll = rng.roll_dice(1, 2);
+    if cspawn_roll == 1 {
+        builder.with(CorridorSpawner::new());
     }
 
     if build_roll != 3 {
