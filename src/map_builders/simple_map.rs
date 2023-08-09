@@ -1,7 +1,6 @@
 use rltk::RandomNumberGenerator;
 
 use crate::map_builders::{BuilderMap, InitialMapBuilder};
-use crate::map_builders::common::*;
 use crate::rect::Rect;
 
 const MAX_ROOMS: i32 = 30;
@@ -35,11 +34,7 @@ impl SimpleMapBuilder {
                 if new_room.intersects(other_room) { ok = false; }
             }
             if ok {
-                apply_room_to_map(&mut build_data.map, &new_room);
-                build_data.take_snapshot();
-
                 rooms.push(new_room);
-                build_data.take_snapshot();
             }
         }
         build_data.rooms = Some(rooms);

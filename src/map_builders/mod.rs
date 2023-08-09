@@ -20,6 +20,7 @@ use crate::map_builders::room_based_spawner::RoomBasedSpawner;
 use crate::map_builders::room_based_stairs::RoomBasedStairs;
 use crate::map_builders::room_based_starting_position::RoomBasedStartingPosition;
 use crate::map_builders::room_corner_rounding::RoomCornerRounder;
+use crate::map_builders::room_draw::RoomDrawer;
 use crate::map_builders::room_exploder::RoomExploder;
 use crate::map_builders::room_sorter::{RoomSort, RoomSorter};
 use crate::map_builders::rooms_corridors_bsp::BspCorridors;
@@ -53,6 +54,7 @@ mod room_corner_rounding;
 mod rooms_corridors_dogleg;
 mod rooms_corridors_bsp;
 mod room_sorter;
+mod room_draw;
 
 #[derive(Default)]
 pub struct BuilderMap {
@@ -175,6 +177,8 @@ fn random_room_builder(rng: &mut RandomNumberGenerator, builder: &mut BuilderCha
             5 => builder.with(RoomSorter::new(RoomSort::CENTRAL)),
             _ => unreachable!()
         }
+
+        builder.with(RoomDrawer::new());
 
         let corridor_roll = rng.roll_dice(1, 2);
         match corridor_roll {
