@@ -3,6 +3,7 @@ use std::cmp::{max, min};
 use crate::map::{Map, TileType};
 
 #[derive(PartialEq, Eq, Copy, Clone)]
+#[allow(dead_code)]
 pub enum Symmetry { None, Horizontal, Vertical, Both }
 
 pub fn apply_horizontal_tunnel(map: &mut Map, x1: i32, x2: i32, y: i32) -> Vec<usize> {

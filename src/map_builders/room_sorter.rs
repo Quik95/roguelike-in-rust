@@ -3,7 +3,7 @@ use rltk::{DistanceAlg, Point, RandomNumberGenerator};
 use crate::map_builders::{BuilderMap, MetaMapBuilder};
 use crate::rect::Rect;
 
-pub enum RoomSort { LEFTMOST, RIGHTMOST, TOPMOST, BOTTOMMOST, CENTRAL }
+pub enum RoomSort { Leftmost, Rightmost, Topmost, Bottommost, Central }
 
 pub struct RoomSorter {
     sort_by: RoomSort,
@@ -22,11 +22,11 @@ impl RoomSorter {
 
     fn sorter(&mut self, _: &mut RandomNumberGenerator, build_data: &mut BuilderMap) {
         match self.sort_by {
-            RoomSort::LEFTMOST => build_data.rooms.as_mut().unwrap().sort_by(|a, b| a.x1.cmp(&b.x1)),
-            RoomSort::RIGHTMOST => build_data.rooms.as_mut().unwrap().sort_by(|a, b| b.x2.cmp(&a.x2)),
-            RoomSort::TOPMOST => build_data.rooms.as_mut().unwrap().sort_by(|a, b| a.y1.cmp(&b.y1)),
-            RoomSort::BOTTOMMOST => build_data.rooms.as_mut().unwrap().sort_by(|a, b| b.y2.cmp(&a.y2)),
-            RoomSort::CENTRAL => {
+            RoomSort::Leftmost => build_data.rooms.as_mut().unwrap().sort_by(|a, b| a.x1.cmp(&b.x1)),
+            RoomSort::Rightmost => build_data.rooms.as_mut().unwrap().sort_by(|a, b| b.x2.cmp(&a.x2)),
+            RoomSort::Topmost => build_data.rooms.as_mut().unwrap().sort_by(|a, b| a.y1.cmp(&b.y1)),
+            RoomSort::Bottommost => build_data.rooms.as_mut().unwrap().sort_by(|a, b| b.y2.cmp(&a.y2)),
+            RoomSort::Central => {
                 let map_center = Point::new(build_data.map.width / 2, build_data.map.height / 2);
                 let center_sort = |a: &Rect, b: &Rect| {
                     let a_center = a.center();

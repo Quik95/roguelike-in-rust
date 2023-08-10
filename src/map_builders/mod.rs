@@ -189,11 +189,11 @@ fn random_room_builder(rng: &mut RandomNumberGenerator, builder: &mut BuilderCha
     if build_roll != 3 {
         let sort_roll = rng.roll_dice(1, 5);
         match sort_roll {
-            1 => builder.with(RoomSorter::new(RoomSort::LEFTMOST)),
-            2 => builder.with(RoomSorter::new(RoomSort::RIGHTMOST)),
-            3 => builder.with(RoomSorter::new(RoomSort::TOPMOST)),
-            4 => builder.with(RoomSorter::new(RoomSort::BOTTOMMOST)),
-            5 => builder.with(RoomSorter::new(RoomSort::CENTRAL)),
+            1 => builder.with(RoomSorter::new(RoomSort::Leftmost)),
+            2 => builder.with(RoomSorter::new(RoomSort::Rightmost)),
+            3 => builder.with(RoomSorter::new(RoomSort::Topmost)),
+            4 => builder.with(RoomSorter::new(RoomSort::Bottommost)),
+            5 => builder.with(RoomSorter::new(RoomSort::Central)),
             _ => unreachable!(),
         }
 
@@ -245,7 +245,7 @@ fn random_room_builder(rng: &mut RandomNumberGenerator, builder: &mut BuilderCha
 }
 
 fn random_shape_builder(rng: &mut RandomNumberGenerator, builder: &mut BuilderChain) {
-    let builder_roll = rng.roll_dice(1, 17);
+    let builder_roll = rng.roll_dice(1, 18);
     match builder_roll {
         1 => builder.start_with(CellularAutomataBuilder::new()),
         2 => builder.start_with(DrunkardsWalkBuilder::open_area()),
@@ -258,13 +258,14 @@ fn random_shape_builder(rng: &mut RandomNumberGenerator, builder: &mut BuilderCh
         9 => builder.start_with(DlaBuilder::walk_outwards()),
         10 => builder.start_with(DlaBuilder::central_attractor()),
         11 => builder.start_with(DlaBuilder::insectoid()),
-        12 => builder.start_with(VoronoiCellBuilder::pythagoras()),
-        13 => builder.start_with(VoronoiCellBuilder::manhattan()),
-        14 => builder.start_with(VoronoiCellBuilder::chebyshev()),
+        12 => builder.start_with(DlaBuilder::heavy_erosion()),
+        13 => builder.start_with(VoronoiCellBuilder::pythagoras()),
+        14 => builder.start_with(VoronoiCellBuilder::manhattan()),
+        15 => builder.start_with(VoronoiCellBuilder::chebyshev()),
         _ => builder.start_with(PrefabBuilder::constant(WFC_POPULATED)),
     }
 
-    builder.with(AreaStartingPosition::new(XStart::CENTER, YStart::CENTER));
+    builder.with(AreaStartingPosition::new(XStart::Center, YStart::Center));
     builder.with(CullUnreachable::new());
 
     let (start_x, start_y) = random_start_position(rng);
@@ -276,16 +277,16 @@ fn random_shape_builder(rng: &mut RandomNumberGenerator, builder: &mut BuilderCh
 
 fn random_start_position(rng: &mut RandomNumberGenerator) -> (XStart, YStart) {
     let start_x = match rng.roll_dice(1, 3) {
-        1 => XStart::LEFT,
-        2 => XStart::CENTER,
-        3 => XStart::RIGHT,
+        1 => XStart::Left,
+        2 => XStart::Center,
+        3 => XStart::Right,
         _ => unreachable!(),
     };
 
     let start_y = match rng.roll_dice(1, 3) {
-        1 => YStart::BOTTOM,
-        2 => YStart::CENTER,
-        3 => YStart::TOP,
+        1 => YStart::Bottom,
+        2 => YStart::Center,
+        3 => YStart::Top,
         _ => unreachable!(),
     };
 

@@ -63,6 +63,7 @@ impl<'a> System<'a> for ItemUseSystem {
         WriteExpect<'a, RunState>
     );
 
+    #[allow(clippy::cognitive_complexity)]
     fn run(&mut self, data: Self::SystemData) {
         let (player_entity, mut gamelog, entities, mut wants_item, names, healing, inflict_damage, mut combat_stats, consumables, map, mut suffer_damage, aoe, mut confused, equippable, mut equipped, mut backpack, mut particle_builder, positions, provides_food, mut hunger_clock, magic_mapper, mut runstate) = data;
 

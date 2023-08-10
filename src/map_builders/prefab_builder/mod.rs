@@ -2,7 +2,6 @@ use std::collections::HashSet;
 
 use itertools::Itertools;
 use rltk::{console, RandomNumberGenerator, XpFile};
-use specs::Builder;
 
 use crate::components::Position;
 use crate::map::{TileType};
@@ -18,6 +17,7 @@ pub mod prefab_section;
 pub mod prefab_rooms;
 
 #[derive(Eq, PartialEq, Clone)]
+#[allow(dead_code)]
 pub enum PrefabMode {
     RexLevel { template: &'static str },
     Constant { level: PrefabLevel },
@@ -42,6 +42,7 @@ impl InitialMapBuilder for PrefabBuilder {
 }
 
 impl PrefabBuilder {
+    #[allow(dead_code)]
     pub fn rex_level(template: &'static str) -> Box<Self> {
         Box::new(Self {
             mode: PrefabMode::RexLevel { template },

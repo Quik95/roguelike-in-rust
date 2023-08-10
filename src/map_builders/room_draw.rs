@@ -1,5 +1,4 @@
 use rltk::{DistanceAlg, Point, RandomNumberGenerator};
-use specs::Builder;
 
 use crate::map::{TileType};
 use crate::map_builders::{BuilderMap, MetaMapBuilder};

@@ -3,6 +3,7 @@ use std::fs::File;
 use std::path::Path;
 
 use specs::{Builder, Entity, Join, World, WorldExt};
+#[allow(deprecated)]
 use specs::error::NoError;
 use specs::saveload::{DeserializeComponents, MarkedBuilder, SerializeComponents, SimpleMarker, SimpleMarkerAllocator};
 
@@ -23,6 +24,7 @@ macro_rules! serialize_individually {
     };
 }
 
+#[allow(deprecated)]
 pub fn save_game(ecs: &mut World) {
     let mapcopy = ecs.get_mut::<super::map::Map>().unwrap().clone();
     let savehelper = ecs
@@ -54,7 +56,8 @@ macro_rules! deserialize_individually {
         $(
         DeserializeComponents::<NoError, _>::deserialize(
             &mut ( &mut $ecs.write_storage::<$type>(), ),
-            &mut $data.0, // entities
+            // let's hope nothing breaks in the future
+            $data.0, // entities
             &mut $data.1, // marker
             &mut $data.2, // allocater
             &mut $de,
@@ -64,6 +67,7 @@ macro_rules! deserialize_individually {
     };
 }
 
+#[allow(deprecated)]
 pub fn load_game(ecs: &mut World) {
     {
         let mut to_delete = Vec::new();

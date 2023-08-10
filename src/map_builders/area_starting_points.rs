@@ -5,9 +5,9 @@ use crate::components::Position;
 use crate::map::TileType;
 use crate::map_builders::{BuilderMap, MetaMapBuilder};
 
-pub enum XStart { LEFT, CENTER, RIGHT }
+pub enum XStart { Left, Center, Right }
 
-pub enum YStart { TOP, CENTER, BOTTOM }
+pub enum YStart { Top, Center, Bottom }
 
 pub struct AreaStartingPosition {
     x: XStart,
@@ -27,15 +27,15 @@ impl AreaStartingPosition {
 
     fn build(&mut self, _: &mut RandomNumberGenerator, build_data: &mut BuilderMap) {
         let seed_x = match self.x {
-            XStart::LEFT => 1,
-            XStart::CENTER => build_data.map.width / 2,
-            XStart::RIGHT => build_data.map.width - 2
+            XStart::Left => 1,
+            XStart::Center => build_data.map.width / 2,
+            XStart::Right => build_data.map.width - 2
         };
 
         let seed_y = match self.y {
-            YStart::TOP => 1,
-            YStart::CENTER => build_data.map.height / 2,
-            YStart::BOTTOM => build_data.map.height - 2
+            YStart::Top => 1,
+            YStart::Center => build_data.map.height / 2,
+            YStart::Bottom => build_data.map.height - 2
         };
 
         let mut available_floors = Vec::new();

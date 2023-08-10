@@ -1,7 +1,9 @@
 #[derive(Eq, PartialEq, Copy, Clone)]
+#[allow(dead_code)]
 pub enum HorizontalPlacement { Left, Center, Right }
 
 #[derive(Eq, PartialEq, Copy, Clone)]
+#[allow(dead_code)]
 pub enum VerticalPlacement { Top, Center, Bottom }
 
 #[derive(Eq, PartialEq, Copy, Clone)]

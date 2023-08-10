@@ -18,7 +18,7 @@ impl InitialMapBuilder for VoronoiCellBuilder {
 }
 
 impl VoronoiCellBuilder {
-    fn new() -> Self {
+    const fn new() -> Self {
         Self {
             n_seeds: 64,
             distance_algorithm: DistanceAlgorithm::Pythagoras,

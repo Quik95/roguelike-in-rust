@@ -59,6 +59,7 @@ pub fn build_patterns(map: &Map, chunk_size: i32, include_flipping: bool, dedupe
         }
     }
 
+    #[allow(clippy::iter_with_drain)]
     // Dedupe
     if dedupe {
         rltk::console::log(format!("Pre de-duplication, there are {} patterns", patterns.len()));

@@ -97,7 +97,7 @@ impl<'a> Grid<'a> {
         grid
     }
 
-    fn calculate_index(&self, row: i32, column: i32) -> Option<i32> {
+    const fn calculate_index(&self, row: i32, column: i32) -> Option<i32> {
         if row < 0 || column < 0 || column > self.width - 1 || row > self.height - 1 {
             None
         } else {
