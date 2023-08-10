@@ -1,5 +1,5 @@
 use rltk::RandomNumberGenerator;
-use specs::{Builder, World};
+use specs::World;
 
 use crate::{SHOW_MAPGEN_VISUALIZER, spawner};
 use crate::components::Position;
@@ -11,6 +11,7 @@ use crate::map_builders::cellular_automata::CellularAutomataBuilder;
 use crate::map_builders::cull_unreachable::CullUnreachable;
 use crate::map_builders::distant_exit::DistantExit;
 use crate::map_builders::dla::DlaBuilder;
+use crate::map_builders::door_placement::DoorPlacement;
 use crate::map_builders::drunkard::DrunkardsWalkBuilder;
 use crate::map_builders::maze::MazeBuilder;
 use crate::map_builders::prefab_builder::prefab_level::WFC_POPULATED;
@@ -32,33 +33,34 @@ use crate::map_builders::voronoi_spawning::VoronoiSpawning;
 use crate::map_builders::waveform_collapse::WaveformCollapseBuilder;
 use crate::rect::Rect;
 
+mod area_starting_points;
 mod bsp_dungeon;
 mod bsp_interior;
 mod cellular_automata;
 mod common;
+mod cull_unreachable;
+mod distant_exit;
 mod dla;
+mod door_placement;
 mod drunkard;
 mod maze;
 mod prefab_builder;
+mod room_based_spawner;
+mod room_based_stairs;
+mod room_based_starting_position;
+mod room_corner_rounding;
+mod room_corridor_spawner;
+mod room_draw;
+mod room_exploder;
+mod room_sorter;
+mod rooms_corridors_bsp;
+mod rooms_corridors_dogleg;
+mod rooms_corridors_lines;
+mod rooms_corridors_nearest;
 mod simple_map;
 mod voronoi;
-mod waveform_collapse;
-mod room_based_spawner;
-mod room_based_starting_position;
-mod room_based_stairs;
-mod area_starting_points;
-mod cull_unreachable;
 mod voronoi_spawning;
-mod distant_exit;
-mod room_exploder;
-mod room_corner_rounding;
-mod rooms_corridors_dogleg;
-mod rooms_corridors_bsp;
-mod room_sorter;
-mod room_draw;
-mod rooms_corridors_nearest;
-mod rooms_corridors_lines;
-mod room_corridor_spawner;
+mod waveform_collapse;
 
 #[derive(Default)]
 pub struct BuilderMap {
@@ -67,7 +69,7 @@ pub struct BuilderMap {
     pub starting_position: Option<Position>,
     pub rooms: Option<Vec<Rect>>,
     pub history: Vec<Map>,
-    pub corridors: Option<Vec<Vec<usize>>>
+    pub corridors: Option<Vec<Vec<usize>>>,
 }
 
 impl BuilderMap {
@@ -116,7 +118,7 @@ impl BuilderChain {
     pub fn start_with(&mut self, starter: Box<dyn InitialMapBuilder>) {
         match self.starter {
             None => self.starter = Some(starter),
-            Some(_) => panic!("You can only have one starting builder.")
+            Some(_) => panic!("You can only have one starting builder."),
         }
     }
 
@@ -127,7 +129,7 @@ impl BuilderChain {
     pub fn build_map(&mut self, rng: &mut RandomNumberGenerator) {
         match &mut self.starter {
             None => panic!("Cannot run a map builder chain without a starting build system"),
-            Some(starter) => starter.build_map(rng, &mut self.build_data)
+            Some(starter) => starter.build_map(rng, &mut self.build_data),
         }
 
         for metabuilder in self.builders.iter_mut() {
@@ -148,17 +150,24 @@ pub fn random_builder(new_depth: i32, rng: &mut RandomNumberGenerator) -> Builde
     match type_roll {
         1 => random_room_builder(rng, &mut builder),
         2 => random_shape_builder(rng, &mut builder),
-        _ => unreachable!()
+        _ => unreachable!(),
     }
 
     if rng.roll_dice(1, 3) == 1 {
         builder.with(WaveformCollapseBuilder::new());
+
+        let (start_x, start_y) = random_start_position(rng);
+        builder.with(AreaStartingPosition::new(start_x, start_y));
+
+        builder.with(VoronoiSpawning::new());
+        builder.with(DistantExit::new());
     }
 
     if rng.roll_dice(1, 20) == 1 {
         builder.with(PrefabBuilder::sectional(UNDERGROUND_FORT));
     }
 
+    builder.with(DoorPlacement::new());
     builder.with(PrefabBuilder::vaults());
 
     builder
@@ -170,13 +179,10 @@ fn random_room_builder(rng: &mut RandomNumberGenerator, builder: &mut BuilderCha
         1 => builder.start_with(SimpleMapBuilder::new()),
         2 => builder.start_with(BspDungeonBuilder::new()),
         3 => builder.start_with(BspInteriorBuilder::new()),
-        _ => unreachable!()
+        _ => unreachable!(),
     }
 
-    let cspawn_roll = rng.roll_dice(1, 2);
-    if cspawn_roll == 1 {
-        builder.with(CorridorSpawner::new());
-    }
+
 
     if build_roll != 3 {
         let sort_roll = rng.roll_dice(1, 5);
@@ -186,7 +192,7 @@ fn random_room_builder(rng: &mut RandomNumberGenerator, builder: &mut BuilderCha
             3 => builder.with(RoomSorter::new(RoomSort::TOPMOST)),
             4 => builder.with(RoomSorter::new(RoomSort::BOTTOMMOST)),
             5 => builder.with(RoomSorter::new(RoomSort::CENTRAL)),
-            _ => unreachable!()
+            _ => unreachable!(),
         }
 
         builder.with(RoomDrawer::new());
@@ -195,7 +201,12 @@ fn random_room_builder(rng: &mut RandomNumberGenerator, builder: &mut BuilderCha
         match corridor_roll {
             1 => builder.with(DoglegCorridors::new()),
             2 => builder.with(BspCorridors::new()),
-            _ => unreachable!()
+            _ => unreachable!(),
+        }
+
+        let cspawn_roll = rng.roll_dice(1, 2);
+        if cspawn_roll == 1 {
+            builder.with(CorridorSpawner::new());
         }
 
         let modifier_roll = rng.roll_dice(1, 6);
@@ -213,21 +224,21 @@ fn random_room_builder(rng: &mut RandomNumberGenerator, builder: &mut BuilderCha
             let (start_x, start_y) = random_start_position(rng);
             builder.with(AreaStartingPosition::new(start_x, start_y));
         }
-        _ => unreachable!()
+        _ => unreachable!(),
     }
 
     let exit_roll = rng.roll_dice(1, 2);
     match exit_roll {
         1 => builder.with(RoomBasedStairs::new()),
         2 => builder.with(DistantExit::new()),
-        _ => unreachable!()
+        _ => unreachable!(),
     }
 
     let spawn_roll = rng.roll_dice(1, 1);
     match spawn_roll {
         1 => builder.with(RoomBasedSpawner::new()),
         2 => builder.with(VoronoiSpawning::new()),
-        _ => unreachable!()
+        _ => unreachable!(),
     }
 }
 
@@ -266,15 +277,16 @@ fn random_start_position(rng: &mut RandomNumberGenerator) -> (XStart, YStart) {
         1 => XStart::LEFT,
         2 => XStart::CENTER,
         3 => XStart::RIGHT,
-        _ => unreachable!()
+        _ => unreachable!(),
     };
 
     let start_y = match rng.roll_dice(1, 3) {
         1 => YStart::BOTTOM,
         2 => YStart::CENTER,
         3 => YStart::TOP,
-        _ => unreachable!()
+        _ => unreachable!(),
     };
 
     (start_x, start_y)
 }
+

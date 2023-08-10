@@ -39,6 +39,10 @@ impl Player {
         let entities = ecs.entities();
         let mut wants_to_melee = ecs.write_storage::<WantsToMelee>();
         let mut entity_moved = ecs.write_storage::<EntityMoved>();
+        let mut doors = ecs.write_storage::<Door>();
+        let mut blocks_visibility = ecs.write_storage::<BlocksVisibility>();
+        let mut blocks_movement = ecs.write_storage::<BlocksTile>();
+        let mut renderables = ecs.write_storage::<Renderable>();
 
         for (entity, _player, pos, viewshed) in (&entities, &mut players, &mut positions, &mut viewsheds).join() {
             if pos.x + delta_x < 1 || pos.x + delta_x > map.width - 1 || pos.y + delta_y < 1 || pos.y + delta_y > map.height - 1 {
@@ -51,6 +55,15 @@ impl Player {
                 if let Some(_target) = target {
                     wants_to_melee.insert(entity, WantsToMelee { target: *potential_target }).expect("Add target failed");
                     return;
+                }
+                let door = doors.get_mut(*potential_target);
+                if let Some(door) = door {
+                    door.open = true;
+                    blocks_visibility.remove(*potential_target);
+                    blocks_movement.remove(*potential_target);
+                    let glyph = renderables.get_mut(*potential_target).unwrap();
+                    glyph.glyph = rltk::to_cp437('/');
+                    viewshed.dirty = true;
                 }
             }
 

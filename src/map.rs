@@ -21,6 +21,7 @@ pub struct Map {
     pub blocked: Vec<bool>,
     pub depth: i32,
     pub bloodstains: HashSet<usize>,
+    pub view_blocked: HashSet<usize>,
 
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]
@@ -47,6 +48,7 @@ impl Map {
             tile_content: vec![Vec::new(); MAPCOUNT],
             depth: new_depth,
             bloodstains: HashSet::new(),
+            view_blocked: HashSet::new(),
         }
     }
 
@@ -157,14 +159,7 @@ impl Algorithm2D for Map {
 
 impl BaseMap for Map {
     fn is_opaque(&self, idx: usize) -> bool {
-        self.tiles[idx] == TileType::Wall
-    }
-
-    fn get_pathing_distance(&self, idx1: usize, idx2: usize) -> f32 {
-        let w = self.width as usize;
-        let p1 = Point::new(idx1 % w, idx1 / w);
-        let p2 = Point::new(idx2 % w, idx2 / w);
-        rltk::DistanceAlg::Pythagoras.distance2d(p1, p2)
+        self.tiles[idx] == TileType::Wall || self.view_blocked.contains(&idx)
     }
 
     fn get_available_exits(&self, idx: usize) -> SmallVec<[(usize, f32); 10]> {
@@ -202,5 +197,12 @@ impl BaseMap for Map {
         };
 
         exits
+    }
+
+    fn get_pathing_distance(&self, idx1: usize, idx2: usize) -> f32 {
+        let w = self.width as usize;
+        let p1 = Point::new(idx1 % w, idx1 / w);
+        let p2 = Point::new(idx2 % w, idx2 / w);
+        rltk::DistanceAlg::Pythagoras.distance2d(p1, p2)
     }
 }
