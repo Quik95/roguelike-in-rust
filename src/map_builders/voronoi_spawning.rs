@@ -2,7 +2,7 @@ use std::collections::{hash_map, HashMap};
 
 use rltk::{CellularDistanceFunction, FastNoise, NoiseType, RandomNumberGenerator};
 
-use crate::map::{Map, TileType};
+use crate::map::{TileType};
 use crate::map_builders::{BuilderMap, MetaMapBuilder};
 use crate::spawner;
 
@@ -28,7 +28,7 @@ impl VoronoiSpawning {
 
         for y in 1..build_data.map.height - 1 {
             for x in 1..build_data.map.width - 1 {
-                let idx = Map::xy_idx(x, y);
+                let idx = build_data.map.xy_idx(x, y);
                 if build_data.map.tiles[idx] == TileType::Floor {
                     let cell_value_f = noise.get_noise(x as f32, y as f32) * 10240.0;
                     let cell_value = cell_value_f as i32;

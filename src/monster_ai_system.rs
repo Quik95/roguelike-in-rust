@@ -70,16 +70,16 @@ impl<'a> System<'a> for MonsterAI {
                 } else if viewshed.visible_tiles.contains(&*player_pos) {
                     // Path to the player
                     let path = rltk::a_star_search(
-                        Map::xy_idx(pos.x, pos.y),
-                        Map::xy_idx(player_pos.x, player_pos.y),
+                        map.xy_idx(pos.x, pos.y),
+                        map.xy_idx(player_pos.x, player_pos.y),
                         &*map,
                     );
                     if path.success && path.steps.len() > 1 {
-                        let mut idx = Map::xy_idx(pos.x, pos.y);
+                        let mut idx = map.xy_idx(pos.x, pos.y);
                         map.blocked[idx] = false;
                         pos.x = path.steps[1] as i32 % map.width;
                         pos.y = path.steps[1] as i32 / map.width;
-                        idx = Map::xy_idx(pos.x, pos.y);
+                        idx = map.xy_idx(pos.x, pos.y);
                         map.blocked[idx] = true;
                         viewshed.dirty = true;
                         entity_moved.insert(entity, EntityMoved {}).expect("Unable to insert marker");

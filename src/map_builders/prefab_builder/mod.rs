@@ -5,7 +5,7 @@ use rltk::{console, RandomNumberGenerator, XpFile};
 use specs::Builder;
 
 use crate::components::Position;
-use crate::map::{Map, TileType};
+use crate::map::{TileType};
 use crate::map_builders::{BuilderMap, InitialMapBuilder, MetaMapBuilder};
 use crate::map_builders::prefab_builder::prefab_level::PrefabLevel;
 use crate::map_builders::prefab_builder::prefab_rooms::{CHECKERBOARD, SILLY_SIMPLE, TOTALLY_NOT_A_TRAP};
@@ -74,7 +74,7 @@ impl PrefabBuilder {
                 for x in 0..layer.width {
                     let cell = layer.get(x, y).unwrap();
                     if x < build_data.map.width as usize && y < build_data.map.height as usize {
-                        let idx = Map::xy_idx(x as i32, y as i32);
+                        let idx = build_data.map.xy_idx(x as i32, y as i32);
                         self.char_to_map(cell.ch as u8 as char, idx, build_data);
                     }
                 }
@@ -89,7 +89,7 @@ impl PrefabBuilder {
         for ty in 0..level.height {
             for tx in 0..level.width {
                 if tx < build_data.map.width as usize && ty < build_data.map.height as usize {
-                    let idx = Map::xy_idx(tx as i32, ty as i32);
+                    let idx = build_data.map.xy_idx(tx as i32, ty as i32);
                     if let Some(&c) = string_vec.get(i) {
                         self.char_to_map(c, idx, build_data);
                     } else {
@@ -173,7 +173,7 @@ impl PrefabBuilder {
                     && ty < build_data.map.height as usize - 1
                     && ty > 0
                 {
-                    let idx = Map::xy_idx(tx as i32 + chunk_x, ty as i32 + chunk_y);
+                    let idx = build_data.map.xy_idx(tx as i32 + chunk_x, ty as i32 + chunk_y);
                     if let Some(&c) = string_vec.get(i) {
                         self.char_to_map(c, idx, build_data);
                     } else {
@@ -238,7 +238,7 @@ impl PrefabBuilder {
                     let mut possible = true;
                     for ty in 0..vault.height as i32 {
                         for tx in 0..vault.width as i32 {
-                            let idx = Map::xy_idx(tx + x, ty + y);
+                            let idx = build_data.map.xy_idx(tx + x, ty + y);
                             if build_data.map.tiles[idx] != TileType::Floor {
                                 possible = false;
                             }
@@ -278,7 +278,7 @@ impl PrefabBuilder {
                 let mut i = 0;
                 for ty in 0..vault.height {
                     for tx in 0..vault.width {
-                        let idx = Map::xy_idx(tx as i32 + chunk_x, ty as i32 + chunk_y);
+                        let idx = build_data.map.xy_idx(tx as i32 + chunk_x, ty as i32 + chunk_y);
                         if let Some(&c) = string_vec.get(i) {
                             self.char_to_map(c, idx, build_data);
                             used_tiles.insert(idx);

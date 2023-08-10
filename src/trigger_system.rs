@@ -42,7 +42,7 @@ impl<'a> System<'a> for TriggerSystem {
         let mut remove_entity = Vec::new();
 
         for (entity, mut _entity_moved, pos) in (&entities, &mut entity_moved, &position).join() {
-            let idx = Map::xy_idx(pos.x, pos.y);
+            let idx = map.xy_idx(pos.x, pos.y);
             for entity_id in map.tile_content[idx].iter() {
                 if entity != *entity_id {
                     let maybe_trigger = entry_trigger.get(*entity_id);

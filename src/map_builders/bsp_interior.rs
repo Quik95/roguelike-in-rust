@@ -1,6 +1,6 @@
 use rltk::RandomNumberGenerator;
 
-use crate::map::{Map, TileType};
+use crate::map::{TileType};
 use crate::map_builders::{BuilderMap, InitialMapBuilder};
 use crate::map_builders::common::draw_corridor;
 use crate::rect::Rect;
@@ -35,7 +35,7 @@ impl BspInteriorBuilder {
             rooms.push(room);
             for y in room.y1..room.y2 {
                 for x in room.x1..room.x2 {
-                    let idx = Map::xy_idx(x, y);
+                    let idx = build_data.map.xy_idx(x, y);
                     if idx > 0 && idx < ((build_data.map.width * build_data.map.height) - 1) as usize {
                         build_data.map.tiles[idx] = TileType::Floor;
                     }

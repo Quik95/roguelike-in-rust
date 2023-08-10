@@ -48,7 +48,7 @@ impl Player {
             if pos.x + delta_x < 1 || pos.x + delta_x > map.width - 1 || pos.y + delta_y < 1 || pos.y + delta_y > map.height - 1 {
                 return;
             }
-            let destination_idx = Map::xy_idx(pos.x + delta_x, pos.y + delta_y);
+            let destination_idx = map.xy_idx(pos.x + delta_x, pos.y + delta_y);
 
             for potential_target in map.tile_content[destination_idx].iter() {
                 let target = combat_stats.get(*potential_target);
@@ -68,8 +68,8 @@ impl Player {
             }
 
             if !map.blocked[destination_idx] {
-                pos.x = i32::min(79, i32::max(0, pos.x + delta_x));
-                pos.y = i32::min(49, i32::max(0, pos.y + delta_y));
+                pos.x = i32::min(map.width-1, i32::max(0, pos.x + delta_x));
+                pos.y = i32::min(map.height-1, i32::max(0, pos.y + delta_y));
                 viewshed.dirty = true;
                 ppos.x = pos.x;
                 ppos.y = pos.y;
@@ -153,7 +153,7 @@ impl Player {
     fn try_next_level(ecs: &mut World) -> bool {
         let player_pos = ecs.fetch::<Point>();
         let map = ecs.fetch::<Map>();
-        let player_idx = Map::xy_idx(player_pos.x, player_pos.y);
+        let player_idx = map.xy_idx(player_pos.x, player_pos.y);
         return if map.tiles[player_idx] == TileType::DownStairs {
             true
         } else {
@@ -173,7 +173,7 @@ impl Player {
         let mut can_heal = true;
         let viewshed = viewshed_components.get(*player_entity).unwrap();
         for tile in viewshed.visible_tiles.iter() {
-            let idx = Map::xy_idx(tile.x, tile.y);
+            let idx = worldmap_resource.xy_idx(tile.x, tile.y);
             for entity_id in worldmap_resource.tile_content[idx].iter() {
                 let mob = monsters.get(*entity_id);
                 match mob {

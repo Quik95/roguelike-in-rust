@@ -178,7 +178,7 @@ impl<'a> Grid<'a> {
         for cell in self.cells.iter() {
             let x = cell.column + 1;
             let y = cell.row + 1;
-            let idx = Map::xy_idx(x * 2, y * 2);
+            let idx = map.xy_idx(x * 2, y * 2);
 
             map.tiles[idx] = TileType::Floor;
             if !cell.walls[TOP] { map.tiles[idx - map.width as usize] = TileType::Floor; }

@@ -5,7 +5,7 @@ use specs::{Builder, Entity, World, WorldExt};
 use specs::saveload::{MarkedBuilder, SimpleMarker};
 
 use crate::components::{AreaOfEffect, BlocksTile, BlocksVisibility, CombatStats, Confusion, Consumable, DefenseBonus, Door, EntryTrigger, EquipmentSlot, Equippable, Hidden, HungerClock, HungerState, InflictsDamage, Item, MagicMapper, MeleePowerBonus, Monster, Name, Player, Position, ProvidesFood, ProvidesHealing, Ranged, Renderable, SerializeMe, Viewshed};
-use crate::map::{Map, MAPWIDTH, TileType};
+use crate::map::{Map,  TileType};
 use crate::random_table::RandomTable;
 use crate::rect::Rect;
 
@@ -62,7 +62,7 @@ pub fn spawn_room(map: &Map, rng: &mut RandomNumberGenerator, room: &Rect, map_d
     {
         for y in room.y1 + 1..room.y2 {
             for x in room.x1 + 1..room.x2 {
-                let idx = Map::xy_idx(x, y);
+                let idx = map.xy_idx(x, y);
                 if map.tiles[idx] == TileType::Floor {
                     possible_targets.push(idx);
                 }
@@ -96,8 +96,10 @@ pub fn spawn_region(_map: &Map, rng: &mut RandomNumberGenerator, area: &[usize],
 }
 
 pub fn spawn_entity(ecs: &mut World, spawn: &(&usize, &String)) {
-    let x = (*spawn.0 % MAPWIDTH) as i32;
-    let y = (*spawn.0 / MAPWIDTH) as i32;
+    let map = ecs.fetch::<Map>();
+    let x = (*spawn.0 % map.width as usize) as i32;
+    let y = (*spawn.0 / map.width as usize) as i32;
+    std::mem::drop(map);
 
     match spawn.1.as_ref() {
         "Goblin" => goblin(ecs, x, y),

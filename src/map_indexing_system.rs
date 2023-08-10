@@ -21,7 +21,7 @@ impl<'a> System<'a> for MapIndexingSystem {
         map.populate_blocked();
         map.clear_content_index();
         for (entity, position) in (&entities, &position).join() {
-            let idx = Map::xy_idx(position.x, position.y);
+            let idx = map.xy_idx(position.x, position.y);
 
             let _p = blockers.get(entity);
             if let Some(_p) = _p {

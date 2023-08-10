@@ -1,6 +1,6 @@
 use rltk::RandomNumberGenerator;
 
-use crate::map::{Map, TileType};
+use crate::map::{TileType};
 use crate::map_builders::{BuilderMap, InitialMapBuilder, MetaMapBuilder};
 
 pub struct CellularAutomataBuilder {}
@@ -27,7 +27,7 @@ impl CellularAutomataBuilder {
 
         for y in 1..build_data.map.height - 1 {
             for x in 1..build_data.map.width - 1 {
-                let idx = Map::xy_idx(x, y);
+                let idx = build_data.map.xy_idx(x, y);
                 let mut neighbors = 0;
                 if build_data.map.tiles[idx - 1] == TileType::Wall { neighbors += 1; }
                 if build_data.map.tiles[idx + 1] == TileType::Wall { neighbors += 1; }
@@ -53,7 +53,7 @@ impl CellularAutomataBuilder {
         for y in 1..build_data.map.height - 1 {
             for x in 1..build_data.map.width - 1 {
                 let roll = rng.roll_dice(1, 100);
-                let idx = Map::xy_idx(x, y);
+                let idx = build_data.map.xy_idx(x, y);
                 if roll > 55 { build_data.map.tiles[idx] = TileType::Floor } else { build_data.map.tiles[idx] = TileType::Wall }
             }
         }

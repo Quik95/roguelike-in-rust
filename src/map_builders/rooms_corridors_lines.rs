@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use rltk::{DistanceAlg, LineAlg, Point, RandomNumberGenerator};
 
-use crate::map::{Map, TileType};
+use crate::map::{TileType};
 use crate::map_builders::{BuilderMap, MetaMapBuilder};
 
 pub struct StraightLineCorridors {}
@@ -45,7 +45,7 @@ impl StraightLineCorridors {
                 let line = rltk::line2d(LineAlg::Bresenham, room_center_pt, Point::new(dest_center.0, dest_center.1));
                 let mut corridor = Vec::new();
                 for cell in line.iter() {
-                    let idx = Map::xy_idx(cell.x, cell.y);
+                    let idx = build_data.map.xy_idx(cell.x, cell.y);
                     if build_data.map.tiles[idx] != TileType::Floor {
                         build_data.map.tiles[idx] = TileType::Floor;
                         corridor.push(idx);

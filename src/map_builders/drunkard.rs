@@ -1,7 +1,7 @@
 use rltk::RandomNumberGenerator;
 
 use crate::components::Position;
-use crate::map::{Map, TileType};
+use crate::map::{TileType};
 use crate::map_builders::{BuilderMap, InitialMapBuilder, MetaMapBuilder};
 use crate::map_builders::common::{paint, Symmetry};
 
@@ -100,7 +100,7 @@ impl DrunkardsWalkBuilder {
 
     fn build(&mut self, rng: &mut RandomNumberGenerator, build_data: &mut BuilderMap) {
         let starting_position = Position { x: build_data.map.width / 2, y: build_data.map.height / 2 };
-        let start_idx = Map::xy_idx(starting_position.x, starting_position.y);
+        let start_idx = build_data.map.xy_idx(starting_position.x, starting_position.y);
         build_data.map.tiles[start_idx] = TileType::Floor;
 
         let total_tiles = build_data.map.width * build_data.map.height;
@@ -132,7 +132,7 @@ impl DrunkardsWalkBuilder {
             let mut drunk_life = self.settings.drunken_lifetime;
 
             while drunk_life > 0 {
-                let drunk_idx = Map::xy_idx(drunk_x, drunk_y);
+                let drunk_idx = build_data.map.xy_idx(drunk_x, drunk_y);
                 if build_data.map.tiles[drunk_idx] == TileType::Wall {
                     did_something = true;
                 }

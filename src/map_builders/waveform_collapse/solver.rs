@@ -33,7 +33,7 @@ impl Solver {
         }
     }
 
-    fn chunk_idx(&self, x: usize, y: usize) -> usize {
+    const fn chunk_idx(&self, x: usize, y: usize) -> usize {
         (y * self.chunks_x) + x
     }
 
@@ -171,7 +171,7 @@ impl Solver {
             let mut i: usize = 0;
             for y in top_y..bottom_y {
                 for x in left_x..right_x {
-                    let mapidx = Map::xy_idx(x, y);
+                    let mapidx = map.xy_idx(x, y);
                     let tile = self.constraints[new_chunk_idx].pattern[i];
                     map.tiles[mapidx] = tile;
                     i += 1;
@@ -214,7 +214,7 @@ impl Solver {
                 let mut i: usize = 0;
                 for y in top_y..bottom_y {
                     for x in left_x..right_x {
-                        let mapidx = Map::xy_idx(x, y);
+                        let mapidx = map.xy_idx(x, y);
                         let tile = self.constraints[possible_options[new_chunk_idx as usize]].pattern[i];
                         map.tiles[mapidx] = tile;
                         i += 1;

@@ -1,7 +1,7 @@
 use rltk::{LineAlg, RandomNumberGenerator};
 
 use crate::components::Position;
-use crate::map::{Map, TileType};
+use crate::map::{TileType};
 use crate::map_builders::{BuilderMap, InitialMapBuilder, MetaMapBuilder};
 use crate::map_builders::common::{paint, Symmetry};
 
@@ -85,7 +85,7 @@ impl DlaBuilder {
 
     fn build(&mut self, rng: &mut RandomNumberGenerator, build_data: &mut BuilderMap) {
         let starting_position = Position { x: build_data.map.width / 2, y: build_data.map.height / 2 };
-        let start_idx = Map::xy_idx(starting_position.x, starting_position.y);
+        let start_idx = build_data.map.xy_idx(starting_position.x, starting_position.y);
         build_data.take_snapshot();
         build_data.map.tiles[start_idx] = TileType::Floor;
         build_data.map.tiles[start_idx - 1] = TileType::Floor;
@@ -104,7 +104,7 @@ impl DlaBuilder {
                     let mut digger_y = rng.roll_dice(1, build_data.map.height - 3) + 1;
                     let mut prev_x = digger_x;
                     let mut prev_y = digger_y;
-                    let mut digger_idx = Map::xy_idx(digger_x, digger_y);
+                    let mut digger_idx = build_data.map.xy_idx(digger_x, digger_y);
                     while build_data.map.tiles[digger_idx] == TileType::Wall {
                         prev_x = digger_x;
                         prev_y = digger_y;
@@ -116,14 +116,14 @@ impl DlaBuilder {
                             4 => { if digger_y < build_data.map.height - 2 { digger_y += 1; } }
                             _ => unreachable!()
                         }
-                        digger_idx = Map::xy_idx(digger_x, digger_y);
+                        digger_idx = build_data.map.xy_idx(digger_x, digger_y);
                     }
                     paint(&mut build_data.map, self.symmetry, self.brush_size, prev_x, prev_y);
                 }
                 DLAAlgorithm::WalkOutwards => {
                     let mut digger_x = starting_position.x;
                     let mut digger_y = starting_position.y;
-                    let mut digger_idx = Map::xy_idx(digger_x, digger_y);
+                    let mut digger_idx = build_data.map.xy_idx(digger_x, digger_y);
                     while build_data.map.tiles[digger_idx] == TileType::Floor {
                         let stagger_direction = rng.roll_dice(1, 4);
                         match stagger_direction {
@@ -132,7 +132,7 @@ impl DlaBuilder {
                             3 => { if digger_y > 2 { digger_y -= 1; } }
                             _ => { if digger_y < build_data.map.height - 2 { digger_y += 1; } }
                         }
-                        digger_idx = Map::xy_idx(digger_x, digger_y);
+                        digger_idx = build_data.map.xy_idx(digger_x, digger_y);
                     }
                     paint(&mut build_data.map, self.symmetry, self.brush_size, digger_x, digger_y);
                 }
@@ -141,7 +141,7 @@ impl DlaBuilder {
                     let mut digger_y = rng.roll_dice(1, build_data.map.height - 3) + 1;
                     let mut prev_x = digger_x;
                     let mut prev_y = digger_y;
-                    let mut digger_idx = Map::xy_idx(digger_x, digger_y);
+                    let mut digger_idx = build_data.map.xy_idx(digger_x, digger_y);
 
                     let mut path = rltk::line2d(
                         LineAlg::Bresenham,
@@ -155,7 +155,7 @@ impl DlaBuilder {
                         digger_x = path[0].x;
                         digger_y = path[0].y;
                         path.remove(0);
-                        digger_idx = Map::xy_idx(digger_x, digger_y);
+                        digger_idx = build_data.map.xy_idx(digger_x, digger_y);
                     }
                     paint(&mut build_data.map, self.symmetry, self.brush_size, prev_x, prev_y);
                 }

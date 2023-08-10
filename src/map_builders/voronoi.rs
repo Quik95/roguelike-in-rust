@@ -1,6 +1,6 @@
 use rltk::{DistanceAlg, Point, RandomNumberGenerator};
 
-use crate::map::{Map, TileType};
+use crate::map::{TileType};
 use crate::map_builders::{BuilderMap, InitialMapBuilder};
 
 #[derive(Eq, PartialEq, Copy, Clone)]
@@ -52,7 +52,7 @@ impl VoronoiCellBuilder {
         while voronoi_seeds.len() < self.n_seeds {
             let vx = rng.roll_dice(1, build_data.map.width - 1);
             let vy = rng.roll_dice(1, build_data.map.height - 1);
-            let vidx = Map::xy_idx(vx, vy);
+            let vidx = build_data.map.xy_idx(vx, vy);
             let candidate = (vidx, Point::new(vx, vy));
             if !voronoi_seeds.contains(&candidate) {
                 voronoi_seeds.push(candidate);
@@ -85,12 +85,12 @@ impl VoronoiCellBuilder {
         for y in 1..build_data.map.height - 1 {
             for x in 1..build_data.map.width - 1 {
                 let mut neighbors = 0;
-                let my_idx = Map::xy_idx(x, y);
+                let my_idx = build_data.map.xy_idx(x, y);
                 let my_seed = voronoi_membership[my_idx];
-                if voronoi_membership[Map::xy_idx(x - 1, y)] != my_seed { neighbors += 1; }
-                if voronoi_membership[Map::xy_idx(x + 1, y)] != my_seed { neighbors += 1; }
-                if voronoi_membership[Map::xy_idx(x, y - 1)] != my_seed { neighbors += 1; }
-                if voronoi_membership[Map::xy_idx(x, y + 1)] != my_seed { neighbors += 1; }
+                if voronoi_membership[build_data.map.xy_idx(x - 1, y)] != my_seed { neighbors += 1; }
+                if voronoi_membership[build_data.map.xy_idx(x + 1, y)] != my_seed { neighbors += 1; }
+                if voronoi_membership[build_data.map.xy_idx(x, y - 1)] != my_seed { neighbors += 1; }
+                if voronoi_membership[build_data.map.xy_idx(x, y + 1)] != my_seed { neighbors += 1; }
 
                 if neighbors < 2 {
                     build_data.map.tiles[my_idx] = TileType::Floor;

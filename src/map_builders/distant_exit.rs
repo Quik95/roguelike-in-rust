@@ -1,6 +1,6 @@
 use rltk::{DijkstraMap, RandomNumberGenerator};
 
-use crate::map::{Map, TileType};
+use crate::map::{TileType};
 use crate::map_builders::{BuilderMap, MetaMapBuilder};
 
 pub struct DistantExit {}
@@ -18,7 +18,7 @@ impl DistantExit {
 
     fn build(&mut self, _: &mut RandomNumberGenerator, build_data: &mut BuilderMap) {
         let starting_pos = build_data.starting_position.as_ref().unwrap().clone();
-        let start_idx = Map::xy_idx(starting_pos.x, starting_pos.y);
+        let start_idx = build_data.map.xy_idx(starting_pos.x, starting_pos.y);
         build_data.map.populate_blocked();
         let map_start = vec![start_idx];
         let dijkstra_map = DijkstraMap::new(build_data.map.width as usize, build_data.map.height as usize, &map_start, &build_data.map, 1000.0);

@@ -1,4 +1,3 @@
-
 use itertools::Itertools;
 use rltk::{GameState, Point, RandomNumberGenerator};
 use specs::prelude::*;
@@ -12,11 +11,11 @@ use player::RunState;
 use RunState::PreRun;
 use visibility_system::VisibilitySystem;
 
+use crate::camera::{render_camera, render_debug_map};
 use crate::damage_system::DamageSystem;
 use crate::gamelog::GameLog;
+use crate::gui::draw_ui;
 use crate::inventory_system::{ItemCollectionSystem, ItemDropSystem, ItemRemoveSystem, ItemUseSystem};
-use crate::map::{MAPHEIGHT, MAPWIDTH};
-
 use crate::melee_combat_system::MeleeCombatSystem;
 use crate::player::RunState::*;
 
@@ -41,6 +40,7 @@ mod hunger_system;
 mod rex_assets;
 mod trigger_system;
 mod map_builders;
+mod camera;
 
 const SHOW_MAPGEN_VISUALIZER: bool = true;
 
@@ -99,7 +99,7 @@ impl State {
         self.mapgen_history.clear();
 
         let mut rng = self.ecs.write_resource::<RandomNumberGenerator>();
-        let mut builder = map_builders::random_builder(new_depth, &mut rng);
+        let mut builder = map_builders::random_builder(new_depth, &mut rng, 80, 50);
         builder.build_map(&mut rng);
         std::mem::drop(rng);
 
@@ -229,26 +229,10 @@ impl GameState for State {
         particle_system::cull_dead_particles(&mut self.ecs, ctx);
 
         match newrunstate {
-            MainMenu { .. } => {}
+            GameOver { .. } => {}
             _ => {
-                Map::draw_map(&self.ecs.fetch::<Map>(), ctx);
-
-                {
-                    let positions = self.ecs.read_storage::<Position>();
-                    let renderables = self.ecs.read_storage::<Renderable>();
-                    let hidden = self.ecs.read_storage::<Hidden>();
-                    let map = self.ecs.fetch::<Map>();
-
-                    let data = (&positions, &renderables, !&hidden).join()
-                        .sorted_by(|&a, &b| b.1.render_order.cmp(&a.1.render_order));
-                    for (pos, render, _hidden) in data {
-                        let idx = Map::xy_idx(pos.x, pos.y);
-                        if map.visible_tiles[idx] {
-                            ctx.set(pos.x, pos.y, render.fg, render.bg, render.glyph);
-                        }
-                    }
-                    gui::draw_ui(&self.ecs, ctx);
-                }
+                render_camera(&self.ecs, ctx);
+                draw_ui(&self.ecs, ctx);
             }
         }
 
@@ -368,11 +352,11 @@ impl GameState for State {
             }
             MagicMapReveal { row } => {
                 let mut map = self.ecs.fetch_mut::<Map>();
-                for x in 0..MAPWIDTH {
-                    let idx = Map::xy_idx(x as i32, row);
+                for x in 0..map.width {
+                    let idx = map.xy_idx(x, row);
                     map.revealed_tiles[idx] = true;
                 }
-                if row as usize == MAPHEIGHT - 1 {
+                if row == map.height - 1 {
                     newrunstate = MonsterTurn;
                 } else {
                     newrunstate = MagicMapReveal { row: row + 1 };
@@ -381,16 +365,19 @@ impl GameState for State {
             MapGeneration => {
                 if !SHOW_MAPGEN_VISUALIZER {
                     newrunstate = self.mapgen_next_state.unwrap();
-                }
-                ctx.cls();
-                Map::draw_map(&self.mapgen_history[self.mapgen_index], ctx);
+                } else {
+                    ctx.cls();
+                    if self.mapgen_index < self.mapgen_history.len() {
+                        render_debug_map(&self.mapgen_history[self.mapgen_index], ctx);
+                    }
 
-                self.mapgen_timer += ctx.frame_time_ms;
-                if self.mapgen_timer > 150.0 {
-                    self.mapgen_timer = 0.0;
-                    self.mapgen_index += 1;
-                    if self.mapgen_index >= self.mapgen_history.len() {
-                        newrunstate = self.mapgen_next_state.unwrap();
+                    self.mapgen_timer += ctx.frame_time_ms;
+                    if self.mapgen_timer > 100.0 {
+                        self.mapgen_timer = 0.0;
+                        self.mapgen_index += 1;
+                        if self.mapgen_index >= self.mapgen_history.len() {
+                            newrunstate = self.mapgen_next_state.unwrap();
+                        }
                     }
                 }
             }
@@ -460,7 +447,7 @@ fn main() -> rltk::BError {
 
 
     gs.ecs.insert(SimpleMarkerAllocator::<SerializeMe>::new());
-    gs.ecs.insert(Map::new(1));
+    gs.ecs.insert(Map::new(1, 64, 64));
     gs.ecs.insert(Point::new(0, 0));
     gs.ecs.insert(RandomNumberGenerator::new());
     let player_entity = spawner::player(&mut gs.ecs, 0, 0);

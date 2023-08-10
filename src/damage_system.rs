@@ -23,7 +23,7 @@ impl<'a> System<'a> for DamageSystem {
             stats.hp -= damage.amount.iter().sum::<i32>();
             let pos = positions.get(entity);
             if let Some(pos) = pos {
-                let idx = Map::xy_idx(pos.x, pos.y);
+                let idx = map.xy_idx(pos.x, pos.y);
                 map.bloodstains.insert(idx);
             }
         }

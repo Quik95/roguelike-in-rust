@@ -1,7 +1,7 @@
 use rltk::{DistanceAlg, Point, RandomNumberGenerator};
 use specs::Builder;
 
-use crate::map::{Map, TileType};
+use crate::map::{TileType};
 use crate::map_builders::{BuilderMap, MetaMapBuilder};
 use crate::rect::Rect;
 
@@ -21,7 +21,7 @@ impl RoomDrawer {
     fn rectangle(&mut self, build_data: &mut BuilderMap, room: &Rect) {
         for y in room.y1 + 1..=room.y2 {
             for x in room.x1 + 1..=room.x2 {
-                let idx = Map::xy_idx(x, y);
+                let idx = build_data.map.xy_idx(x, y);
                 if idx > 0 && idx < ((build_data.map.width * build_data.map.height) - 1) as usize {
                     build_data.map.tiles[idx] = TileType::Floor;
                 }
@@ -35,7 +35,7 @@ impl RoomDrawer {
         let center_pt = Point::new(center.0, center.1);
         for y in room.y1..=room.y2 {
             for x in room.x1..=room.x2 {
-                let idx = Map::xy_idx(x, y);
+                let idx = build_data.map.xy_idx(x, y);
                 let distance = DistanceAlg::Pythagoras.distance2d(center_pt, Point::new(x, y));
                 if idx > 0
                     && idx < ((build_data.map.width * build_data.map.height)-1) as usize

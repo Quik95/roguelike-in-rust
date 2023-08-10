@@ -40,7 +40,7 @@ impl<'a> System<'a> for VisibilitySystem {
 
         map.view_blocked.clear();
         for (block_pos, _block) in (&pos, &blocks_visibility).join() {
-            let idx = Map::xy_idx(block_pos.x, block_pos.y);
+            let idx = map.xy_idx(block_pos.x, block_pos.y);
             map.view_blocked.insert(idx);
         }
 
@@ -61,7 +61,7 @@ impl<'a> System<'a> for VisibilitySystem {
                     *t = false;
                 }
                 for vis in viewshed.visible_tiles.iter() {
-                    let idx = Map::xy_idx(vis.x, vis.y);
+                    let idx = map.xy_idx(vis.x, vis.y);
                     map.revealed_tiles[idx] = true;
                     map.visible_tiles[idx] = true;
 

@@ -1,6 +1,6 @@
 use rltk::RandomNumberGenerator;
 
-use crate::map::{Map, TileType};
+use crate::map::{TileType};
 use crate::map_builders::{BuilderMap, InitialMapBuilder};
 use crate::rect::Rect;
 
@@ -96,7 +96,7 @@ impl BspDungeonBuilder {
                 if x < 1 { can_build = false }
                 if y < 1 { can_build = false }
                 if can_build {
-                    let idx = Map::xy_idx(x, y);
+                    let idx = build_data.map.xy_idx(x, y);
                     if build_data.map.tiles[idx] != TileType::Wall {
                         can_build = false
                     }

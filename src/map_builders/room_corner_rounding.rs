@@ -1,6 +1,6 @@
 use rltk::RandomNumberGenerator;
 
-use crate::map::{Map, TileType};
+use crate::map::{TileType};
 use crate::map_builders::{BuilderMap, MetaMapBuilder};
 
 pub struct RoomCornerRounder {}
@@ -19,7 +19,7 @@ impl RoomCornerRounder {
     fn fill_if_corner(&mut self, x: i32, y: i32, build_data: &mut BuilderMap) {
         let w = build_data.map.width;
         let h = build_data.map.height;
-        let idx = Map::xy_idx(x, y);
+        let idx = build_data.map.xy_idx(x, y);
         let mut neighbor_walls = 0;
         if x > 0 && build_data.map.tiles[idx - 1] == TileType::Wall { neighbor_walls += 1; }
         if y > 0 && build_data.map.tiles[idx - w as usize] == TileType::Wall { neighbor_walls += 1; }

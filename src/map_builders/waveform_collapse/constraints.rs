@@ -19,7 +19,7 @@ pub fn build_patterns(map: &Map, chunk_size: i32, include_flipping: bool, dedupe
 
             for y in start_y..end_y {
                 for x in start_x..end_x {
-                    let idx = Map::xy_idx(x, y);
+                    let idx = map.xy_idx(x, y);
                     pattern.push(map.tiles[idx]);
                 }
             }
@@ -30,7 +30,7 @@ pub fn build_patterns(map: &Map, chunk_size: i32, include_flipping: bool, dedupe
                 pattern = Vec::new();
                 for y in start_y..end_y {
                     for x in start_x..end_x {
-                        let idx = Map::xy_idx(end_x - (x + 1), y);
+                        let idx = map.xy_idx(end_x - (x + 1), y);
                         pattern.push(map.tiles[idx]);
                     }
                 }
@@ -40,7 +40,7 @@ pub fn build_patterns(map: &Map, chunk_size: i32, include_flipping: bool, dedupe
                 pattern = Vec::new();
                 for y in start_y..end_y {
                     for x in start_x..end_x {
-                        let idx = Map::xy_idx(x, end_y - (y + 1));
+                        let idx = map.xy_idx(x, end_y - (y + 1));
                         pattern.push(map.tiles[idx]);
                     }
                 }
@@ -50,7 +50,7 @@ pub fn build_patterns(map: &Map, chunk_size: i32, include_flipping: bool, dedupe
                 pattern = Vec::new();
                 for y in start_y..end_y {
                     for x in start_x..end_x {
-                        let idx = Map::xy_idx(end_x - (x + 1), end_y - (y + 1));
+                        let idx = map.xy_idx(end_x - (x + 1), end_y - (y + 1));
                         pattern.push(map.tiles[idx]);
                     }
                 }
@@ -74,7 +74,7 @@ pub fn render_pattern_to_map(map: &mut Map, chunk: &MapChunk, chunk_size: i32, s
     let mut i = 0usize;
     for tile_y in 0..chunk_size {
         for tile_x in 0..chunk_size {
-            let map_idx = Map::xy_idx(start_x + tile_x, start_y + tile_y);
+            let map_idx = map.xy_idx(start_x + tile_x, start_y + tile_y);
             map.tiles[map_idx] = chunk.pattern[i];
             map.visible_tiles[map_idx] = true;
             i += 1;
@@ -83,25 +83,25 @@ pub fn render_pattern_to_map(map: &mut Map, chunk: &MapChunk, chunk_size: i32, s
 
     for (x, northbound) in chunk.exits[0].iter().enumerate() {
         if *northbound {
-            let map_idx = Map::xy_idx(start_x + x as i32, start_y);
+            let map_idx = map.xy_idx(start_x + x as i32, start_y);
             map.tiles[map_idx] = TileType::DownStairs;
         }
     }
     for (x, southbound) in chunk.exits[1].iter().enumerate() {
         if *southbound {
-            let map_idx = Map::xy_idx(start_x + x as i32, start_y + chunk_size - 1);
+            let map_idx = map.xy_idx(start_x + x as i32, start_y + chunk_size - 1);
             map.tiles[map_idx] = TileType::DownStairs;
         }
     }
     for (x, westbound) in chunk.exits[2].iter().enumerate() {
         if *westbound {
-            let map_idx = Map::xy_idx(start_x, start_y + x as i32);
+            let map_idx = map.xy_idx(start_x, start_y + x as i32);
             map.tiles[map_idx] = TileType::DownStairs;
         }
     }
     for (x, eastbound) in chunk.exits[2].iter().enumerate() {
         if *eastbound {
-            let map_idx = Map::xy_idx(start_x + chunk_size - 1, start_y + x as i32);
+            let map_idx = map.xy_idx(start_x + chunk_size - 1, start_y + x as i32);
             map.tiles[map_idx] = TileType::DownStairs;
         }
     }

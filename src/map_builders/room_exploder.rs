@@ -1,6 +1,6 @@
 use rltk::RandomNumberGenerator;
 
-use crate::map::{Map, TileType};
+use crate::map::{TileType};
 use crate::map_builders::{BuilderMap, MetaMapBuilder};
 use crate::map_builders::common::{paint, Symmetry};
 
@@ -28,7 +28,7 @@ impl RoomExploder {
                     let mut did_something = false;
 
                     while drunk_life > 0 {
-                        let drunk_idx = Map::xy_idx(drunk_x, drunk_y);
+                        let drunk_idx = build_data.map.xy_idx(drunk_x, drunk_y);
                         if build_data.map.tiles[drunk_idx] == TileType::Wall {
                             did_something = true;
                         }
