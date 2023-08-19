@@ -7,7 +7,7 @@ use specs::saveload::{MarkedBuilder, SimpleMarker};
 use crate::components::{AreaOfEffect, BlocksTile, BlocksVisibility, CombatStats, Confusion, Consumable, DefenseBonus, Door, EntryTrigger, EquipmentSlot, Equippable, Hidden, HungerClock, HungerState, InflictsDamage, Item, MagicMapper, MeleePowerBonus, Monster, Name, Player, Position, ProvidesFood, ProvidesHealing, Ranged, Renderable, SerializeMe, Viewshed};
 use crate::map::{Map, TileType};
 use crate::random_table::RandomTable;
-use crate::raws::rawmaster::{RAWS, spawn_named_entity, SpawnType};
+use crate::raws::rawmaster::{get_spawn_table_for_depth, RAWS, spawn_named_entity, SpawnType};
 use crate::rect::Rect;
 
 const MAX_MONSTERS: i32 = 4;
@@ -187,20 +187,7 @@ fn confusion_scroll(ecs: &mut World, x: i32, y: i32) {
 }
 
 fn room_table(map_depth: i32) -> RandomTable {
-    RandomTable::new()
-        .add("Goblin", 10)
-        .add("Orc", 1 + map_depth)
-        .add("Health Potion", 7)
-        .add("Fireball Scroll", 2 + map_depth)
-        .add("Confusion Scroll", 2 + map_depth)
-        .add("Magic Missile Scroll", 4)
-        .add("Dagger", 3)
-        .add("Shield", 3)
-        .add("Longsword", map_depth - 1)
-        .add("Tower Shield", map_depth - 1)
-        .add("Rations", 10)
-        .add("Magic Mapping Scroll", 2)
-        .add("Bear Trap", 5)
+    get_spawn_table_for_depth(&RAWS.lock().unwrap(), map_depth)
 }
 
 fn dagger(ecs: &mut World, x: i32, y: i32) {

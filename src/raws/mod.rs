@@ -6,11 +6,13 @@ use crate::raws::item_structs::Item;
 use crate::raws::mob_structs::Mob;
 use crate::raws::prop_structs::Prop;
 use crate::raws::rawmaster::RAWS;
+use crate::raws::spawn_table_structs::SpawnTableEntry;
 
 mod item_structs;
 pub mod rawmaster;
 mod mob_structs;
 mod prop_structs;
+mod spawn_table_structs;
 
 rltk::embedded_resource!(RAW_FILE, "../../raws/spawns.json");
 
@@ -32,4 +34,5 @@ pub struct Raws {
     pub items: Vec<Item>,
     pub mobs: Vec<Mob>,
     pub props: Vec<Prop>,
+    pub spawn_table: Vec<SpawnTableEntry>
 }
