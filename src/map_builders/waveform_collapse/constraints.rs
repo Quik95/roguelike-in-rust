@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use crate::map::{Map, TileType};
+use crate::map::{Map, tiletype::TileType};
 use crate::map_builders::waveform_collapse::common::{MapChunk, tile_idx_in_chunk};
 
 pub fn build_patterns(map: &Map, chunk_size: i32, include_flipping: bool, dedupe: bool) -> Vec<Vec<TileType>> {

@@ -1,6 +1,6 @@
 use rltk::RandomNumberGenerator;
 
-use crate::map::TileType;
+use crate::map::tiletype::TileType;
 
 use super::{BuilderMap, MetaMapBuilder};
 

@@ -5,7 +5,7 @@ use specs::{Builder, Entity, World, WorldExt};
 use specs::saveload::{MarkedBuilder, SimpleMarker};
 
 use crate::components::{AreaOfEffect, BlocksTile, BlocksVisibility, CombatStats, Confusion, Consumable, DefenseBonus, Door, EntryTrigger, EquipmentSlot, Equippable, Hidden, HungerClock, HungerState, InflictsDamage, Item, MagicMapper, MeleePowerBonus, Monster, Name, Player, Position, ProvidesFood, ProvidesHealing, Ranged, Renderable, SerializeMe, Viewshed};
-use crate::map::{Map, TileType};
+use crate::map::{Map, tiletype::TileType};
 use crate::random_table::RandomTable;
 use crate::raws::rawmaster::{get_spawn_table_for_depth, RAWS, spawn_named_entity, SpawnType};
 use crate::rect::Rect;

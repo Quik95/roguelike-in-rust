@@ -2,7 +2,7 @@ use std::collections::{hash_map, HashMap};
 
 use rltk::{CellularDistanceFunction, FastNoise, NoiseType, RandomNumberGenerator};
 
-use crate::map::TileType;
+use crate::map::tiletype::TileType;
 use crate::map_builders::{BuilderMap, MetaMapBuilder};
 use crate::spawner;
 

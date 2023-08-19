@@ -3,7 +3,7 @@ use specs::prelude::*;
 
 use crate::gamelog::GameLog;
 use crate::gui;
-use crate::map::TileType;
+use crate::map::tiletype::TileType;
 use crate::player::RunState::{NextLevel, PlayerTurn, SaveGame, ShowDropItem, ShowInventory, ShowRemoveItem};
 
 use super::components::*;

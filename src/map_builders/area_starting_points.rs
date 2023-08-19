@@ -2,7 +2,6 @@ use rltk::{Point, RandomNumberGenerator};
 use rltk::DistanceAlg::PythagorasSquared;
 
 use crate::components::Position;
-use crate::map::TileType;
 use crate::map_builders::{BuilderMap, MetaMapBuilder};
 
 pub enum XStart { Left, Center, Right }
@@ -40,7 +39,7 @@ impl AreaStartingPosition {
 
         let mut available_floors = Vec::new();
         for (idx, tiletype) in build_data.map.tiles.iter().enumerate() {
-            if *tiletype == TileType::Floor {
+            if tiletype.is_walkable() {
                 available_floors.push(
                     (
                         idx,

@@ -1,6 +1,6 @@
 use std::cmp::{max, min};
 
-use crate::map::{Map, TileType};
+use crate::map::{Map, tiletype::TileType};
 
 #[derive(PartialEq, Eq, Copy, Clone)]
 #[allow(dead_code)]

@@ -1,7 +1,7 @@
 use rltk::{LineAlg, RandomNumberGenerator};
 
 use crate::components::Position;
-use crate::map::TileType;
+use crate::map::tiletype::TileType;
 use crate::map_builders::{BuilderMap, InitialMapBuilder, MetaMapBuilder};
 use crate::map_builders::common::{paint, Symmetry};
 

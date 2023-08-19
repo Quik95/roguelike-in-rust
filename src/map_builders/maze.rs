@@ -2,7 +2,7 @@ use std::cmp;
 
 use rltk::RandomNumberGenerator;
 
-use crate::map::{Map, TileType};
+use crate::map::{Map, tiletype::TileType};
 use crate::map_builders::{BuilderMap, InitialMapBuilder};
 
 const TOP: usize = 0;

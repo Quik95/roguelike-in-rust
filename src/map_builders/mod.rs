@@ -1,4 +1,4 @@
-use rltk::RandomNumberGenerator;
+use rltk::{console, RandomNumberGenerator};
 use specs::World;
 
 use crate::{SHOW_MAPGEN_VISUALIZER, spawner};
@@ -28,6 +28,7 @@ use crate::map_builders::room_sorter::{RoomSort, RoomSorter};
 use crate::map_builders::rooms_corridors_bsp::BspCorridors;
 use crate::map_builders::rooms_corridors_dogleg::DoglegCorridors;
 use crate::map_builders::simple_map::SimpleMapBuilder;
+use crate::map_builders::town::town_builder;
 use crate::map_builders::voronoi::VoronoiCellBuilder;
 use crate::map_builders::voronoi_spawning::VoronoiSpawning;
 use crate::map_builders::waveform_collapse::WaveformCollapseBuilder;
@@ -61,6 +62,7 @@ mod simple_map;
 mod voronoi;
 mod voronoi_spawning;
 mod waveform_collapse;
+mod town;
 
 #[derive(Default)]
 pub struct BuilderMap {
@@ -72,6 +74,14 @@ pub struct BuilderMap {
     pub corridors: Option<Vec<Vec<usize>>>,
     pub width: i32,
     pub height: i32,
+}
+
+pub fn level_builder(new_depth: i32, rng: &mut RandomNumberGenerator, width: i32, height: i32) -> BuilderChain {
+    console::log(format!("Depth: {new_depth}"));
+    match new_depth {
+        1 => town_builder(new_depth, rng, width, height),
+        _ => random_builder(new_depth, rng, width, height)
+    }
 }
 
 impl BuilderMap {

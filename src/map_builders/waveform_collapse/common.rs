@@ -1,4 +1,4 @@
-use crate::map::TileType;
+use crate::map::tiletype::TileType;
 
 #[derive(PartialEq, Eq, Hash, Clone)]
 pub struct MapChunk {
