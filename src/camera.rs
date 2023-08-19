@@ -1,9 +1,11 @@
+use rltk::{Point, RGB, Rltk};
 use specs::prelude::*;
-use super::{Map,Position,Renderable,Hidden};
-use rltk::{Point, Rltk, RGB};
+
 use crate::map::TileType;
 
-pub fn get_screen_bounds(ecs: &World, ctx : &mut Rltk) -> (i32, i32, i32, i32) {
+use super::{Hidden, Map, Position, Renderable};
+
+pub fn get_screen_bounds(ecs: &World, ctx: &mut Rltk) -> (i32, i32, i32, i32) {
     let player_pos = ecs.fetch::<Point>();
     let (x_chars, y_chars) = ctx.get_char_size();
 
@@ -18,19 +20,19 @@ pub fn get_screen_bounds(ecs: &World, ctx : &mut Rltk) -> (i32, i32, i32, i32) {
     (min_x, max_x, min_y, max_y)
 }
 
-const SHOW_BOUNDARIES : bool = true;
+const SHOW_BOUNDARIES: bool = true;
 
-pub fn render_camera(ecs: &World, ctx : &mut Rltk) {
+pub fn render_camera(ecs: &World, ctx: &mut Rltk) {
     let map = ecs.fetch::<Map>();
     let (min_x, max_x, min_y, max_y) = get_screen_bounds(ecs, ctx);
 
     // Render the Map
 
-    let map_width = map.width-1;
-    let map_height = map.height-1;
+    let map_width = map.width - 1;
+    let map_height = map.height - 1;
 
-    for (y, ty) in (min_y .. max_y).enumerate() {
-        for (x, tx) in (min_x .. max_x).enumerate() {
+    for (y, ty) in (min_y..max_y).enumerate() {
+        for (x, tx) in (min_x..max_x).enumerate() {
             if tx > 0 && tx < map_width && ty > 0 && ty < map_height {
                 let idx = map.xy_idx(tx, ty);
                 if map.revealed_tiles[idx] {
@@ -50,7 +52,7 @@ pub fn render_camera(ecs: &World, ctx : &mut Rltk) {
     let map = ecs.fetch::<Map>();
 
     let mut data = (&positions, &renderables, !&hidden).join().collect::<Vec<_>>();
-    data.sort_by(|&a, &b| b.1.render_order.cmp(&a.1.render_order) );
+    data.sort_by(|&a, &b| b.1.render_order.cmp(&a.1.render_order));
     for (pos, render, _hidden) in data.iter() {
         let idx = map.xy_idx(pos.x, pos.y);
         if map.visible_tiles[idx] {
@@ -63,7 +65,7 @@ pub fn render_camera(ecs: &World, ctx : &mut Rltk) {
     }
 }
 
-pub fn render_debug_map(map : &Map, ctx : &mut Rltk) {
+pub fn render_debug_map(map: &Map, ctx: &mut Rltk) {
     let player_pos = Point::new(map.width / 2, map.height / 2);
     let (x_chars, y_chars) = ctx.get_char_size();
 
@@ -75,11 +77,11 @@ pub fn render_debug_map(map : &Map, ctx : &mut Rltk) {
     let min_y = player_pos.y - center_y;
     let max_y = min_y + y_chars as i32;
 
-    let map_width = map.width-1;
-    let map_height = map.height-1;
+    let map_width = map.width - 1;
+    let map_height = map.height - 1;
 
-    for (y, ty) in (min_y .. max_y).enumerate() {
-        for (x, tx) in (min_x .. max_x).enumerate() {
+    for (y, ty) in (min_y..max_y).enumerate() {
+        for (x, tx) in (min_x..max_x).enumerate() {
             if tx > 0 && tx < map_width && ty > 0 && ty < map_height {
                 let idx = map.xy_idx(tx, ty);
                 if map.revealed_tiles[idx] {
@@ -93,7 +95,7 @@ pub fn render_debug_map(map : &Map, ctx : &mut Rltk) {
     }
 }
 
-fn get_tile_glyph(idx: usize, map : &Map) -> (rltk::FontCharType, RGB, RGB) {
+fn get_tile_glyph(idx: usize, map: &Map) -> (rltk::FontCharType, RGB, RGB) {
     let glyph;
     let mut fg;
     let mut bg = RGB::from_f32(0., 0., 0.);
@@ -123,14 +125,14 @@ fn get_tile_glyph(idx: usize, map : &Map) -> (rltk::FontCharType, RGB, RGB) {
     (glyph, fg, bg)
 }
 
-fn wall_glyph(map : &Map, x: i32, y:i32) -> rltk::FontCharType {
-    if x < 1 || x > map.width-2 || y < 1 || y > map.height-2_i32 { return 35; }
-    let mut mask : u8 = 0;
+fn wall_glyph(map: &Map, x: i32, y: i32) -> rltk::FontCharType {
+    if x < 1 || x > map.width - 2 || y < 1 || y > map.height - 2_i32 { return 35; }
+    let mut mask: u8 = 0;
 
-    if is_revealed_and_wall(map, x, y - 1) { mask +=1; }
-    if is_revealed_and_wall(map, x, y + 1) { mask +=2; }
-    if is_revealed_and_wall(map, x - 1, y) { mask +=4; }
-    if is_revealed_and_wall(map, x + 1, y) { mask +=8; }
+    if is_revealed_and_wall(map, x, y - 1) { mask += 1; }
+    if is_revealed_and_wall(map, x, y + 1) { mask += 2; }
+    if is_revealed_and_wall(map, x - 1, y) { mask += 4; }
+    if is_revealed_and_wall(map, x + 1, y) { mask += 8; }
 
     match mask {
         0 => { 9 } // Pillar because we can't see neighbors

@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use rltk::{DistanceAlg, LineAlg, Point, RandomNumberGenerator};
 
-use crate::map::{TileType};
+use crate::map::TileType;
 use crate::map_builders::{BuilderMap, MetaMapBuilder};
 
 pub struct StraightLineCorridors {}

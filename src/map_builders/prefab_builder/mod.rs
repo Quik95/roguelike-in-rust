@@ -4,7 +4,7 @@ use itertools::Itertools;
 use rltk::{console, RandomNumberGenerator, XpFile};
 
 use crate::components::Position;
-use crate::map::{TileType};
+use crate::map::TileType;
 use crate::map_builders::{BuilderMap, InitialMapBuilder, MetaMapBuilder};
 use crate::map_builders::prefab_builder::prefab_level::PrefabLevel;
 use crate::map_builders::prefab_builder::prefab_rooms::{CHECKERBOARD, SILLY_SIMPLE, TOTALLY_NOT_A_TRAP};

@@ -116,7 +116,7 @@ pub fn patterns_to_constraints(patterns: Vec<Vec<TileType>>, chunk_size: i32) ->
             pattern: p,
             exits: [Vec::new(), Vec::new(), Vec::new(), Vec::new()],
             has_exits: true,
-            compatible_with: [Vec::new(), Vec::new(), Vec::new(), Vec::new()]
+            compatible_with: [Vec::new(), Vec::new(), Vec::new(), Vec::new()],
         };
         for exit in new_chunk.exits.iter_mut() {
             for _i in 0..chunk_size {

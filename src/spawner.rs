@@ -1,12 +1,13 @@
 use std::collections::HashMap;
 
-use rltk::{BLACK, CYAN, CYAN3, GREEN, MAGENTA, ORANGE, PINK, RandomNumberGenerator, RGB, to_cp437, YELLOW, CHOCOLATE};
+use rltk::{BLACK, CHOCOLATE, console, CYAN, CYAN3, GREEN, MAGENTA, ORANGE, PINK, RandomNumberGenerator, RGB, to_cp437, YELLOW};
 use specs::{Builder, Entity, World, WorldExt};
 use specs::saveload::{MarkedBuilder, SimpleMarker};
 
 use crate::components::{AreaOfEffect, BlocksTile, BlocksVisibility, CombatStats, Confusion, Consumable, DefenseBonus, Door, EntryTrigger, EquipmentSlot, Equippable, Hidden, HungerClock, HungerState, InflictsDamage, Item, MagicMapper, MeleePowerBonus, Monster, Name, Player, Position, ProvidesFood, ProvidesHealing, Ranged, Renderable, SerializeMe, Viewshed};
-use crate::map::{Map,  TileType};
+use crate::map::{Map, TileType};
 use crate::random_table::RandomTable;
+use crate::raws::rawmaster::{RAWS, spawn_named_entity, SpawnType};
 use crate::rect::Rect;
 
 const MAX_MONSTERS: i32 = 4;
@@ -101,23 +102,12 @@ pub fn spawn_entity(ecs: &mut World, spawn: &(&usize, &String)) {
     let y = (*spawn.0 / map.width as usize) as i32;
     std::mem::drop(map);
 
-    match spawn.1.as_ref() {
-        "Goblin" => goblin(ecs, x, y),
-        "Orc" => orc(ecs, x, y),
-        "Health Potion" => health_potion(ecs, x, y),
-        "Fireball Scroll" => fireball_scroll(ecs, x, y),
-        "Confusion Scroll" => confusion_scroll(ecs, x, y),
-        "Magic Missile Scroll" => magic_missile_scroll(ecs, x, y),
-        "Dagger" => dagger(ecs, x, y),
-        "Shield" => shield(ecs, x, y),
-        "Longsword" => longsword(ecs, x, y),
-        "Tower Shield" => tower_shield(ecs, x, y),
-        "Rations" => rations(ecs, x, y),
-        "Magic Mapping Scroll" => magic_mapping_scroll(ecs, x, y),
-        "Bear Trap" => bear_trap(ecs, x, y),
-        "Door" => door(ecs, x, y),
-        name => panic!("Tried to spawn an unknown entity with name {name}.")
+    let spawn_result = spawn_named_entity(&RAWS.lock().unwrap(), ecs.create_entity(), &spawn.1, SpawnType::AtPosition { x, y });
+    if spawn_result.is_some() {
+        return;
     }
+
+    console::log(format!("WARNING: We don't know how to spawn [{}]!", spawn.1));
 }
 
 fn health_potion(ecs: &mut World, x: i32, y: i32) {
@@ -334,17 +324,17 @@ fn bear_trap(ecs: &mut World, x: i32, y: i32) {
 
 pub fn door(ecs: &mut World, x: i32, y: i32) {
     ecs.create_entity()
-        .with(Position{x, y})
+        .with(Position { x, y })
         .with(Renderable {
             glyph: rltk::to_cp437('+'),
             fg: RGB::named(CHOCOLATE),
             bg: RGB::named(BLACK),
-            render_order: 2
+            render_order: 2,
         })
-        .with(Name{name: "Door".to_string()})
-        .with(BlocksTile{})
-        .with(BlocksVisibility{})
-        .with(Door{open: false})
+        .with(Name { name: "Door".to_string() })
+        .with(BlocksTile {})
+        .with(BlocksVisibility {})
+        .with(Door { open: false })
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
 }

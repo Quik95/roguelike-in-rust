@@ -193,7 +193,9 @@ pub struct EntityMoved {}
 pub struct SingleActivation {}
 
 #[derive(Component, Debug, Serialize, Deserialize, Clone)]
-pub struct BlocksVisibility{}
+pub struct BlocksVisibility {}
 
 #[derive(Component, Debug, Serialize, Deserialize, Clone)]
-pub struct Door{pub open: bool}
+pub struct Door {
+    pub open: bool,
+}

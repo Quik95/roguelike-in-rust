@@ -40,6 +40,7 @@ mod rex_assets;
 mod trigger_system;
 mod map_builders;
 mod camera;
+mod raws;
 
 const SHOW_MAPGEN_VISUALIZER: bool = true;
 
@@ -443,9 +444,10 @@ fn main() -> rltk::BError {
     gs.ecs.register::<SingleActivation>();
     gs.ecs.register::<BlocksVisibility>();
     gs.ecs.register::<Door>();
-
-
     gs.ecs.insert(SimpleMarkerAllocator::<SerializeMe>::new());
+
+    raws::load_raws();
+
     gs.ecs.insert(Map::new(1, 64, 64));
     gs.ecs.insert(Point::new(0, 0));
     gs.ecs.insert(RandomNumberGenerator::new());

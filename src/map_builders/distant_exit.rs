@@ -1,6 +1,6 @@
 use rltk::{DijkstraMap, RandomNumberGenerator};
 
-use crate::map::{TileType};
+use crate::map::TileType;
 use crate::map_builders::{BuilderMap, MetaMapBuilder};
 
 pub struct DistantExit {}

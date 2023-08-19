@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 itertools = "0.11.0"
+lazy_static = "1.4.0"
 # rltk = { version = "0.8.7", features = ["webgpu", "serde"], default-features = false }
 # rltk = { version = "0.8.7", features = ["serde"] }
 rltk = { git = "https://github.com/amethyst/bracket-lib.git", features = ["serde"] }

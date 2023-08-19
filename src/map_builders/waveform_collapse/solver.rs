@@ -10,7 +10,7 @@ pub struct Solver {
     chunks_y: usize,
     remaining: Vec<(usize, i32)>,
     // (index, # neighbors)
-    pub possible: bool
+    pub possible: bool,
 }
 
 impl Solver {
@@ -29,7 +29,7 @@ impl Solver {
             chunks_x,
             chunks_y,
             remaining,
-            possible: true
+            possible: true,
         }
     }
 

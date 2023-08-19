@@ -1,8 +1,9 @@
 use rltk::RandomNumberGenerator;
+
 use crate::map_builders::{BuilderMap, MetaMapBuilder};
 use crate::spawner;
 
-pub struct CorridorSpawner{}
+pub struct CorridorSpawner {}
 
 impl MetaMapBuilder for CorridorSpawner {
     fn build_map(&mut self, rng: &mut RandomNumberGenerator, build_data: &mut BuilderMap) {
@@ -11,8 +12,8 @@ impl MetaMapBuilder for CorridorSpawner {
 }
 
 impl CorridorSpawner {
-    pub fn new() -> Box<Self     >{
-        Box::new(Self{})
+    pub fn new() -> Box<Self> {
+        Box::new(Self {})
     }
 
     fn build(&mut self, rng: &mut RandomNumberGenerator, build_data: &mut BuilderMap) {

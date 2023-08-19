@@ -1,6 +1,6 @@
 use rltk::{DistanceAlg, Point, RandomNumberGenerator};
 
-use crate::map::{TileType};
+use crate::map::TileType;
 use crate::map_builders::{BuilderMap, InitialMapBuilder};
 
 #[derive(Eq, PartialEq, Copy, Clone)]

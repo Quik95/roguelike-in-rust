@@ -68,8 +68,8 @@ impl Player {
             }
 
             if !map.blocked[destination_idx] {
-                pos.x = i32::min(map.width-1, i32::max(0, pos.x + delta_x));
-                pos.y = i32::min(map.height-1, i32::max(0, pos.y + delta_y));
+                pos.x = i32::min(map.width - 1, i32::max(0, pos.x + delta_x));
+                pos.y = i32::min(map.height - 1, i32::max(0, pos.y + delta_y));
                 viewshed.dirty = true;
                 ppos.x = pos.x;
                 ppos.y = pos.y;

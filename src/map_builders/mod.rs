@@ -71,7 +71,7 @@ pub struct BuilderMap {
     pub history: Vec<Map>,
     pub corridors: Option<Vec<Vec<usize>>>,
     pub width: i32,
-    pub height: i32
+    pub height: i32,
 }
 
 impl BuilderMap {
@@ -114,7 +114,7 @@ impl BuilderChain {
                 history: Vec::new(),
                 corridors: None,
                 width,
-                height
+                height,
             },
         }
     }

@@ -1498,6 +1498,7 @@ name = "roguelike-in-rust"
 version = "0.1.0"
 dependencies = [
  "itertools",
+ "lazy_static",
  "rltk",
  "serde",
  "serde_json",
