@@ -64,7 +64,9 @@ impl SufferDamage {
         if let Some(damage) = store.get_mut(victim) {
             damage.amount.push(amount);
         } else {
-            let dmg = Self { amount: vec![amount] };
+            let dmg = Self {
+                amount: vec![amount],
+            };
             store.insert(victim, dmg).expect("Unable to insert damage");
         }
     }
@@ -132,7 +134,10 @@ pub struct SerializationHelper {
 }
 
 #[derive(PartialEq, Eq, Copy, Clone, Serialize, Deserialize)]
-pub enum EquipmentSlot { Melee, Shield }
+pub enum EquipmentSlot {
+    Melee,
+    Shield,
+}
 
 #[derive(Component, Serialize, Deserialize, Clone)]
 pub struct Equippable {
@@ -166,7 +171,12 @@ pub struct ParticleLifetime {
 }
 
 #[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq)]
-pub enum HungerState { WellFed, Normal, Hungry, Starving }
+pub enum HungerState {
+    WellFed,
+    Normal,
+    Hungry,
+    Starving,
+}
 
 #[derive(Component, Serialize, Deserialize, Copy, Clone, PartialEq, Eq)]
 pub struct HungerClock {
@@ -199,3 +209,6 @@ pub struct BlocksVisibility {}
 pub struct Door {
     pub open: bool,
 }
+
+#[derive(Component, Debug, Serialize, Deserialize, Clone)]
+pub struct Bystander {}

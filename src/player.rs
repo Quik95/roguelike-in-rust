@@ -1,10 +1,14 @@
+use std::cmp::{max, min};
+
 use rltk::{Point, VirtualKeyCode};
 use specs::prelude::*;
 
 use crate::gamelog::GameLog;
 use crate::gui;
 use crate::map::tiletype::TileType;
-use crate::player::RunState::{NextLevel, PlayerTurn, SaveGame, ShowDropItem, ShowInventory, ShowRemoveItem};
+use crate::player::RunState::{
+    NextLevel, PlayerTurn, SaveGame, ShowDropItem, ShowInventory, ShowRemoveItem,
+};
 
 use super::components::*;
 use super::map::Map;
@@ -18,13 +22,20 @@ pub enum RunState {
     MonsterTurn,
     ShowInventory,
     ShowDropItem,
-    ShowTargeting { range: i32, item: Entity },
-    MainMenu { menu_selection: gui::MainMenuSelection },
+    ShowTargeting {
+        range: i32,
+        item: Entity,
+    },
+    MainMenu {
+        menu_selection: gui::MainMenuSelection,
+    },
     SaveGame,
     NextLevel,
     ShowRemoveItem,
     GameOver,
-    MagicMapReveal { row: i32 },
+    MagicMapReveal {
+        row: i32,
+    },
     MapGeneration,
 }
 
@@ -43,19 +54,51 @@ impl Player {
         let mut blocks_visibility = ecs.write_storage::<BlocksVisibility>();
         let mut blocks_movement = ecs.write_storage::<BlocksTile>();
         let mut renderables = ecs.write_storage::<Renderable>();
+        let mut bystanders = ecs.read_storage::<Bystander>();
 
-        for (entity, _player, pos, viewshed) in (&entities, &mut players, &mut positions, &mut viewsheds).join() {
-            if pos.x + delta_x < 1 || pos.x + delta_x > map.width - 1 || pos.y + delta_y < 1 || pos.y + delta_y > map.height - 1 {
+        let mut swap_entities = Vec::new();
+
+        for (entity, _player, pos, viewshed) in
+            (&entities, &mut players, &mut positions, &mut viewsheds).join()
+        {
+            if pos.x + delta_x < 1
+                || pos.x + delta_x > map.width - 1
+                || pos.y + delta_y < 1
+                || pos.y + delta_y > map.height - 1
+            {
                 return;
             }
             let destination_idx = map.xy_idx(pos.x + delta_x, pos.y + delta_y);
 
             for potential_target in map.tile_content[destination_idx].iter() {
-                let target = combat_stats.get(*potential_target);
-                if let Some(_target) = target {
-                    wants_to_melee.insert(entity, WantsToMelee { target: *potential_target }).expect("Add target failed");
-                    return;
+                let bystander = bystanders.get(*potential_target);
+                if bystander.is_some() {
+                    swap_entities.push((*potential_target, pos.x, pos.y));
+
+                    pos.x = min(map.width - 1, max(0, pos.x + delta_x));
+                    pos.y = min(map.height - 1, max(0, pos.y + delta_y));
+                    entity_moved
+                        .insert(entity, EntityMoved {})
+                        .expect("Unable to insert marker");
+
+                    viewshed.dirty = true;
+                    ppos.x = pos.x;
+                    ppos.y = pos.y;
+                } else {
+                    let target = combat_stats.get(*potential_target);
+                    if let Some(_target) = target {
+                        wants_to_melee
+                            .insert(
+                                entity,
+                                WantsToMelee {
+                                    target: *potential_target,
+                                },
+                            )
+                            .expect("Add target failed");
+                        return;
+                    }
                 }
+
                 let door = doors.get_mut(*potential_target);
                 if let Some(door) = door {
                     door.open = true;
@@ -73,7 +116,17 @@ impl Player {
                 viewshed.dirty = true;
                 ppos.x = pos.x;
                 ppos.y = pos.y;
-                entity_moved.insert(entity, EntityMoved {}).expect("Unable to insert marker");
+                entity_moved
+                    .insert(entity, EntityMoved {})
+                    .expect("Unable to insert marker");
+            }
+        }
+
+        for m in swap_entities.iter() {
+            let their_pos = positions.get_mut(m.0);
+            if let Some(their_pos) = their_pos {
+                their_pos.x = m.1;
+                their_pos.y = m.2;
             }
         }
     }
@@ -116,7 +169,9 @@ impl Player {
                         return NextLevel;
                     }
                 }
-                VirtualKeyCode::Numpad5 | VirtualKeyCode::Space => return Self::skip_turn(&mut gs.ecs),
+                VirtualKeyCode::Numpad5 | VirtualKeyCode::Space => {
+                    return Self::skip_turn(&mut gs.ecs)
+                }
                 VirtualKeyCode::R => return ShowRemoveItem,
                 VirtualKeyCode::Q => ctx.quit(),
                 _ => return RunState::AwaitingInput,
@@ -142,10 +197,20 @@ impl Player {
         }
 
         match target_item {
-            None => gamelog.entries.push("There is nothing here to pick up.".to_string()),
+            None => gamelog
+                .entries
+                .push("There is nothing here to pick up.".to_string()),
             Some(item) => {
                 let mut pickup = ecs.write_storage::<WantsToPickupItem>();
-                pickup.insert(*player_entity, WantsToPickupItem { collected_by: *player_entity, item }).expect("Unable to insert want to pickup");
+                pickup
+                    .insert(
+                        *player_entity,
+                        WantsToPickupItem {
+                            collected_by: *player_entity,
+                            item,
+                        },
+                    )
+                    .expect("Unable to insert want to pickup");
             }
         }
     }
@@ -158,7 +223,9 @@ impl Player {
             true
         } else {
             let mut gamelog = ecs.fetch_mut::<GameLog>();
-            gamelog.entries.push("There is no way down from here.".to_string());
+            gamelog
+                .entries
+                .push("There is no way down from here.".to_string());
             false
         };
     }
@@ -178,7 +245,7 @@ impl Player {
                 let mob = monsters.get(*entity_id);
                 match mob {
                     None => {}
-                    Some(_) => can_heal = false
+                    Some(_) => can_heal = false,
                 }
             }
         }

@@ -138,6 +138,46 @@
       "shield": {
         "defense_bonus": 3
       }
+    },
+    {
+      "name": "Keg",
+      "renderable": {
+        "glyph": "φ",
+        "fg": "#AAAAAA",
+        "bg": "#000000",
+        "order": 2
+      },
+      "hidden": false
+    },
+    {
+      "name": "Table",
+      "renderable": {
+        "glyph": "╦",
+        "fg": "#AAAAAA",
+        "bg": "#000000",
+        "order": 2
+      },
+      "hidden": false
+    },
+    {
+      "name": "Chair",
+      "renderable": {
+        "glyph": "└",
+        "fg": "#AAAAAA",
+        "bg": "#000000",
+        "order": 2
+      },
+      "hidden": false
+    },
+    {
+      "name": "Candle",
+      "renderable": {
+        "glyph": "Ä",
+        "fg": "#FFA500",
+        "bg": "#000000",
+        "order": 2
+      },
+      "hidden": false
     }
   ],
   "mobs": [
@@ -156,7 +196,8 @@
         "defense": 1,
         "power": 4
       },
-      "vision_range": 8
+      "vision_range": 8,
+      "ai": "melee"
     },
     {
       "name": "Goblin",
@@ -173,7 +214,8 @@
         "defense": 1,
         "power": 3
       },
-      "vision_range": 8
+      "vision_range": 8,
+      "ai": "melee"
     },
     {
       "name": "Kobold",
@@ -190,7 +232,206 @@
         "defense": 0,
         "power": 2
       },
-      "vision_range": 4
+      "vision_range": 4,
+      "ai": "melee"
+    },
+    {
+      "name": "Barkeep",
+      "renderable": {
+        "glyph": "☺",
+        "fg": "#EE82EE",
+        "bg": "#000000",
+        "order": 1
+      },
+      "blocks_tile": true,
+      "stats": {
+        "max_hp": 16,
+        "hp": 16,
+        "defense": 1,
+        "power": 4
+      },
+      "vision_range": 4,
+      "ai": "bystander"
+    },
+    {
+      "name": "Shady Salesman",
+      "renderable": {
+        "glyph": "h",
+        "fg": "#EE82EE",
+        "bg": "#000000",
+        "order": 1
+      },
+      "blocks_tile": true,
+      "stats": {
+        "max_hp": 16,
+        "hp": 16,
+        "defense": 1,
+        "power": 4
+      },
+      "vision_range": 4,
+      "ai": "bystander"
+    },
+    {
+      "name": "Patron",
+      "renderable": {
+        "glyph": "☺",
+        "fg": "#AAAAAA",
+        "bg": "#000000",
+        "order": 1
+      },
+      "blocks_tile": true,
+      "stats": {
+        "max_hp": 16,
+        "hp": 16,
+        "defense": 1,
+        "power": 4
+      },
+      "vision_range": 4,
+      "ai": "bystander"
+    },
+    {
+      "name": "Priest",
+      "renderable": {
+        "glyph": "☺",
+        "fg": "#EE82EE",
+        "bg": "#000000",
+        "order": 1
+      },
+      "blocks_tile": true,
+      "stats": {
+        "max_hp": 16,
+        "hp": 16,
+        "defense": 1,
+        "power": 4
+      },
+      "vision_range": 4,
+      "ai": "bystander"
+    },
+    {
+      "name": "Parishioner",
+      "renderable": {
+        "glyph": "☺",
+        "fg": "#AAAAAA",
+        "bg": "#000000",
+        "order": 1
+      },
+      "blocks_tile": true,
+      "stats": {
+        "max_hp": 16,
+        "hp": 16,
+        "defense": 1,
+        "power": 4
+      },
+      "vision_range": 4,
+      "ai": "bystander"
+    },
+    {
+      "name": "Blacksmith",
+      "renderable": {
+        "glyph": "☺",
+        "fg": "#EE82EE",
+        "bg": "#000000",
+        "order": 1
+      },
+      "blocks_tile": true,
+      "stats": {
+        "max_hp": 16,
+        "hp": 16,
+        "defense": 1,
+        "power": 4
+      },
+      "vision_range": 4,
+      "ai": "bystander"
+    },
+    {
+      "name": "Clothier",
+      "renderable": {
+        "glyph": "☺",
+        "fg": "#EE82EE",
+        "bg": "#000000",
+        "order": 1
+      },
+      "blocks_tile": true,
+      "stats": {
+        "max_hp": 16,
+        "hp": 16,
+        "defense": 1,
+        "power": 4
+      },
+      "vision_range": 4,
+      "ai": "bystander"
+    },
+    {
+      "name": "Alchemist",
+      "renderable": {
+        "glyph": "☺",
+        "fg": "#EE82EE",
+        "bg": "#000000",
+        "order": 1
+      },
+      "blocks_tile": true,
+      "stats": {
+        "max_hp": 16,
+        "hp": 16,
+        "defense": 1,
+        "power": 4
+      },
+      "vision_range": 4,
+      "ai": "bystander"
+    },
+    {
+      "name": "Mom",
+      "renderable": {
+        "glyph": "☺",
+        "fg": "#FFAAAA",
+        "bg": "#000000",
+        "order": 1
+      },
+      "blocks_tile": true,
+      "stats": {
+        "max_hp": 16,
+        "hp": 16,
+        "defense": 1,
+        "power": 4
+      },
+      "vision_range": 4,
+      "ai": "bystander"
+    },
+    {
+      "name": "Peasant",
+      "renderable": {
+        "glyph": "☺",
+        "fg": "#999999",
+        "bg": "#000000",
+        "order": 1
+      },
+      "blocks_tile": true,
+      "stats": {
+        "max_hp": 16,
+        "hp": 16,
+        "defense": 1,
+        "power": 4
+      },
+      "vision_range": 4,
+      "ai": "bystander"
+    },
+    {
+      "name": "Rat",
+      "renderable": {
+        "glyph": "r",
+        "fg": "#FF0000",
+        "bg": "#000000",
+        "order": 1
+      },
+      "blocks_tile": true,
+      "stats": {
+        "max_hp": 2,
+        "hp": 2,
+        "defense": 1,
+        "power": 3
+      },
+      "vision_range": 8,
+      "ai": "melee"
     }
   ],
   "props": [
@@ -235,6 +476,106 @@
         "range": "melee",
         "power_bonus": 5
       }
+    },
+    {
+      "name": "Anvil",
+      "renderable": {
+        "glyph": "╔",
+        "fg": "#AAAAAA",
+        "bg": "#000000",
+        "order": 2
+      },
+      "hidden": false
+    },
+    {
+      "name": "Water Trough",
+      "renderable": {
+        "glyph": "•",
+        "fg": "#5555FF",
+        "bg": "#000000",
+        "order": 2
+      },
+      "hidden": false
+    },
+    {
+      "name": "Weapon Rack",
+      "renderable": {
+        "glyph": "π",
+        "fg": "#FFD700",
+        "bg": "#000000",
+        "order": 2
+      },
+      "hidden": false
+    },
+    {
+      "name": "Armor Stand",
+      "renderable": {
+        "glyph": "⌠",
+        "fg": "#FFFFFF",
+        "bg": "#000000",
+        "order": 2
+      },
+      "hidden": false
+    },
+    {
+      "name": "Chemistry Set",
+      "renderable": {
+        "glyph": "δ",
+        "fg": "#00FFFF",
+        "bg": "#000000",
+        "order": 2
+      },
+      "hidden": false
+    },
+    {
+      "name": "Dead Thing",
+      "renderable": {
+        "glyph": "☻",
+        "fg": "#AA0000",
+        "bg": "#000000",
+        "order": 2
+      },
+      "hidden": false
+    },
+    {
+      "name": "Cabinet",
+      "renderable": {
+        "glyph": "∩",
+        "fg": "#805A46",
+        "bg": "#000000",
+        "order": 2
+      },
+      "hidden": false
+    },
+    {
+      "name": "Bed",
+      "renderable": {
+        "glyph": "8",
+        "fg": "#805A46",
+        "bg": "#000000",
+        "order": 2
+      },
+      "hidden": false
+    },
+    {
+      "name": "Loom",
+      "renderable": {
+        "glyph": "≡",
+        "fg": "#805A46",
+        "bg": "#000000",
+        "order": 2
+      },
+      "hidden": false
+    },
+    {
+      "name": "Hide Rack",
+      "renderable": {
+        "glyph": "π",
+        "fg": "#805A46",
+        "bg": "#000000",
+        "order": 2
+      },
+      "hidden": false
     }
   ],
   "spawn_table": [

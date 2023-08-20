@@ -2,13 +2,15 @@ use std::fs;
 use std::fs::File;
 use std::path::Path;
 
-use specs::{Builder, Entity, Join, World, WorldExt};
 #[allow(deprecated)]
 use specs::error::NoError;
-use specs::saveload::{DeserializeComponents, MarkedBuilder, SerializeComponents, SimpleMarker, SimpleMarkerAllocator};
+use specs::saveload::{
+    DeserializeComponents, MarkedBuilder, SerializeComponents, SimpleMarker, SimpleMarkerAllocator,
+};
+use specs::{Builder, Entity, Join, World, WorldExt};
 
-use crate::components::{SerializationHelper, SerializeMe};
 use crate::components::*;
+use crate::components::{SerializationHelper, SerializeMe};
 
 macro_rules! serialize_individually {
     ($ecs:expr, $ser:expr, $data:expr, $( $type:ty),*) => {
@@ -33,14 +35,53 @@ pub fn save_game(ecs: &mut World) {
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
     {
-        let data = (ecs.entities(), ecs.read_storage::<SimpleMarker<SerializeMe>>());
+        let data = (
+            ecs.entities(),
+            ecs.read_storage::<SimpleMarker<SerializeMe>>(),
+        );
         let writer = File::create("/tmp/savegame.json").unwrap();
         let mut serializer = serde_json::Serializer::new(writer);
         serialize_individually!(
-            ecs, serializer, data, Position, Renderable, Player, Viewshed, Monster,
-            Name, BlocksTile, CombatStats, SufferDamage, WantsToMelee, Item, Consumable, Ranged, InflictsDamage,
-            AreaOfEffect, Confusion, ProvidesHealing, InBackpack, WantsToPickupItem, WantsToUseItem,
-            WantsToDropItem, SerializationHelper, Equippable, MeleePowerBonus, DefenseBonus, WantsToRemoveItem, ParticleLifetime, HungerClock, ProvidesFood, MagicMapper, Hidden, EntryTrigger, EntityMoved, SingleActivation, Door, BlocksVisibility
+            ecs,
+            serializer,
+            data,
+            Position,
+            Renderable,
+            Player,
+            Viewshed,
+            Monster,
+            Name,
+            BlocksTile,
+            CombatStats,
+            SufferDamage,
+            WantsToMelee,
+            Item,
+            Consumable,
+            Ranged,
+            InflictsDamage,
+            AreaOfEffect,
+            Confusion,
+            ProvidesHealing,
+            InBackpack,
+            WantsToPickupItem,
+            WantsToUseItem,
+            WantsToDropItem,
+            SerializationHelper,
+            Equippable,
+            MeleePowerBonus,
+            DefenseBonus,
+            WantsToRemoveItem,
+            ParticleLifetime,
+            HungerClock,
+            ProvidesFood,
+            MagicMapper,
+            Hidden,
+            EntryTrigger,
+            EntityMoved,
+            SingleActivation,
+            Door,
+            BlocksVisibility,
+            Bystander
         );
     }
 
@@ -82,13 +123,53 @@ pub fn load_game(ecs: &mut World) {
     let data = fs::read_to_string("/tmp/savegame.json").unwrap();
     let mut de = serde_json::Deserializer::from_str(&data);
     {
-        let mut d = (&mut ecs.entities(), &mut ecs.write_storage::<SimpleMarker<SerializeMe>>(), &mut ecs.write_resource::<SimpleMarkerAllocator<SerializeMe>>());
+        let mut d = (
+            &mut ecs.entities(),
+            &mut ecs.write_storage::<SimpleMarker<SerializeMe>>(),
+            &mut ecs.write_resource::<SimpleMarkerAllocator<SerializeMe>>(),
+        );
 
         deserialize_individually!(
-            ecs, de, d, Position, Renderable, Player, Viewshed, Monster,
-            Name, BlocksTile, CombatStats, SufferDamage, WantsToMelee, Item, Consumable, Ranged, InflictsDamage,
-            AreaOfEffect, Confusion, ProvidesHealing, InBackpack, WantsToPickupItem, WantsToUseItem,
-            WantsToDropItem, SerializationHelper, Equippable, MeleePowerBonus, DefenseBonus, WantsToRemoveItem, ParticleLifetime, HungerClock, ProvidesFood, MagicMapper, Hidden, EntryTrigger, EntityMoved, SingleActivation, Door, BlocksVisibility
+            ecs,
+            de,
+            d,
+            Position,
+            Renderable,
+            Player,
+            Viewshed,
+            Monster,
+            Name,
+            BlocksTile,
+            CombatStats,
+            SufferDamage,
+            WantsToMelee,
+            Item,
+            Consumable,
+            Ranged,
+            InflictsDamage,
+            AreaOfEffect,
+            Confusion,
+            ProvidesHealing,
+            InBackpack,
+            WantsToPickupItem,
+            WantsToUseItem,
+            WantsToDropItem,
+            SerializationHelper,
+            Equippable,
+            MeleePowerBonus,
+            DefenseBonus,
+            WantsToRemoveItem,
+            ParticleLifetime,
+            HungerClock,
+            ProvidesFood,
+            MagicMapper,
+            Hidden,
+            EntryTrigger,
+            EntityMoved,
+            SingleActivation,
+            Door,
+            BlocksVisibility,
+            Bystander
         );
     }
 
@@ -112,7 +193,8 @@ pub fn load_game(ecs: &mut World) {
             *player_resource = e;
         }
     }
-    ecs.delete_entity(deleteme.unwrap()).expect("Unable to delete helper");
+    ecs.delete_entity(deleteme.unwrap())
+        .expect("Unable to delete helper");
 }
 
 pub fn delete_save() {
