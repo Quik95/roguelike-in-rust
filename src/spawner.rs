@@ -1,21 +1,40 @@
 use std::collections::HashMap;
 
-use rltk::{BLACK, CHOCOLATE, console, CYAN, CYAN3, GREEN, MAGENTA, ORANGE, PINK, RandomNumberGenerator, RGB, to_cp437, YELLOW};
-use specs::{Builder, Entity, World, WorldExt};
+use rltk::{
+    console, to_cp437, RandomNumberGenerator, BLACK, CHOCOLATE, CYAN, CYAN3, GREEN, MAGENTA,
+    ORANGE, PINK, RGB, YELLOW,
+};
 use specs::saveload::{MarkedBuilder, SimpleMarker};
+use specs::{Builder, Entity, World, WorldExt};
 
-use crate::components::{AreaOfEffect, BlocksTile, BlocksVisibility, CombatStats, Confusion, Consumable, DefenseBonus, Door, EntryTrigger, EquipmentSlot, Equippable, Hidden, HungerClock, HungerState, InflictsDamage, Item, MagicMapper, MeleePowerBonus, Monster, Name, Player, Position, ProvidesFood, ProvidesHealing, Ranged, Renderable, SerializeMe, Viewshed};
-use crate::map::{Map, tiletype::TileType};
+use crate::components::{
+    AreaOfEffect, Attribute, Attributes, BlocksTile, BlocksVisibility, Confusion, Consumable,
+    DefenseBonus, Door, EntryTrigger, EquipmentSlot, Equippable, Hidden, HungerClock, HungerState,
+    InflictsDamage, Item, MagicMapper, MeleePowerBonus, Monster, Name, Player, Pool, Pools,
+    Position, ProvidesFood, ProvidesHealing, Ranged, Renderable, SerializeMe, Skill, Skills,
+    Viewshed,
+};
+use crate::gamesystem::{attr_bonus, mana_at_level, player_hp_at_level};
+use crate::map::{tiletype::TileType, Map};
 use crate::random_table::RandomTable;
-use crate::raws::rawmaster::{get_spawn_table_for_depth, RAWS, spawn_named_entity, SpawnType};
+use crate::raws::rawmaster::{get_spawn_table_for_depth, spawn_named_entity, SpawnType, RAWS};
 use crate::rect::Rect;
 
 const MAX_MONSTERS: i32 = 4;
 
 pub fn player(ecs: &mut World, player_x: i32, player_y: i32) -> Entity {
-    ecs
-        .create_entity()
-        .with(Position { x: player_x, y: player_y })
+    let mut skills = Skills {
+        skills: HashMap::new(),
+    };
+    skills.skills.insert(Skill::Melee, 1);
+    skills.skills.insert(Skill::Defense, 1);
+    skills.skills.insert(Skill::Magic, 1);
+
+    ecs.create_entity()
+        .with(Position {
+            x: player_x,
+            y: player_y,
+        })
         .with(Renderable {
             glyph: to_cp437('@'),
             fg: RGB::named(rltk::YELLOW),
@@ -23,10 +42,53 @@ pub fn player(ecs: &mut World, player_x: i32, player_y: i32) -> Entity {
             render_order: 0,
         })
         .with(Player {})
-        .with(Viewshed { visible_tiles: Vec::new(), range: 8, dirty: true })
-        .with(Name { name: "Player".to_string() })
-        .with(CombatStats { max_hp: 30, hp: 30, defense: 2, power: 5 })
-        .with(HungerClock { state: HungerState::WellFed, duration: 20 })
+        .with(Viewshed {
+            visible_tiles: Vec::new(),
+            range: 8,
+            dirty: true,
+        })
+        .with(Name {
+            name: "Player".to_string(),
+        })
+        .with(HungerClock {
+            state: HungerState::WellFed,
+            duration: 20,
+        })
+        .with(Attributes {
+            might: Attribute {
+                base: 11,
+                modifiers: 0,
+                bonus: attr_bonus(11),
+            },
+            fitness: Attribute {
+                base: 11,
+                modifiers: 0,
+                bonus: attr_bonus(11),
+            },
+            quickness: Attribute {
+                base: 11,
+                modifiers: 0,
+                bonus: attr_bonus(11),
+            },
+            intelligence: Attribute {
+                base: 11,
+                modifiers: 0,
+                bonus: attr_bonus(11),
+            },
+        })
+        .with(skills)
+        .with(Pools {
+            hit_points: Pool {
+                current: player_hp_at_level(11, 1),
+                max: player_hp_at_level(11, 1),
+            },
+            mana: Pool {
+                current: mana_at_level(11, 1),
+                max: mana_at_level(11, 1),
+            },
+            xp: 0,
+            level: 1,
+        })
         .marked::<SimpleMarker<SerializeMe>>()
         .build()
 }
@@ -40,8 +102,7 @@ fn goblin(ecs: &mut World, x: i32, y: i32) {
 }
 
 fn monster<S: ToString>(ecs: &mut World, x: i32, y: i32, glyph: rltk::FontCharType, name: S) {
-    ecs
-        .create_entity()
+    ecs.create_entity()
         .with(Position { x, y })
         .with(Renderable {
             glyph,
@@ -49,16 +110,27 @@ fn monster<S: ToString>(ecs: &mut World, x: i32, y: i32, glyph: rltk::FontCharTy
             bg: RGB::named(rltk::BLACK),
             render_order: 1,
         })
-        .with(Viewshed { visible_tiles: Vec::new(), range: 8, dirty: true })
+        .with(Viewshed {
+            visible_tiles: Vec::new(),
+            range: 8,
+            dirty: true,
+        })
         .with(Monster {})
-        .with(Name { name: name.to_string() })
+        .with(Name {
+            name: name.to_string(),
+        })
         .with(BlocksTile {})
-        .with(CombatStats { max_hp: 16, hp: 16, defense: 1, power: 4 })
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
 }
 
-pub fn spawn_room(map: &Map, rng: &mut RandomNumberGenerator, room: &Rect, map_depth: i32, spawn_list: &mut Vec<(usize, String)>) {
+pub fn spawn_room(
+    map: &Map,
+    rng: &mut RandomNumberGenerator,
+    room: &Rect,
+    map_depth: i32,
+    spawn_list: &mut Vec<(usize, String)>,
+) {
     let mut possible_targets: Vec<usize> = Vec::new();
     {
         for y in room.y1 + 1..room.y2 {
@@ -74,17 +146,32 @@ pub fn spawn_room(map: &Map, rng: &mut RandomNumberGenerator, room: &Rect, map_d
     spawn_region(map, rng, &possible_targets, map_depth, spawn_list);
 }
 
-pub fn spawn_region(_map: &Map, rng: &mut RandomNumberGenerator, area: &[usize], map_depth: i32, spawn_list: &mut Vec<(usize, String)>) {
+pub fn spawn_region(
+    _map: &Map,
+    rng: &mut RandomNumberGenerator,
+    area: &[usize],
+    map_depth: i32,
+    spawn_list: &mut Vec<(usize, String)>,
+) {
     let spawn_table = room_table(map_depth);
     let mut spawn_points = HashMap::new();
     let mut areas = Vec::from(area);
 
     {
-        let num_spawns = i32::min(areas.len() as i32, rng.roll_dice(1, MAX_MONSTERS + 3) + (map_depth - 1) - 3);
-        if num_spawns == 0 { return; }
+        let num_spawns = i32::min(
+            areas.len() as i32,
+            rng.roll_dice(1, MAX_MONSTERS + 3) + (map_depth - 1) - 3,
+        );
+        if num_spawns == 0 {
+            return;
+        }
 
         for _i in 0..num_spawns {
-            let array_index = if areas.len() == 1 { 0usize } else { (rng.roll_dice(1, areas.len() as i32) - 1) as usize };
+            let array_index = if areas.len() == 1 {
+                0usize
+            } else {
+                (rng.roll_dice(1, areas.len() as i32) - 1) as usize
+            };
             let map_idx = areas[array_index];
             spawn_points.insert(map_idx, spawn_table.roll(rng));
             areas.remove(array_index);
@@ -102,17 +189,24 @@ pub fn spawn_entity(ecs: &mut World, spawn: &(&usize, &String)) {
     let y = (*spawn.0 / map.width as usize) as i32;
     std::mem::drop(map);
 
-    let spawn_result = spawn_named_entity(&RAWS.lock().unwrap(), ecs.create_entity(), &spawn.1, SpawnType::AtPosition { x, y });
+    let spawn_result = spawn_named_entity(
+        &RAWS.lock().unwrap(),
+        ecs.create_entity(),
+        &spawn.1,
+        SpawnType::AtPosition { x, y },
+    );
     if spawn_result.is_some() {
         return;
     }
 
-    console::log(format!("WARNING: We don't know how to spawn [{}]!", spawn.1));
+    console::log(format!(
+        "WARNING: We don't know how to spawn [{}]!",
+        spawn.1
+    ));
 }
 
 fn health_potion(ecs: &mut World, x: i32, y: i32) {
-    ecs
-        .create_entity()
+    ecs.create_entity()
         .with(Position { x, y })
         .with(Renderable {
             glyph: to_cp437('¡'),
@@ -120,7 +214,9 @@ fn health_potion(ecs: &mut World, x: i32, y: i32) {
             bg: RGB::named(BLACK),
             render_order: 2,
         })
-        .with(Name { name: "Health Potion".to_string() })
+        .with(Name {
+            name: "Health Potion".to_string(),
+        })
         .with(Item {})
         .with(Consumable {})
         .with(ProvidesHealing { heal_amount: 8 })
@@ -129,8 +225,7 @@ fn health_potion(ecs: &mut World, x: i32, y: i32) {
 }
 
 fn magic_missile_scroll(ecs: &mut World, x: i32, y: i32) {
-    ecs
-        .create_entity()
+    ecs.create_entity()
         .with(Position { x, y })
         .with(Renderable {
             glyph: to_cp437(')'),
@@ -138,7 +233,9 @@ fn magic_missile_scroll(ecs: &mut World, x: i32, y: i32) {
             bg: RGB::named(BLACK),
             render_order: 2,
         })
-        .with(Name { name: "Magic Missile Scroll".to_string() })
+        .with(Name {
+            name: "Magic Missile Scroll".to_string(),
+        })
         .with(Item {})
         .with(Consumable {})
         .with(Ranged { range: 6 })
@@ -148,8 +245,7 @@ fn magic_missile_scroll(ecs: &mut World, x: i32, y: i32) {
 }
 
 fn fireball_scroll(ecs: &mut World, x: i32, y: i32) {
-    ecs
-        .create_entity()
+    ecs.create_entity()
         .with(Position { x, y })
         .with(Renderable {
             glyph: to_cp437(')'),
@@ -157,7 +253,9 @@ fn fireball_scroll(ecs: &mut World, x: i32, y: i32) {
             bg: RGB::named(BLACK),
             render_order: 2,
         })
-        .with(Name { name: "Fireball Scroll".to_string() })
+        .with(Name {
+            name: "Fireball Scroll".to_string(),
+        })
         .with(Item {})
         .with(Consumable {})
         .with(Ranged { range: 6 })
@@ -168,8 +266,7 @@ fn fireball_scroll(ecs: &mut World, x: i32, y: i32) {
 }
 
 fn confusion_scroll(ecs: &mut World, x: i32, y: i32) {
-    ecs
-        .create_entity()
+    ecs.create_entity()
         .with(Position { x, y })
         .with(Renderable {
             glyph: to_cp437(')'),
@@ -177,7 +274,9 @@ fn confusion_scroll(ecs: &mut World, x: i32, y: i32) {
             bg: RGB::named(BLACK),
             render_order: 2,
         })
-        .with(Name { name: "Confusion Scroll".to_string() })
+        .with(Name {
+            name: "Confusion Scroll".to_string(),
+        })
         .with(Item {})
         .with(Consumable {})
         .with(Ranged { range: 6 })
@@ -199,9 +298,13 @@ fn dagger(ecs: &mut World, x: i32, y: i32) {
             bg: RGB::named(BLACK),
             render_order: 2,
         })
-        .with(Name { name: "Dagger".to_string() })
+        .with(Name {
+            name: "Dagger".to_string(),
+        })
         .with(Item {})
-        .with(Equippable { slot: EquipmentSlot::Melee })
+        .with(Equippable {
+            slot: EquipmentSlot::Melee,
+        })
         .with(MeleePowerBonus { power: 2 })
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
@@ -216,9 +319,13 @@ fn shield(ecs: &mut World, x: i32, y: i32) {
             bg: RGB::named(BLACK),
             render_order: 2,
         })
-        .with(Name { name: "Shield".to_string() })
+        .with(Name {
+            name: "Shield".to_string(),
+        })
         .with(Item {})
-        .with(Equippable { slot: EquipmentSlot::Shield })
+        .with(Equippable {
+            slot: EquipmentSlot::Shield,
+        })
         .with(DefenseBonus { defense: 1 })
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
@@ -233,9 +340,13 @@ fn longsword(ecs: &mut World, x: i32, y: i32) {
             bg: RGB::named(BLACK),
             render_order: 2,
         })
-        .with(Name { name: "Longsword".to_string() })
+        .with(Name {
+            name: "Longsword".to_string(),
+        })
         .with(Item {})
-        .with(Equippable { slot: EquipmentSlot::Melee })
+        .with(Equippable {
+            slot: EquipmentSlot::Melee,
+        })
         .with(MeleePowerBonus { power: 4 })
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
@@ -250,9 +361,13 @@ fn tower_shield(ecs: &mut World, x: i32, y: i32) {
             bg: RGB::named(BLACK),
             render_order: 2,
         })
-        .with(Name { name: "Tower Shield".to_string() })
+        .with(Name {
+            name: "Tower Shield".to_string(),
+        })
         .with(Item {})
-        .with(Equippable { slot: EquipmentSlot::Shield })
+        .with(Equippable {
+            slot: EquipmentSlot::Shield,
+        })
         .with(DefenseBonus { defense: 3 })
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
@@ -267,7 +382,9 @@ fn rations(ecs: &mut World, x: i32, y: i32) {
             bg: RGB::named(BLACK),
             render_order: 2,
         })
-        .with(Name { name: "Rations".to_string() })
+        .with(Name {
+            name: "Rations".to_string(),
+        })
         .with(Item {})
         .with(ProvidesFood {})
         .with(Consumable {})
@@ -284,7 +401,9 @@ fn magic_mapping_scroll(ecs: &mut World, x: i32, y: i32) {
             bg: RGB::named(BLACK),
             render_order: 2,
         })
-        .with(Name { name: "Magic Mapping Scroll".to_string() })
+        .with(Name {
+            name: "Magic Mapping Scroll".to_string(),
+        })
         .with(Item {})
         .with(MagicMapper {})
         .with(Consumable {})
@@ -301,7 +420,9 @@ fn bear_trap(ecs: &mut World, x: i32, y: i32) {
             bg: RGB::named(rltk::BLACK),
             render_order: 2,
         })
-        .with(Name { name: "Bear Trap".to_string() })
+        .with(Name {
+            name: "Bear Trap".to_string(),
+        })
         .with(Hidden {})
         .with(EntryTrigger {})
         .with(InflictsDamage { damage: 6 })
@@ -318,7 +439,9 @@ pub fn door(ecs: &mut World, x: i32, y: i32) {
             bg: RGB::named(BLACK),
             render_order: 2,
         })
-        .with(Name { name: "Door".to_string() })
+        .with(Name {
+            name: "Door".to_string(),
+        })
         .with(BlocksTile {})
         .with(BlocksVisibility {})
         .with(Door { open: false })

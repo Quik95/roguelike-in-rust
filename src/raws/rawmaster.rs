@@ -7,12 +7,13 @@ use rltk::{console, to_cp437, RGB};
 use specs::{Builder, Entity, EntityBuilder};
 
 use crate::components::{
-    AreaOfEffect, BlocksTile, BlocksVisibility, Bystander, CombatStats, Confusion, Consumable,
-    DefenseBonus, Door, EntryTrigger, EquipmentSlot, Equippable, Hidden, InflictsDamage,
-    MagicMapper, MeleePowerBonus, Monster, Name, Position, ProvidesFood, ProvidesHealing, Ranged,
-    SingleActivation, Viewshed,
+    AreaOfEffect, Attribute, Attributes, BlocksTile, BlocksVisibility, Bystander, Confusion,
+    Consumable, DefenseBonus, Door, EntryTrigger, EquipmentSlot, Equippable, Hidden,
+    InflictsDamage, MagicMapper, MeleePowerBonus, Monster, Name, Pool, Pools, Position,
+    ProvidesFood, ProvidesHealing, Ranged, SingleActivation, Skill, Skills, Viewshed,
 };
 use crate::components::{Quips, Renderable, Vendor};
+use crate::gamesystem::{attr_bonus, mana_at_level, npc_hp};
 use crate::random_table::RandomTable;
 use crate::raws::spawn_table_structs::SpawnTableEntry;
 use crate::raws::Raws;
@@ -236,18 +237,115 @@ pub fn spawn_named_mob(
             eb = eb.with(BlocksTile {});
         }
 
-        eb = eb.with(CombatStats {
-            max_hp: mob_template.stats.hp,
-            hp: mob_template.stats.hp,
-            power: mob_template.stats.power,
-            defense: mob_template.stats.defense,
-        });
         eb = eb.with(Viewshed {
             visible_tiles: Vec::new(),
             range: mob_template.vision_range,
             dirty: true,
         });
 
+        let mut mob_fitness = 11;
+        let mut mob_int = 11;
+        let mut attr = Attributes {
+            might: Attribute {
+                base: 11,
+                modifiers: 0,
+                bonus: attr_bonus(11),
+            },
+            fitness: Attribute {
+                base: 11,
+                modifiers: 0,
+                bonus: attr_bonus(11),
+            },
+            quickness: Attribute {
+                base: 11,
+                modifiers: 0,
+                bonus: attr_bonus(11),
+            },
+            intelligence: Attribute {
+                base: 11,
+                modifiers: 0,
+                bonus: attr_bonus(11),
+            },
+        };
+        if let Some(might) = mob_template.attributes.might {
+            attr.might = Attribute {
+                base: might,
+                modifiers: 0,
+                bonus: attr_bonus(might),
+            };
+        }
+        if let Some(fitness) = mob_template.attributes.fitness {
+            attr.fitness = Attribute {
+                base: fitness,
+                modifiers: 0,
+                bonus: attr_bonus(fitness),
+            };
+            mob_fitness = fitness;
+        }
+        if let Some(quickness) = mob_template.attributes.quickness {
+            attr.quickness = Attribute {
+                base: quickness,
+                modifiers: 0,
+                bonus: attr_bonus(quickness),
+            };
+        }
+        if let Some(intelligence) = mob_template.attributes.intelligence {
+            attr.intelligence = Attribute {
+                base: intelligence,
+                modifiers: 0,
+                bonus: attr_bonus(intelligence),
+            };
+            mob_int = intelligence;
+        }
+        eb = eb.with(attr);
+
+        let mob_level = if mob_template.level.is_some() {
+            mob_template.level.unwrap()
+        } else {
+            1
+        };
+        let mob_hp = npc_hp(mob_fitness, mob_level);
+        let mob_mana = mana_at_level(mob_int, mob_level);
+
+        let pools = Pools {
+            level: mob_level,
+            xp: 0,
+            hit_points: Pool {
+                current: mob_hp,
+                max: mob_hp,
+            },
+            mana: Pool {
+                current: mob_mana,
+                max: mob_mana,
+            },
+        };
+        eb = eb.with(pools);
+
+        let mut skills = Skills {
+            skills: HashMap::new(),
+        };
+        skills.skills.insert(Skill::Melee, 1);
+        skills.skills.insert(Skill::Defense, 1);
+        skills.skills.insert(Skill::Magic, 1);
+        if let Some(mobskills) = &mob_template.skills {
+            for sk in mobskills.iter() {
+                match sk.0.as_str() {
+                    "Melee" => {
+                        skills.skills.insert(Skill::Melee, *sk.1);
+                    }
+                    "Defense" => {
+                        skills.skills.insert(Skill::Defense, *sk.1);
+                    }
+                    "Magic" => {
+                        skills.skills.insert(Skill::Magic, *sk.1);
+                    }
+                    _ => {
+                        unreachable!("Unknown skill referenced: [{}]", sk.0);
+                    }
+                }
+            }
+        }
+        eb = eb.with(skills);
         return Some(eb.build());
     }
 

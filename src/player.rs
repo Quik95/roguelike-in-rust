@@ -46,7 +46,7 @@ impl Player {
         let mut viewsheds = ecs.write_storage::<Viewshed>();
         let map = ecs.fetch::<Map>();
         let mut ppos = ecs.write_resource::<Point>();
-        let combat_stats = ecs.read_storage::<CombatStats>();
+        let pools = ecs.read_storage::<Pools>();
         let entities = ecs.entities();
         let mut wants_to_melee = ecs.write_storage::<WantsToMelee>();
         let mut entity_moved = ecs.write_storage::<EntityMoved>();
@@ -87,7 +87,7 @@ impl Player {
                     ppos.x = pos.x;
                     ppos.y = pos.y;
                 } else {
-                    let target = combat_stats.get(*potential_target);
+                    let target = pools.get(*potential_target);
                     if let Some(_target) = target {
                         wants_to_melee
                             .insert(
@@ -261,9 +261,10 @@ impl Player {
             }
         }
         if can_heal {
-            let mut health_components = ecs.write_storage::<CombatStats>();
+            let mut health_components = ecs.write_storage::<Pools>();
             let player_hp = health_components.get_mut(*player_entity).unwrap();
-            player_hp.hp = i32::min(player_hp.hp + 1, player_hp.max_hp);
+            player_hp.hit_points.current =
+                i32::min(player_hp.hit_points.current + 1, player_hp.hit_points.max);
         }
 
         PlayerTurn

@@ -1,7 +1,11 @@
 use rltk::{BLACK, MAGENTA, ORANGE, RED};
 use specs::{Entities, Entity, Join, ReadExpect, ReadStorage, System, WriteExpect, WriteStorage};
 
-use crate::components::{AreaOfEffect, CombatStats, Confusion, Consumable, Equippable, Equipped, HungerClock, HungerState, InBackpack, InflictsDamage, MagicMapper, Name, Position, ProvidesFood, ProvidesHealing, SufferDamage, WantsToDropItem, WantsToPickupItem, WantsToRemoveItem, WantsToUseItem};
+use crate::components::{
+    AreaOfEffect, Confusion, Consumable, Equippable, Equipped, HungerClock, HungerState,
+    InBackpack, InflictsDamage, MagicMapper, Name, Pools, Position, ProvidesFood, ProvidesHealing,
+    SufferDamage, WantsToDropItem, WantsToPickupItem, WantsToRemoveItem, WantsToUseItem,
+};
 use crate::gamelog::GameLog;
 use crate::map::Map;
 use crate::particle_system::ParticleBuilder;
@@ -16,18 +20,29 @@ impl<'a> System<'a> for ItemCollectionSystem {
         WriteStorage<'a, WantsToPickupItem>,
         WriteStorage<'a, Position>,
         ReadStorage<'a, Name>,
-        WriteStorage<'a, InBackpack>
+        WriteStorage<'a, InBackpack>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
-        let (player_entity, mut gamelog, mut wants_pickup, mut positions, names, mut backpack) = data;
+        let (player_entity, mut gamelog, mut wants_pickup, mut positions, names, mut backpack) =
+            data;
 
         for pickup in wants_pickup.join() {
             positions.remove(pickup.item);
-            backpack.insert(pickup.item, InBackpack { owner: pickup.collected_by }).expect("Unable to insert backpack entry");
+            backpack
+                .insert(
+                    pickup.item,
+                    InBackpack {
+                        owner: pickup.collected_by,
+                    },
+                )
+                .expect("Unable to insert backpack entry");
 
             if pickup.collected_by == *player_entity {
-                gamelog.entries.push(format!("You pick up the {}.", names.get(pickup.item).unwrap().name));
+                gamelog.entries.push(format!(
+                    "You pick up the {}.",
+                    names.get(pickup.item).unwrap().name
+                ));
             }
         }
 
@@ -46,7 +61,7 @@ impl<'a> System<'a> for ItemUseSystem {
         ReadStorage<'a, Name>,
         ReadStorage<'a, ProvidesHealing>,
         ReadStorage<'a, InflictsDamage>,
-        WriteStorage<'a, CombatStats>,
+        WriteStorage<'a, Pools>,
         ReadStorage<'a, Consumable>,
         WriteExpect<'a, Map>,
         WriteStorage<'a, SufferDamage>,
@@ -60,17 +75,40 @@ impl<'a> System<'a> for ItemUseSystem {
         ReadStorage<'a, ProvidesFood>,
         WriteStorage<'a, HungerClock>,
         ReadStorage<'a, MagicMapper>,
-        WriteExpect<'a, RunState>
+        WriteExpect<'a, RunState>,
     );
 
     #[allow(clippy::cognitive_complexity)]
     fn run(&mut self, data: Self::SystemData) {
-        let (player_entity, mut gamelog, entities, mut wants_item, names, healing, inflict_damage, mut combat_stats, consumables, map, mut suffer_damage, aoe, mut confused, equippable, mut equipped, mut backpack, mut particle_builder, positions, provides_food, mut hunger_clock, magic_mapper, mut runstate) = data;
+        let (
+            player_entity,
+            mut gamelog,
+            entities,
+            mut wants_item,
+            names,
+            healing,
+            inflict_damage,
+            mut pools,
+            consumables,
+            map,
+            mut suffer_damage,
+            aoe,
+            mut confused,
+            equippable,
+            mut equipped,
+            mut backpack,
+            mut particle_builder,
+            positions,
+            provides_food,
+            mut hunger_clock,
+            magic_mapper,
+            mut runstate,
+        ) = data;
 
         for (entity, useitem) in (&entities, &wants_item).join() {
             let mut targets = Vec::new();
             match useitem.target {
-                None => { targets.push(*player_entity) }
+                None => targets.push(*player_entity),
                 Some(target) => {
                     let area_effect = aoe.get(useitem.item);
                     match area_effect {
@@ -81,14 +119,24 @@ impl<'a> System<'a> for ItemUseSystem {
                             }
                         }
                         Some(area_effect) => {
-                            let mut blast_tiles = rltk::field_of_view(target, area_effect.radius, &*map);
-                            blast_tiles.retain(|p| p.x > 0 && p.x < map.width - 1 && p.y > 0 && p.y < map.height - 1);
+                            let mut blast_tiles =
+                                rltk::field_of_view(target, area_effect.radius, &*map);
+                            blast_tiles.retain(|p| {
+                                p.x > 0 && p.x < map.width - 1 && p.y > 0 && p.y < map.height - 1
+                            });
                             for tile_idx in blast_tiles.iter() {
                                 let idx = map.xy_idx(tile_idx.x, tile_idx.y);
                                 for mob in map.tile_content[idx].iter() {
                                     targets.push(*mob);
                                 }
-                                particle_builder.request(tile_idx.x, tile_idx.y, rltk::RGB::named(rltk::ORANGE), rltk::RGB::named(rltk::BLACK), rltk::to_cp437('░'), 200.0);
+                                particle_builder.request(
+                                    tile_idx.x,
+                                    tile_idx.y,
+                                    rltk::RGB::named(rltk::ORANGE),
+                                    rltk::RGB::named(rltk::BLACK),
+                                    rltk::to_cp437('░'),
+                                    200.0,
+                                );
                             }
                         }
                     }
@@ -111,16 +159,28 @@ impl<'a> System<'a> for ItemUseSystem {
                 }
                 for item in to_unequip.iter() {
                     equipped.remove(*item);
-                    backpack.insert(*item, InBackpack { owner: target }).expect("Unable to insert backpack entry");
+                    backpack
+                        .insert(*item, InBackpack { owner: target })
+                        .expect("Unable to insert backpack entry");
                 }
 
-                equipped.insert(useitem.item, Equipped { owner: target, slot: target_slot }).expect("Unable to insert equipped component");
+                equipped
+                    .insert(
+                        useitem.item,
+                        Equipped {
+                            owner: target,
+                            slot: target_slot,
+                        },
+                    )
+                    .expect("Unable to insert equipped component");
                 backpack.remove(useitem.item);
                 if target == *player_entity {
-                    gamelog.entries.push(format!("You equip {}.", names.get(useitem.item).unwrap().name));
+                    gamelog.entries.push(format!(
+                        "You equip {}.",
+                        names.get(useitem.item).unwrap().name
+                    ));
                 }
             }
-
 
             let consumable = consumables.get(useitem.item);
             match consumable {
@@ -133,16 +193,30 @@ impl<'a> System<'a> for ItemUseSystem {
             let item_heals = healing.get(useitem.item);
             if let Some(healer) = item_heals {
                 for target in targets.iter() {
-                    let stats = combat_stats.get_mut(*target);
+                    let stats = pools.get_mut(*target);
                     if let Some(stats) = stats {
-                        stats.hp = i32::min(stats.max_hp, stats.hp + healer.heal_amount);
+                        stats.hit_points.current = i32::min(
+                            stats.hit_points.max,
+                            stats.hit_points.current + healer.heal_amount,
+                        );
                         if entity == *player_entity {
-                            gamelog.entries.push(format!("You drink the {}, healing {} hp.", names.get(useitem.item).unwrap().name, healer.heal_amount));
+                            gamelog.entries.push(format!(
+                                "You drink the {}, healing {} hp.",
+                                names.get(useitem.item).unwrap().name,
+                                healer.heal_amount
+                            ));
                         }
 
                         let pos = positions.get(*target);
                         if let Some(pos) = pos {
-                            particle_builder.request(pos.x, pos.y, rltk::RGB::named(ORANGE), rltk::RGB::named(BLACK), rltk::to_cp437('♥'), 200.0);
+                            particle_builder.request(
+                                pos.x,
+                                pos.y,
+                                rltk::RGB::named(ORANGE),
+                                rltk::RGB::named(BLACK),
+                                rltk::to_cp437('♥'),
+                                200.0,
+                            );
                         }
                     }
                 }
@@ -155,11 +229,21 @@ impl<'a> System<'a> for ItemUseSystem {
                     if entity == *player_entity {
                         let mob_name = names.get(*mob).unwrap();
                         let item_name = names.get(useitem.item).unwrap();
-                        gamelog.entries.push(format!("You use {} on {}, inflicting {} hp.", item_name.name, mob_name.name, damage.damage));
+                        gamelog.entries.push(format!(
+                            "You use {} on {}, inflicting {} hp.",
+                            item_name.name, mob_name.name, damage.damage
+                        ));
 
                         let pos = positions.get(*mob);
                         if let Some(pos) = pos {
-                            particle_builder.request(pos.x, pos.y, rltk::RGB::named(RED), rltk::RGB::named(BLACK), rltk::to_cp437('‼'), 200.0);
+                            particle_builder.request(
+                                pos.x,
+                                pos.y,
+                                rltk::RGB::named(RED),
+                                rltk::RGB::named(BLACK),
+                                rltk::to_cp437('‼'),
+                                200.0,
+                            );
                         }
                     }
                 }
@@ -174,18 +258,30 @@ impl<'a> System<'a> for ItemUseSystem {
                         if entity == *player_entity {
                             let mob_name = names.get(*mob).unwrap();
                             let item_name = names.get(useitem.item).unwrap();
-                            gamelog.entries.push(format!("You use {} on {}, confusing them.", item_name.name, mob_name.name));
+                            gamelog.entries.push(format!(
+                                "You use {} on {}, confusing them.",
+                                item_name.name, mob_name.name
+                            ));
 
                             let pos = positions.get(*mob);
                             if let Some(pos) = pos {
-                                particle_builder.request(pos.x, pos.y, rltk::RGB::named(MAGENTA), rltk::RGB::named(BLACK), rltk::to_cp437('?'), 200.0);
+                                particle_builder.request(
+                                    pos.x,
+                                    pos.y,
+                                    rltk::RGB::named(MAGENTA),
+                                    rltk::RGB::named(BLACK),
+                                    rltk::to_cp437('?'),
+                                    200.0,
+                                );
                             }
                         }
                     }
                 }
             }
             for mob in add_confusion.iter() {
-                confused.insert(mob.0, Confusion { turns: mob.1 }).expect("Unable to insert.");
+                confused
+                    .insert(mob.0, Confusion { turns: mob.1 })
+                    .expect("Unable to insert.");
             }
 
             let item_edible = provides_food.get(useitem.item);
@@ -195,13 +291,18 @@ impl<'a> System<'a> for ItemUseSystem {
                 if let Some(hc) = hc {
                     hc.state = HungerState::WellFed;
                     hc.duration = 20;
-                    gamelog.entries.push(format!("You eat the {}.", names.get(useitem.item).unwrap().name));
+                    gamelog.entries.push(format!(
+                        "You eat the {}.",
+                        names.get(useitem.item).unwrap().name
+                    ));
                 }
             }
 
             let is_mapper = magic_mapper.get(useitem.item);
             if is_mapper.is_some() {
-                gamelog.entries.push("The map is revealed to you!".to_string());
+                gamelog
+                    .entries
+                    .push("The map is revealed to you!".to_string());
                 *runstate = RunState::MagicMapReveal { row: 0 };
             }
         }
@@ -220,11 +321,19 @@ impl<'a> System<'a> for ItemDropSystem {
         WriteStorage<'a, WantsToDropItem>,
         ReadStorage<'a, Name>,
         WriteStorage<'a, Position>,
-        WriteStorage<'a, InBackpack>
+        WriteStorage<'a, InBackpack>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
-        let (player_entity, mut gamelog, entities, mut wants_drop, names, mut positions, mut backpack) = data;
+        let (
+            player_entity,
+            mut gamelog,
+            entities,
+            mut wants_drop,
+            names,
+            mut positions,
+            mut backpack,
+        ) = data;
 
         for (entity, to_drop) in (&entities, &wants_drop).join() {
             let mut dropper_pos = Position { x: 0, y: 0 };
@@ -233,11 +342,22 @@ impl<'a> System<'a> for ItemDropSystem {
                 dropper_pos.x = dropped_pos.x;
                 dropper_pos.y = dropped_pos.y;
             }
-            positions.insert(to_drop.item, Position { x: dropper_pos.x, y: dropper_pos.y }).expect("Unable to insert position");
+            positions
+                .insert(
+                    to_drop.item,
+                    Position {
+                        x: dropper_pos.x,
+                        y: dropper_pos.y,
+                    },
+                )
+                .expect("Unable to insert position");
             backpack.remove(to_drop.item);
 
             if entity == *player_entity {
-                gamelog.entries.push(format!("You drop the {}.", names.get(to_drop.item).unwrap().name));
+                gamelog.entries.push(format!(
+                    "You drop the {}.",
+                    names.get(to_drop.item).unwrap().name
+                ));
             }
         }
 
@@ -260,7 +380,9 @@ impl<'a> System<'a> for ItemRemoveSystem {
 
         for (entity, to_remove) in (&entities, &wants_remove).join() {
             equipped.remove(to_remove.item);
-            backpack.insert(to_remove.item, InBackpack { owner: entity }).expect("Unable to insert backpack entry");
+            backpack
+                .insert(to_remove.item, InBackpack { owner: entity })
+                .expect("Unable to insert backpack entry");
         }
 
         wants_remove.clear();
