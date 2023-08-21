@@ -55,6 +55,7 @@ impl Player {
         let mut blocks_movement = ecs.write_storage::<BlocksTile>();
         let mut renderables = ecs.write_storage::<Renderable>();
         let mut bystanders = ecs.read_storage::<Bystander>();
+        let mut vendors = ecs.read_storage::<Vendor>();
 
         let mut swap_entities = Vec::new();
 
@@ -72,7 +73,8 @@ impl Player {
 
             for potential_target in map.tile_content[destination_idx].iter() {
                 let bystander = bystanders.get(*potential_target);
-                if bystander.is_some() {
+                let vendor = vendors.get(*potential_target);
+                if bystander.is_some() || vendor.is_some() {
                     swap_entities.push((*potential_target, pos.x, pos.y));
 
                     pos.x = min(map.width - 1, max(0, pos.x + delta_x));

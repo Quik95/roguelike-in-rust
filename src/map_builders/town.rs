@@ -55,6 +55,9 @@ impl TownBuilder {
         let exit_idx = build_data.map.xy_idx(build_data.width - 5, wall_gap_y);
         build_data.map.tiles[exit_idx] = TileType::DownStairs;
 
+        self.spawn_dockers(build_data, rng);
+        self.spawn_townsfolk(build_data, rng, &mut available_building_tiles);
+
         let buildings_sorted = self.sort_buildings(&buildings);
         self.building_factory(rng, build_data, &buildings, &buildings_sorted);
 
@@ -472,6 +475,42 @@ impl TownBuilder {
                     && rng.roll_dice(1, 2) == 1
                 {
                     build_data.spawn_list.push((idx, "Rat".to_string()));
+                }
+            }
+        }
+    }
+    fn spawn_dockers(&self, build_data: &mut BuilderMap, rng: &mut RandomNumberGenerator) {
+        for (idx, tt) in build_data.map.tiles.iter_mut().enumerate() {
+            if *tt == TileType::Bridge && rng.roll_dice(1, 6) == 1 {
+                let roll = rng.roll_dice(1, 3);
+                match roll {
+                    1 => build_data.spawn_list.push((idx, "Dock Worker".to_string())),
+                    2 => build_data
+                        .spawn_list
+                        .push((idx, "Wannabe Pirate".to_string())),
+                    3 => build_data.spawn_list.push((idx, "Fisher".to_string())),
+                    _ => unreachable!(),
+                }
+            }
+        }
+    }
+    fn spawn_townsfolk(
+        &self,
+        build_data: &mut BuilderMap,
+        rng: &mut RandomNumberGenerator,
+        available_building_tiles: &mut HashSet<usize>,
+    ) {
+        for idx in available_building_tiles.iter() {
+            if rng.roll_dice(1, 10) == 1 {
+                let roll = rng.roll_dice(1, 4);
+                match roll {
+                    1 => build_data.spawn_list.push((*idx, "Peasant".to_string())),
+                    2 => build_data.spawn_list.push((*idx, "Drunk".to_string())),
+                    3 => build_data
+                        .spawn_list
+                        .push((*idx, "Dock Worker".to_string())),
+                    4 => build_data.spawn_list.push((*idx, "Fisher".to_string())),
+                    _ => unreachable!(),
                 }
             }
         }

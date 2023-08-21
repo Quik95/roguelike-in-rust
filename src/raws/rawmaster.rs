@@ -6,13 +6,13 @@ use lazy_static::lazy_static;
 use rltk::{console, to_cp437, RGB};
 use specs::{Builder, Entity, EntityBuilder};
 
-use crate::components::Renderable;
 use crate::components::{
     AreaOfEffect, BlocksTile, BlocksVisibility, Bystander, CombatStats, Confusion, Consumable,
     DefenseBonus, Door, EntryTrigger, EquipmentSlot, Equippable, Hidden, InflictsDamage,
     MagicMapper, MeleePowerBonus, Monster, Name, Position, ProvidesFood, ProvidesHealing, Ranged,
     SingleActivation, Viewshed,
 };
+use crate::components::{Quips, Renderable, Vendor};
 use crate::random_table::RandomTable;
 use crate::raws::spawn_table_structs::SpawnTableEntry;
 use crate::raws::Raws;
@@ -216,6 +216,12 @@ pub fn spawn_named_mob(
             eb = eb.with(get_renderable_component(renderable));
         }
 
+        if let Some(quips) = &mob_template.quips {
+            eb = eb.with(Quips {
+                available: quips.clone(),
+            });
+        }
+
         eb = eb.with(Name {
             name: mob_template.name.clone(),
         });
@@ -223,6 +229,7 @@ pub fn spawn_named_mob(
         match mob_template.ai.as_ref() {
             "melee" => eb = eb.with(Monster {}),
             "bystander" => eb = eb.with(Bystander {}),
+            "vendor" => eb = eb.with(Vendor {}),
             _ => unimplemented!("Unimplemented AI system"),
         }
         if mob_template.blocks_tile {

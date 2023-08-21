@@ -20,6 +20,7 @@ use crate::inventory_system::{
 use crate::melee_combat_system::MeleeCombatSystem;
 use crate::player::RunState::*;
 
+pub mod bystander_ai_system;
 mod camera;
 mod components;
 mod damage_system;
@@ -61,6 +62,9 @@ impl State {
 
         let mut mob = MonsterAI {};
         mob.run_now(&self.ecs);
+
+        let mut bystander = bystander_ai_system::BystanderAI {};
+        bystander.run_now(&self.ecs);
 
         let mut mapindex = MapIndexingSystem {};
         mapindex.run_now(&self.ecs);
@@ -491,6 +495,8 @@ fn main() -> rltk::BError {
     gs.ecs.register::<BlocksVisibility>();
     gs.ecs.register::<Door>();
     gs.ecs.register::<Bystander>();
+    gs.ecs.register::<Vendor>();
+    gs.ecs.register::<Quips>();
     gs.ecs.insert(SimpleMarkerAllocator::<SerializeMe>::new());
 
     raws::load_raws();
