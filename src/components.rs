@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::str::FromStr;
 
 use rltk::RGB;
 use serde::{Deserialize, Serialize};
@@ -129,8 +130,30 @@ pub struct SerializationHelper {
 
 #[derive(PartialEq, Eq, Copy, Clone, Serialize, Deserialize)]
 pub enum EquipmentSlot {
-    Melee,
     Shield,
+    Head,
+    Torso,
+    Legs,
+    Feet,
+    Hands,
+    Melee,
+}
+
+impl FromStr for EquipmentSlot {
+    type Err = !;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match s {
+            "Shield" => EquipmentSlot::Shield,
+            "Head" => EquipmentSlot::Head,
+            "Torso" => EquipmentSlot::Torso,
+            "Legs" => EquipmentSlot::Legs,
+            "Feet" => EquipmentSlot::Feet,
+            "Hands" => EquipmentSlot::Hands,
+            "Melee" => EquipmentSlot::Melee,
+            _ => unreachable!("Invalid slot type"),
+        })
+    }
 }
 
 #[derive(Component, Serialize, Deserialize, Clone)]
@@ -254,4 +277,40 @@ pub struct Pools {
     pub mana: Pool,
     pub xp: i32,
     pub level: i32,
+}
+
+#[derive(Eq, PartialEq, Copy, Clone, Serialize, Deserialize)]
+pub enum WeaponAttribute {
+    Might,
+    Quickness,
+}
+
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct MeleeWeapon {
+    pub attribute: WeaponAttribute,
+    pub damage_n_dice: i32,
+    pub damage_die_type: i32,
+    pub damage_bonus: i32,
+    pub hit_bonus: i32,
+}
+
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct Wearable {
+    pub armor_class: f32,
+    pub slot: EquipmentSlot,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct NaturalAttack {
+    pub name: String,
+    pub damage_n_dice: i32,
+    pub damage_die_type: i32,
+    pub damage_bonus: i32,
+    pub hit_bonus: i32,
+}
+
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct NaturalAttackDefense {
+    pub armor_class: Option<i32>,
+    pub attacks: Vec<NaturalAttack>,
 }

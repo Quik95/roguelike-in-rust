@@ -1,3 +1,5 @@
+#![feature(never_type)]
+
 use rltk::{GameState, Point, RandomNumberGenerator};
 use specs::prelude::*;
 use specs::saveload::{SimpleMarker, SimpleMarkerAllocator};
@@ -494,6 +496,9 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Attributes>();
     gs.ecs.register::<Skills>();
     gs.ecs.register::<Pools>();
+    gs.ecs.register::<MeleeWeapon>();
+    gs.ecs.register::<Wearable>();
+    gs.ecs.register::<NaturalAttackDefense>();
     gs.ecs.insert(SimpleMarkerAllocator::<SerializeMe>::new());
 
     raws::load_raws();

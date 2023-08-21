@@ -1,3 +1,8 @@
+use std::str::FromStr;
+
+use lazy_static::lazy_static;
+use regex::Regex;
+
 use crate::components::{Skill, Skills};
 
 pub const fn attr_bonus(value: i32) -> i32 {
@@ -32,5 +37,41 @@ pub fn skill_bonus(skill: Skill, skills: &Skills) -> i32 {
         skills.skills[&skill]
     } else {
         -4
+    }
+}
+
+pub struct DiceRoll {
+    pub n_dice: i32,
+    pub die_type: i32,
+    pub die_bonus: i32,
+}
+
+impl FromStr for DiceRoll {
+    type Err = !;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        lazy_static! {
+            static ref DICE_REGEX: Regex = Regex::new(r"(\d+)d(\d+)([\+\-]\d+)?").unwrap();
+        }
+        let mut n_dice = 1;
+        let mut die_type = 4;
+        let mut die_bonus = 0;
+        for cap in DICE_REGEX.captures_iter(s) {
+            if let Some(group) = cap.get(1) {
+                n_dice = group.as_str().parse::<i32>().expect("Not a digit");
+            }
+            if let Some(group) = cap.get(2) {
+                die_type = group.as_str().parse::<i32>().expect("Not a digit");
+            }
+            if let Some(group) = cap.get(3) {
+                die_bonus = group.as_str().parse::<i32>().expect("Not a digit");
+            }
+        }
+
+        Ok(Self {
+            n_dice,
+            die_type,
+            die_bonus,
+        })
     }
 }
