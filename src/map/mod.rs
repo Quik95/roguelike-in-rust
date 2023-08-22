@@ -4,8 +4,11 @@ use rltk::{Algorithm2D, BaseMap, Point};
 use serde::{Deserialize, Serialize};
 use specs::prelude::*;
 
+pub use themes::*;
+
 use crate::map::tiletype::TileType;
 
+mod themes;
 pub mod tiletype;
 
 #[derive(Default, Serialize, Deserialize, Clone)]

@@ -12,6 +12,7 @@ use crate::map_builders::distant_exit::DistantExit;
 use crate::map_builders::dla::DlaBuilder;
 use crate::map_builders::door_placement::DoorPlacement;
 use crate::map_builders::drunkard::DrunkardsWalkBuilder;
+use crate::map_builders::forest::forest_builder;
 use crate::map_builders::maze::MazeBuilder;
 use crate::map_builders::prefab_builder::prefab_level::WFC_POPULATED;
 use crate::map_builders::prefab_builder::prefab_section::UNDERGROUND_FORT;
@@ -44,6 +45,7 @@ mod distant_exit;
 mod dla;
 mod door_placement;
 mod drunkard;
+mod forest;
 mod maze;
 mod prefab_builder;
 mod room_based_spawner;
@@ -63,6 +65,7 @@ mod town;
 mod voronoi;
 mod voronoi_spawning;
 mod waveform_collapse;
+mod yellow_brick_road;
 
 #[derive(Default)]
 pub struct BuilderMap {
@@ -85,6 +88,7 @@ pub fn level_builder(
     console::log(format!("Depth: {new_depth}"));
     match new_depth {
         1 => town_builder(new_depth, rng, width, height),
+        2 => forest_builder(new_depth, rng, width, height),
         _ => random_builder(new_depth, rng, width, height),
     }
 }

@@ -1,5 +1,7 @@
 #![feature(never_type)]
 
+extern crate core;
+
 use rltk::{GameState, Point, RandomNumberGenerator};
 use specs::prelude::*;
 use specs::saveload::{SimpleMarker, SimpleMarkerAllocator};
@@ -12,6 +14,7 @@ use player::RunState;
 use visibility_system::VisibilitySystem;
 use RunState::PreRun;
 
+use crate::animal_ai_system::AnimalAI;
 use crate::camera::{render_camera, render_debug_map};
 use crate::damage_system::DamageSystem;
 use crate::gamelog::GameLog;
@@ -22,6 +25,7 @@ use crate::inventory_system::{
 use crate::melee_combat_system::MeleeCombatSystem;
 use crate::player::RunState::*;
 
+mod animal_ai_system;
 pub mod bystander_ai_system;
 mod camera;
 mod components;
@@ -98,6 +102,9 @@ impl State {
 
         let mut triggers = trigger_system::TriggerSystem {};
         triggers.run_now(&self.ecs);
+
+        let mut animal_ai = AnimalAI {};
+        animal_ai.run_now(&self.ecs);
 
         self.ecs.maintain();
     }
@@ -500,6 +507,9 @@ fn main() -> rltk::BError {
     gs.ecs.register::<MeleeWeapon>();
     gs.ecs.register::<Wearable>();
     gs.ecs.register::<NaturalAttackDefense>();
+    gs.ecs.register::<LootTable>();
+    gs.ecs.register::<Carnivore>();
+    gs.ecs.register::<Herbivore>();
     gs.ecs.insert(SimpleMarkerAllocator::<SerializeMe>::new());
 
     raws::load_raws();

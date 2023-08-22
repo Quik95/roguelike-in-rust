@@ -2,11 +2,10 @@ use std::collections::{HashMap, HashSet};
 use std::sync::Mutex;
 
 use lazy_static::lazy_static;
-use rltk::{console, to_cp437, RGB};
+use rltk::{console, to_cp437, RandomNumberGenerator, RGB};
 use specs::saveload::{MarkedBuilder, SimpleMarker};
 use specs::{Builder, Entity, EntityBuilder, World, WorldExt};
 
-use crate::components::Equipped;
 use crate::components::{
     AreaOfEffect, Attribute, Attributes, BlocksTile, BlocksVisibility, Bystander, Confusion,
     Consumable, Door, EntryTrigger, EquipmentSlot, Equippable, Hidden, InBackpack, InflictsDamage,
@@ -14,6 +13,7 @@ use crate::components::{
     Position, ProvidesFood, ProvidesHealing, Ranged, SerializeMe, SingleActivation, Skill, Skills,
     Viewshed, WeaponAttribute, Wearable,
 };
+use crate::components::{Carnivore, Equipped, Herbivore, LootTable};
 use crate::components::{Quips, Renderable, Vendor};
 use crate::gamesystem::{attr_bonus, mana_at_level, npc_hp, DiceRoll};
 use crate::random_table::RandomTable;
@@ -21,7 +21,7 @@ use crate::raws::spawn_table_structs::SpawnTableEntry;
 use crate::raws::Raws;
 
 lazy_static! {
-    pub static ref RAWS: Mutex<RawMaster> = Mutex::new(RawMaster::empty());
+    pub static ref RAWS: Mutex<RawMaster> = Mutex::new(RawMaster::default());
 }
 
 #[derive(Eq, PartialEq, Hash, Copy, Clone)]
@@ -31,28 +31,16 @@ pub enum SpawnType {
     Carried { by: Entity },
 }
 
+#[derive(Default)]
 pub struct RawMaster {
     raws: Raws,
     item_index: HashMap<String, usize>,
     mob_index: HashMap<String, usize>,
     prop_index: HashMap<String, usize>,
+    loot_index: HashMap<String, usize>,
 }
 
 impl RawMaster {
-    pub fn empty() -> Self {
-        Self {
-            raws: Raws {
-                items: Vec::new(),
-                mobs: Vec::new(),
-                props: Vec::new(),
-                spawn_table: Vec::new(),
-            },
-            item_index: HashMap::new(),
-            mob_index: HashMap::new(),
-            prop_index: HashMap::new(),
-        }
-    }
-
     pub fn load(&mut self, raws: Raws) {
         self.raws = raws;
         self.item_index = HashMap::new();
@@ -96,6 +84,10 @@ impl RawMaster {
                     spawn.name
                 ));
             }
+        }
+
+        for (i, loot) in self.raws.loot_tables.iter().enumerate() {
+            self.loot_index.insert(loot.name.clone(), i);
         }
     }
 }
@@ -253,6 +245,8 @@ pub fn spawn_named_mob(
             "melee" => eb = eb.with(Monster {}),
             "bystander" => eb = eb.with(Bystander {}),
             "vendor" => eb = eb.with(Vendor {}),
+            "carnivore" => eb = eb.with(Carnivore {}),
+            "herbivore" => eb = eb.with(Herbivore {}),
             _ => unimplemented!("Unimplemented AI system"),
         }
         if mob_template.blocks_tile {
@@ -390,6 +384,12 @@ pub fn spawn_named_mob(
             eb = eb.with(nature);
         }
 
+        if let Some(loot) = &mob_template.loot_table {
+            eb = eb.with(LootTable {
+                table: loot.clone(),
+            });
+        }
+
         let new_mob = eb.build();
 
         if let Some(wielding) = &mob_template.equipped {
@@ -516,4 +516,21 @@ fn find_slot_for_equippable_item(tag: &str, raws: &RawMaster) -> EquipmentSlot {
         return wearable.slot.parse::<EquipmentSlot>().unwrap();
     }
     panic!("Trying to equip {tag}, but it has no slot tag.");
+}
+
+pub fn get_item_drop(
+    raws: &RawMaster,
+    rng: &mut RandomNumberGenerator,
+    table: &str,
+) -> Option<String> {
+    if raws.loot_index.contains_key(table) {
+        let mut rt = RandomTable::new();
+        let available_options = &raws.raws.loot_tables[raws.loot_index[table]];
+        for item in available_options.drops.iter() {
+            rt = rt.add(item.name.clone(), item.weight);
+        }
+        return Some(rt.roll(rng));
+    }
+
+    None
 }

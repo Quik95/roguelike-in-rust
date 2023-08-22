@@ -88,7 +88,10 @@ pub fn save_game(ecs: &mut World) {
             Pools,
             MeleeWeapon,
             Wearable,
-            NaturalAttackDefense
+            NaturalAttackDefense,
+            LootTable,
+            Carnivore,
+            Herbivore
         );
     }
 
@@ -183,7 +186,10 @@ pub fn load_game(ecs: &mut World) {
             Pools,
             MeleeWeapon,
             Wearable,
-            NaturalAttackDefense
+            NaturalAttackDefense,
+            LootTable,
+            Carnivore,
+            Herbivore
         );
     }
 
