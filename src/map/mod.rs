@@ -8,6 +8,7 @@ pub use themes::*;
 
 use crate::map::tiletype::TileType;
 
+pub mod dungeon;
 mod themes;
 pub mod tiletype;
 

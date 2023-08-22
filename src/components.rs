@@ -9,6 +9,8 @@ use specs::prelude::*;
 use specs::saveload::{ConvertSaveload, Marker};
 use specs_derive::*;
 
+use crate::map::dungeon::MasterDungeonMap;
+
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct Position {
     pub x: i32,
@@ -131,6 +133,11 @@ pub struct SerializeMe;
 #[derive(Component, Serialize, Deserialize, Clone)]
 pub struct SerializationHelper {
     pub map: super::map::Map,
+}
+
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct DMSerializationHelper {
+    pub map: MasterDungeonMap,
 }
 
 #[derive(PartialEq, Eq, Copy, Clone, Serialize, Deserialize)]
@@ -330,3 +337,10 @@ pub struct Carnivore {}
 
 #[derive(Component, Debug, Serialize, Deserialize, Clone)]
 pub struct Herbivore {}
+
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct OtherLevelPosition {
+    pub x: i32,
+    pub y: i32,
+    pub depth: i32,
+}

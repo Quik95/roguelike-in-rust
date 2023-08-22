@@ -7,7 +7,7 @@ use crate::gamelog::GameLog;
 use crate::gui;
 use crate::map::tiletype::TileType;
 use crate::player::RunState::{
-    NextLevel, PlayerTurn, SaveGame, ShowDropItem, ShowInventory, ShowRemoveItem,
+    NextLevel, PlayerTurn, PreviousLevel, SaveGame, ShowDropItem, ShowInventory, ShowRemoveItem,
 };
 
 use super::components::*;
@@ -31,6 +31,7 @@ pub enum RunState {
     },
     SaveGame,
     NextLevel,
+    PreviousLevel,
     ShowRemoveItem,
     GameOver,
     MagicMapReveal {
@@ -40,7 +41,7 @@ pub enum RunState {
 }
 
 impl Player {
-    pub fn try_move_player(delta_x: i32, delta_y: i32, ecs: &mut World) {
+    pub fn try_move_player(delta_x: i32, delta_y: i32, ecs: &mut World) -> RunState {
         let mut positions = ecs.write_storage::<Position>();
         let mut players = ecs.write_storage::<Self>();
         let mut viewsheds = ecs.write_storage::<Viewshed>();
@@ -56,6 +57,7 @@ impl Player {
         let mut renderables = ecs.write_storage::<Renderable>();
         let mut bystanders = ecs.read_storage::<Bystander>();
         let mut vendors = ecs.read_storage::<Vendor>();
+        let mut result = RunState::AwaitingInput;
 
         let mut swap_entities = Vec::new();
 
@@ -67,7 +69,7 @@ impl Player {
                 || pos.y + delta_y < 1
                 || pos.y + delta_y > map.height - 1
             {
-                return;
+                return RunState::AwaitingInput;
             }
             let destination_idx = map.xy_idx(pos.x + delta_x, pos.y + delta_y);
 
@@ -86,6 +88,7 @@ impl Player {
                     viewshed.dirty = true;
                     ppos.x = pos.x;
                     ppos.y = pos.y;
+                    result = RunState::PlayerTurn;
                 } else {
                     let target = pools.get(*potential_target);
                     if let Some(_target) = target {
@@ -97,7 +100,7 @@ impl Player {
                                 },
                             )
                             .expect("Add target failed");
-                        return;
+                        return RunState::PlayerTurn;
                     }
                 }
 
@@ -115,12 +118,19 @@ impl Player {
             if !map.blocked[destination_idx] {
                 pos.x = i32::min(map.width - 1, i32::max(0, pos.x + delta_x));
                 pos.y = i32::min(map.height - 1, i32::max(0, pos.y + delta_y));
-                viewshed.dirty = true;
-                ppos.x = pos.x;
-                ppos.y = pos.y;
                 entity_moved
                     .insert(entity, EntityMoved {})
                     .expect("Unable to insert marker");
+
+                viewshed.dirty = true;
+                ppos.x = pos.x;
+                ppos.y = pos.y;
+                result = RunState::PlayerTurn;
+                match map.tiles[destination_idx] {
+                    TileType::DownStairs => result = RunState::NextLevel,
+                    TileType::UpStairs => result = RunState::PreviousLevel,
+                    _ => {}
+                }
             }
         }
 
@@ -131,6 +141,8 @@ impl Player {
                 their_pos.y = m.2;
             }
         }
+
+        result
     }
 
     pub fn player_input(gs: &mut State, ctx: &mut rltk::Rltk) -> RunState {
@@ -157,29 +169,29 @@ impl Player {
             None => return RunState::AwaitingInput,
             Some(key) => match key {
                 VirtualKeyCode::Left | VirtualKeyCode::Numpad4 | VirtualKeyCode::H => {
-                    Self::try_move_player(-1, 0, &mut gs.ecs)
+                    return Self::try_move_player(-1, 0, &mut gs.ecs)
                 }
                 VirtualKeyCode::Right | VirtualKeyCode::Numpad6 | VirtualKeyCode::L => {
-                    Self::try_move_player(1, 0, &mut gs.ecs)
+                    return Self::try_move_player(1, 0, &mut gs.ecs)
                 }
                 VirtualKeyCode::Up | VirtualKeyCode::Numpad8 | VirtualKeyCode::K => {
-                    Self::try_move_player(0, -1, &mut gs.ecs)
+                    return Self::try_move_player(0, -1, &mut gs.ecs)
                 }
                 VirtualKeyCode::Down | VirtualKeyCode::Numpad2 | VirtualKeyCode::J => {
-                    Self::try_move_player(0, 1, &mut gs.ecs)
+                    return Self::try_move_player(0, 1, &mut gs.ecs)
                 }
                 // Diagonals
                 VirtualKeyCode::Numpad9 | VirtualKeyCode::U => {
-                    Self::try_move_player(1, -1, &mut gs.ecs)
+                    return Self::try_move_player(1, -1, &mut gs.ecs)
                 }
                 VirtualKeyCode::Numpad7 | VirtualKeyCode::Y => {
-                    Self::try_move_player(-1, -1, &mut gs.ecs)
+                    return Self::try_move_player(-1, -1, &mut gs.ecs)
                 }
                 VirtualKeyCode::Numpad3 | VirtualKeyCode::N => {
-                    Self::try_move_player(1, 1, &mut gs.ecs)
+                    return Self::try_move_player(1, 1, &mut gs.ecs)
                 }
                 VirtualKeyCode::Numpad1 | VirtualKeyCode::B => {
-                    Self::try_move_player(-1, 1, &mut gs.ecs)
+                    return Self::try_move_player(-1, 1, &mut gs.ecs)
                 }
                 VirtualKeyCode::G => Self::get_item(&mut gs.ecs),
                 VirtualKeyCode::I => return ShowInventory,
@@ -188,6 +200,11 @@ impl Player {
                 VirtualKeyCode::Period => {
                     if Self::try_next_level(&mut gs.ecs) {
                         return NextLevel;
+                    }
+                }
+                VirtualKeyCode::Comma => {
+                    if Self::try_previous_level(&mut gs.ecs) {
+                        return PreviousLevel;
                     }
                 }
                 VirtualKeyCode::Numpad5 | VirtualKeyCode::Space => {
@@ -247,6 +264,21 @@ impl Player {
             gamelog
                 .entries
                 .push("There is no way down from here.".to_string());
+            false
+        };
+    }
+
+    fn try_previous_level(ecs: &mut World) -> bool {
+        let player_pos = ecs.fetch::<Point>();
+        let map = ecs.fetch::<Map>();
+        let player_idx = map.xy_idx(player_pos.x, player_pos.y);
+        return if map.tiles[player_idx] == TileType::UpStairs {
+            true
+        } else {
+            let mut gamelog = ecs.fetch_mut::<GameLog>();
+            gamelog
+                .entries
+                .push("There is no way up from here.".to_string());
             false
         };
     }
