@@ -225,7 +225,7 @@ impl<'a> System<'a> for ItemUseSystem {
             let item_damages = inflict_damage.get(useitem.item);
             if let Some(damage) = item_damages {
                 for mob in targets.iter() {
-                    SufferDamage::new_damage(&mut suffer_damage, *mob, damage.damage);
+                    SufferDamage::new_damage(&mut suffer_damage, *mob, damage.damage, true);
                     if entity == *player_entity {
                         let mob_name = names.get(*mob).unwrap();
                         let item_name = names.get(useitem.item).unwrap();

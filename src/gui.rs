@@ -1,4 +1,6 @@
-use rltk::{to_cp437, Point, Rltk, VirtualKeyCode, BLACK, GREEN, MAGENTA, RGB, WHITE, YELLOW};
+use rltk::{
+    to_cp437, Point, Rltk, VirtualKeyCode, BLACK, GOLD, GREEN, MAGENTA, RGB, WHITE, YELLOW,
+};
 use specs::prelude::*;
 
 use crate::camera::get_screen_bounds;
@@ -70,6 +72,19 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
         player_pools.mana.max,
         RGB::named(rltk::BLUE),
         RGB::named(rltk::BLACK),
+    );
+
+    let xp = format!("Level:  {}", player_pools.level);
+    ctx.print_color(50, 3, white, black, &xp);
+    let xp_level_start = (player_pools.level - 1) * 1000;
+    ctx.draw_bar_horizontal(
+        64,
+        3,
+        14,
+        player_pools.xp - xp_level_start,
+        1000,
+        RGB::named(GOLD),
+        RGB::named(BLACK),
     );
 
     let attributes = ecs.read_storage::<Attributes>();

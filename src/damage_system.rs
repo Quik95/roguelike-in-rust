@@ -1,11 +1,16 @@
-use rltk::RandomNumberGenerator;
-use specs::{Entities, Join, ReadStorage, System, World, WorldExt, WriteExpect, WriteStorage};
+use rltk::{to_cp437, RandomNumberGenerator, BLACK, GOLD, RGB};
+use specs::{
+    Entities, Entity, Join, ReadExpect, ReadStorage, System, World, WorldExt, WriteExpect,
+    WriteStorage,
+};
 
 use crate::components::{
-    Equipped, InBackpack, LootTable, Name, Player, Pools, Position, SufferDamage,
+    Attributes, Equipped, InBackpack, LootTable, Name, Player, Pools, Position, SufferDamage,
 };
 use crate::gamelog::GameLog;
+use crate::gamesystem::{mana_at_level, player_hp_at_level};
 use crate::map::Map;
+use crate::particle_system::ParticleBuilder;
 use crate::player::RunState;
 use crate::raws::rawmaster::{get_item_drop, spawn_named_item, SpawnType, RAWS};
 
@@ -18,17 +23,76 @@ impl<'a> System<'a> for DamageSystem {
         ReadStorage<'a, Position>,
         WriteExpect<'a, Map>,
         Entities<'a>,
+        ReadExpect<'a, Entity>,
+        ReadStorage<'a, Attributes>,
+        WriteExpect<'a, GameLog>,
+        WriteExpect<'a, ParticleBuilder>,
+        ReadExpect<'a, rltk::Point>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
-        let (mut pools, mut damage, positions, mut map, entities) = data;
+        let (
+            mut pools,
+            mut damage,
+            positions,
+            mut map,
+            entities,
+            player,
+            attributes,
+            mut log,
+            mut particles,
+            player_pos,
+        ) = data;
+        let mut xp_gain = 0;
 
         for (entity, mut pools, damage) in (&entities, &mut pools, &damage).join() {
-            pools.hit_points.current -= damage.amount.iter().sum::<i32>();
-            let pos = positions.get(entity);
-            if let Some(pos) = pos {
-                let idx = map.xy_idx(pos.x, pos.y);
-                map.bloodstains.insert(idx);
+            for dmg in damage.amount.iter() {
+                pools.hit_points.current -= dmg.0;
+                let pos = positions.get(entity);
+                if let Some(pos) = pos {
+                    let idx = map.xy_idx(pos.x, pos.y);
+                    map.bloodstains.insert(idx);
+                }
+                if pools.hit_points.current < 1 && dmg.1 {
+                    xp_gain += pools.level * 100;
+                }
+            }
+        }
+
+        if xp_gain != 0 {
+            let mut player_stats = pools.get_mut(*player).unwrap();
+            let player_attributes = attributes.get(*player).unwrap();
+            player_stats.xp += xp_gain;
+            if player_stats.xp >= player_stats.level * 1000 {
+                player_stats.level += 1;
+                player_stats.hit_points.max = player_hp_at_level(
+                    player_attributes.fitness.base + player_attributes.fitness.modifiers,
+                    player_stats.level,
+                );
+                player_stats.hit_points.current = player_stats.hit_points.max;
+                player_stats.mana.max = mana_at_level(
+                    player_attributes.intelligence.base + player_attributes.intelligence.modifiers,
+                    player_stats.level,
+                );
+                player_stats.mana.current = player_stats.mana.max;
+
+                for i in 0..10 {
+                    if player_pos.y - i > 1 {
+                        particles.request(
+                            player_pos.x,
+                            player_pos.y - 1,
+                            RGB::named(GOLD),
+                            RGB::named(BLACK),
+                            to_cp437('░'),
+                            200.0,
+                        );
+                    }
+                }
+
+                log.entries.push(format!(
+                    "Congratulations, you are now level {}",
+                    player_stats.level
+                ));
             }
         }
 

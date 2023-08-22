@@ -1,7 +1,7 @@
 use specs::{Entities, Entity, Join, ReadExpect, System, WriteExpect, WriteStorage};
 
-use crate::components::{HungerClock, SufferDamage};
 use crate::components::HungerState::*;
+use crate::components::{HungerClock, SufferDamage};
 use crate::gamelog::GameLog;
 use crate::player::RunState;
 use crate::player::RunState::*;
@@ -15,18 +15,12 @@ impl<'a> System<'a> for HungerSystem {
         ReadExpect<'a, Entity>,
         ReadExpect<'a, RunState>,
         WriteStorage<'a, SufferDamage>,
-        WriteExpect<'a, GameLog>
+        WriteExpect<'a, GameLog>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
-        let (
-            entities,
-            mut hunger_clock,
-            player_entity,
-            runstate,
-            mut inflict_damage,
-            mut log
-        ) = data;
+        let (entities, mut hunger_clock, player_entity, runstate, mut inflict_damage, mut log) =
+            data;
 
         for (entity, mut clock) in (&entities, &mut hunger_clock).join() {
             let mut proceed = false;
@@ -42,13 +36,17 @@ impl<'a> System<'a> for HungerSystem {
                         proceed = true;
                     }
                 }
-                _ => proceed = false
+                _ => proceed = false,
             }
 
-            if !proceed { continue; }
+            if !proceed {
+                continue;
+            }
 
             clock.duration -= 1;
-            if clock.duration >= 1 { continue; }
+            if clock.duration >= 1 {
+                continue;
+            }
 
             match clock.state {
                 WellFed => {
@@ -74,9 +72,12 @@ impl<'a> System<'a> for HungerSystem {
                 }
                 Starving => {
                     if entity == *player_entity {
-                        log.entries.push("Your hunger pangs are getting painful! Your suffer 1 hp of damage.".to_string());
+                        log.entries.push(
+                            "Your hunger pangs are getting painful! Your suffer 1 hp of damage."
+                                .to_string(),
+                        );
                     }
-                    SufferDamage::new_damage(&mut inflict_damage, entity, 1);
+                    SufferDamage::new_damage(&mut inflict_damage, entity, 1, false);
                 }
             }
         }

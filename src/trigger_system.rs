@@ -1,6 +1,9 @@
 use specs::{Entities, Join, ReadExpect, ReadStorage, System, WriteExpect, WriteStorage};
 
-use crate::components::{EntityMoved, EntryTrigger, Hidden, InflictsDamage, Name, Position, SingleActivation, SufferDamage};
+use crate::components::{
+    EntityMoved, EntryTrigger, Hidden, InflictsDamage, Name, Position, SingleActivation,
+    SufferDamage,
+};
 use crate::gamelog::GameLog;
 use crate::map::Map;
 use crate::particle_system::ParticleBuilder;
@@ -20,7 +23,7 @@ impl<'a> System<'a> for TriggerSystem {
         ReadStorage<'a, InflictsDamage>,
         WriteStorage<'a, SufferDamage>,
         WriteExpect<'a, ParticleBuilder>,
-        ReadStorage<'a, SingleActivation>
+        ReadStorage<'a, SingleActivation>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
@@ -36,7 +39,7 @@ impl<'a> System<'a> for TriggerSystem {
             inflicts_damage,
             mut inflict_damage,
             mut particle_builder,
-            single_activation
+            single_activation,
         ) = data;
 
         let mut remove_entity = Vec::new();
@@ -66,7 +69,12 @@ impl<'a> System<'a> for TriggerSystem {
                                     rltk::to_cp437('‼'),
                                     200.0,
                                 );
-                                SufferDamage::new_damage(&mut inflict_damage, entity, damage.damage);
+                                SufferDamage::new_damage(
+                                    &mut inflict_damage,
+                                    entity,
+                                    damage.damage,
+                                    false,
+                                );
                             }
 
                             let sa = single_activation.get(*entity_id);

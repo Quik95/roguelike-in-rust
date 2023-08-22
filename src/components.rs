@@ -51,16 +51,21 @@ pub struct WantsToMelee {
 
 #[derive(Component, Debug, ConvertSaveload, Clone)]
 pub struct SufferDamage {
-    pub amount: Vec<i32>,
+    pub amount: Vec<(i32, bool)>,
 }
 
 impl SufferDamage {
-    pub fn new_damage(store: &mut WriteStorage<Self>, victim: Entity, amount: i32) {
+    pub fn new_damage(
+        store: &mut WriteStorage<Self>,
+        victim: Entity,
+        amount: i32,
+        from_player: bool,
+    ) {
         if let Some(damage) = store.get_mut(victim) {
-            damage.amount.push(amount);
+            damage.amount.push((amount, from_player));
         } else {
             let dmg = Self {
-                amount: vec![amount],
+                amount: vec![(amount, from_player)],
             };
             store.insert(victim, dmg).expect("Unable to insert damage");
         }
