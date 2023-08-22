@@ -1,7 +1,6 @@
 use rltk::{console, RandomNumberGenerator};
 use specs::World;
 
-use crate::{SHOW_MAPGEN_VISUALIZER, spawner};
 use crate::components::Position;
 use crate::map::Map;
 use crate::map_builders::area_starting_points::{AreaStartingPosition, XStart, YStart};
@@ -33,6 +32,7 @@ use crate::map_builders::voronoi::VoronoiCellBuilder;
 use crate::map_builders::voronoi_spawning::VoronoiSpawning;
 use crate::map_builders::waveform_collapse::WaveformCollapseBuilder;
 use crate::rect::Rect;
+use crate::{spawner, SHOW_MAPGEN_VISUALIZER};
 
 mod area_starting_points;
 mod bsp_dungeon;
@@ -59,10 +59,10 @@ mod rooms_corridors_dogleg;
 mod rooms_corridors_lines;
 mod rooms_corridors_nearest;
 mod simple_map;
+mod town;
 mod voronoi;
 mod voronoi_spawning;
 mod waveform_collapse;
-mod town;
 
 #[derive(Default)]
 pub struct BuilderMap {
@@ -76,11 +76,16 @@ pub struct BuilderMap {
     pub height: i32,
 }
 
-pub fn level_builder(new_depth: i32, rng: &mut RandomNumberGenerator, width: i32, height: i32) -> BuilderChain {
+pub fn level_builder(
+    new_depth: i32,
+    rng: &mut RandomNumberGenerator,
+    width: i32,
+    height: i32,
+) -> BuilderChain {
     console::log(format!("Depth: {new_depth}"));
     match new_depth {
         1 => town_builder(new_depth, rng, width, height),
-        _ => random_builder(new_depth, rng, width, height)
+        _ => random_builder(new_depth, rng, width, height),
     }
 }
 
@@ -112,13 +117,13 @@ pub struct BuilderChain {
 }
 
 impl BuilderChain {
-    pub fn new(new_depth: i32, width: i32, height: i32) -> Self {
+    pub fn new(new_depth: i32, width: i32, height: i32, name: impl ToString) -> Self {
         Self {
             starter: None,
             builders: Vec::new(),
             build_data: BuilderMap {
                 spawn_list: Vec::new(),
-                map: Map::new(new_depth, width, height),
+                map: Map::new(new_depth, width, height, name),
                 starting_position: None,
                 rooms: None,
                 history: Vec::new(),
@@ -158,8 +163,13 @@ impl BuilderChain {
     }
 }
 
-pub fn random_builder(new_depth: i32, rng: &mut RandomNumberGenerator, width: i32, height: i32) -> BuilderChain {
-    let mut builder = BuilderChain::new(new_depth, width, height);
+pub fn random_builder(
+    new_depth: i32,
+    rng: &mut RandomNumberGenerator,
+    width: i32,
+    height: i32,
+) -> BuilderChain {
+    let mut builder = BuilderChain::new(new_depth, width, height, "New Map");
     let type_roll = rng.roll_dice(1, 2);
     match type_roll {
         1 => random_room_builder(rng, &mut builder),
@@ -302,4 +312,3 @@ fn random_start_position(rng: &mut RandomNumberGenerator) -> (XStart, YStart) {
 
     (start_x, start_y)
 }
-

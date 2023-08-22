@@ -19,6 +19,7 @@ pub struct Map {
     pub depth: i32,
     pub bloodstains: HashSet<usize>,
     pub view_blocked: HashSet<usize>,
+    pub name: String,
 
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]
@@ -31,7 +32,9 @@ impl Map {
     }
 
     fn is_exit_valid(&self, x: i32, y: i32) -> bool {
-        if x < 1 || x > self.width - 1 || y < 1 || y > self.height - 1 { return false; }
+        if x < 1 || x > self.width - 1 || y < 1 || y > self.height - 1 {
+            return false;
+        }
         let idx = self.xy_idx(x, y);
         !self.blocked[idx]
     }
@@ -49,7 +52,7 @@ impl Map {
     }
 
     /// Generates an empty map, consisting entirely of solid walls
-    pub fn new(new_depth: i32, width: i32, height: i32) -> Self {
+    pub fn new(new_depth: i32, width: i32, height: i32, name: impl ToString) -> Self {
         let map_tile_count = (width * height) as usize;
         Self {
             tiles: vec![TileType::Wall; map_tile_count],
@@ -62,6 +65,7 @@ impl Map {
             depth: new_depth,
             bloodstains: HashSet::new(),
             view_blocked: HashSet::new(),
+            name: name.to_string(),
         }
     }
 }
@@ -74,7 +78,6 @@ impl BaseMap for Map {
             true
         }
     }
-
 
     fn get_pathing_distance(&self, idx1: usize, idx2: usize) -> f32 {
         let w = self.width as usize;
@@ -91,16 +94,32 @@ impl BaseMap for Map {
         let tt = self.tiles[idx];
 
         // Cardinal directions
-        if self.is_exit_valid(x - 1, y) { exits.push((idx - 1, tt.get_cost())) };
-        if self.is_exit_valid(x + 1, y) { exits.push((idx + 1, tt.get_cost())) };
-        if self.is_exit_valid(x, y - 1) { exits.push((idx - w, tt.get_cost())) };
-        if self.is_exit_valid(x, y + 1) { exits.push((idx + w, tt.get_cost())) };
+        if self.is_exit_valid(x - 1, y) {
+            exits.push((idx - 1, tt.get_cost()))
+        };
+        if self.is_exit_valid(x + 1, y) {
+            exits.push((idx + 1, tt.get_cost()))
+        };
+        if self.is_exit_valid(x, y - 1) {
+            exits.push((idx - w, tt.get_cost()))
+        };
+        if self.is_exit_valid(x, y + 1) {
+            exits.push((idx + w, tt.get_cost()))
+        };
 
         // Diagonals
-        if self.is_exit_valid(x - 1, y - 1) { exits.push(((idx - w) - 1, tt.get_cost() * 1.45)); }
-        if self.is_exit_valid(x + 1, y - 1) { exits.push(((idx - w) + 1, tt.get_cost() * 1.45)); }
-        if self.is_exit_valid(x - 1, y + 1) { exits.push(((idx + w) - 1, tt.get_cost() * 1.45)); }
-        if self.is_exit_valid(x + 1, y + 1) { exits.push(((idx + w) + 1, tt.get_cost() * 1.45)); }
+        if self.is_exit_valid(x - 1, y - 1) {
+            exits.push(((idx - w) - 1, tt.get_cost() * 1.45));
+        }
+        if self.is_exit_valid(x + 1, y - 1) {
+            exits.push(((idx - w) + 1, tt.get_cost() * 1.45));
+        }
+        if self.is_exit_valid(x - 1, y + 1) {
+            exits.push(((idx + w) - 1, tt.get_cost() * 1.45));
+        }
+        if self.is_exit_valid(x + 1, y + 1) {
+            exits.push(((idx + w) + 1, tt.get_cost() * 1.45));
+        }
 
         exits
     }
