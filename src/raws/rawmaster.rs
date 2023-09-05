@@ -9,9 +9,9 @@ use specs::{Builder, Entity, EntityBuilder, World, WorldExt};
 use crate::components::{
     AreaOfEffect, Attribute, Attributes, BlocksTile, BlocksVisibility, Bystander, Confusion,
     Consumable, Door, EntryTrigger, EquipmentSlot, Equippable, Hidden, InBackpack, InflictsDamage,
-    MagicMapper, MeleeWeapon, Monster, Name, NaturalAttack, NaturalAttackDefense, Pool, Pools,
-    Position, ProvidesFood, ProvidesHealing, Ranged, SerializeMe, SingleActivation, Skill, Skills,
-    Viewshed, WeaponAttribute, Wearable,
+    LightSource, MagicMapper, MeleeWeapon, Monster, Name, NaturalAttack, NaturalAttackDefense,
+    Pool, Pools, Position, ProvidesFood, ProvidesHealing, Ranged, SerializeMe, SingleActivation,
+    Skill, Skills, Viewshed, WeaponAttribute, Wearable,
 };
 use crate::components::{Carnivore, Equipped, Herbivore, LootTable};
 use crate::components::{Quips, Renderable, Vendor};
@@ -387,6 +387,13 @@ pub fn spawn_named_mob(
         if let Some(loot) = &mob_template.loot_table {
             eb = eb.with(LootTable {
                 table: loot.clone(),
+            });
+        }
+
+        if let Some(light) = &mob_template.light {
+            eb = eb.with(LightSource {
+                range: light.range,
+                color: RGB::from_hex(&light.color).expect("Bad color"),
             });
         }
 

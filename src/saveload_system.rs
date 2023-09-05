@@ -102,7 +102,8 @@ pub fn save_game(ecs: &mut World) {
             Carnivore,
             Herbivore,
             OtherLevelPosition,
-            DMSerializationHelper
+            DMSerializationHelper,
+            LightSource
         );
     }
 
@@ -203,7 +204,8 @@ pub fn load_game(ecs: &mut World) {
             Carnivore,
             Herbivore,
             OtherLevelPosition,
-            DMSerializationHelper
+            DMSerializationHelper,
+            LightSource
         );
     }
 

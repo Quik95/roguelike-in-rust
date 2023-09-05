@@ -156,13 +156,13 @@ impl FromStr for EquipmentSlot {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(match s {
-            "Shield" => EquipmentSlot::Shield,
-            "Head" => EquipmentSlot::Head,
-            "Torso" => EquipmentSlot::Torso,
-            "Legs" => EquipmentSlot::Legs,
-            "Feet" => EquipmentSlot::Feet,
-            "Hands" => EquipmentSlot::Hands,
-            "Melee" => EquipmentSlot::Melee,
+            "Shield" => Self::Shield,
+            "Head" => Self::Head,
+            "Torso" => Self::Torso,
+            "Legs" => Self::Legs,
+            "Feet" => Self::Feet,
+            "Hands" => Self::Hands,
+            "Melee" => Self::Melee,
             _ => unreachable!("Invalid slot type"),
         })
     }
@@ -343,4 +343,10 @@ pub struct OtherLevelPosition {
     pub x: i32,
     pub y: i32,
     pub depth: i32,
+}
+
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct LightSource {
+    pub color: RGB,
+    pub range: i32,
 }

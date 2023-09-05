@@ -10,8 +10,8 @@ use specs::{Builder, Entity, World, WorldExt};
 use crate::components::{
     AreaOfEffect, Attribute, Attributes, BlocksTile, BlocksVisibility, Confusion, Consumable,
     DefenseBonus, Door, EntryTrigger, EquipmentSlot, Equippable, Hidden, HungerClock, HungerState,
-    InflictsDamage, Item, MagicMapper, MeleePowerBonus, Monster, Name, Player, Pool, Pools,
-    Position, ProvidesFood, ProvidesHealing, Ranged, Renderable, SerializeMe, Skill, Skills,
+    InflictsDamage, Item, LightSource, MagicMapper, MeleePowerBonus, Monster, Name, Player, Pool,
+    Pools, Position, ProvidesFood, ProvidesHealing, Ranged, Renderable, SerializeMe, Skill, Skills,
     Viewshed,
 };
 use crate::gamesystem::{attr_bonus, mana_at_level, player_hp_at_level};
@@ -89,6 +89,10 @@ pub fn player(ecs: &mut World, player_x: i32, player_y: i32) -> Entity {
             },
             xp: 0,
             level: 1,
+        })
+        .with(LightSource {
+            color: RGB::from_f32(1.0, 1.0, 0.5),
+            range: 8,
         })
         .marked::<SimpleMarker<SerializeMe>>()
         .build();

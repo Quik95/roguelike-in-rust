@@ -15,6 +15,8 @@ pub enum TileType {
     Bridge,
     Gravel,
     UpStairs,
+    Stalactite,
+    Stalagmite,
 }
 
 impl TileType {
@@ -22,13 +24,13 @@ impl TileType {
         match self {
             Floor | DownStairs | Road | Grass | ShallowWater | WoodFloor | Bridge | Gravel
             | UpStairs => true,
-            Wall | DeepWater => false,
+            Wall | DeepWater | Stalactite | Stalagmite => false,
         }
     }
 
     pub fn is_opaque(&self) -> bool {
         match self {
-            Wall => true,
+            Wall | Stalactite | Stalagmite => true,
             _ => false,
         }
     }

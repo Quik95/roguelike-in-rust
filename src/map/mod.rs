@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use rltk::{Algorithm2D, BaseMap, Point};
+use rltk::{Algorithm2D, BaseMap, Point, BLACK, RGB};
 use serde::{Deserialize, Serialize};
 use specs::prelude::*;
 
@@ -24,6 +24,8 @@ pub struct Map {
     pub bloodstains: HashSet<usize>,
     pub view_blocked: HashSet<usize>,
     pub name: String,
+    pub natural_light: bool,
+    pub light: Vec<RGB>,
 
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]
@@ -70,6 +72,8 @@ impl Map {
             bloodstains: HashSet::new(),
             view_blocked: HashSet::new(),
             name: name.to_string(),
+            natural_light: true,
+            light: vec![RGB::named(BLACK); map_tile_count],
         }
     }
 }
@@ -81,13 +85,6 @@ impl BaseMap for Map {
         } else {
             true
         }
-    }
-
-    fn get_pathing_distance(&self, idx1: usize, idx2: usize) -> f32 {
-        let w = self.width as usize;
-        let p1 = Point::new(idx1 % w, idx1 / w);
-        let p2 = Point::new(idx2 % w, idx2 / w);
-        rltk::DistanceAlg::Pythagoras.distance2d(p1, p2)
     }
 
     fn get_available_exits(&self, idx: usize) -> rltk::SmallVec<[(usize, f32); 10]> {
@@ -126,6 +123,13 @@ impl BaseMap for Map {
         }
 
         exits
+    }
+
+    fn get_pathing_distance(&self, idx1: usize, idx2: usize) -> f32 {
+        let w = self.width as usize;
+        let p1 = Point::new(idx1 % w, idx1 / w);
+        let p2 = Point::new(idx2 % w, idx2 / w);
+        rltk::DistanceAlg::Pythagoras.distance2d(p1, p2)
     }
 }
 

@@ -13,6 +13,7 @@ use crate::map_builders::dla::DlaBuilder;
 use crate::map_builders::door_placement::DoorPlacement;
 use crate::map_builders::drunkard::DrunkardsWalkBuilder;
 use crate::map_builders::forest::forest_builder;
+use crate::map_builders::limestone_cavern::limestone_cavern_builder;
 use crate::map_builders::maze::MazeBuilder;
 use crate::map_builders::prefab_builder::prefab_level::WFC_POPULATED;
 use crate::map_builders::prefab_builder::prefab_section::UNDERGROUND_FORT;
@@ -46,6 +47,7 @@ mod dla;
 mod door_placement;
 mod drunkard;
 mod forest;
+mod limestone_cavern;
 mod maze;
 mod prefab_builder;
 mod room_based_spawner;
@@ -89,12 +91,13 @@ pub fn level_builder(
     match new_depth {
         1 => town_builder(new_depth, rng, width, height),
         2 => forest_builder(new_depth, rng, width, height),
+        3 => limestone_cavern_builder(new_depth, rng, width, height),
         _ => random_builder(new_depth, rng, width, height),
     }
 }
 
 impl BuilderMap {
-    fn take_snapshot(&mut self) {
+    pub(crate) fn take_snapshot(&mut self) {
         if SHOW_MAPGEN_VISUALIZER {
             let mut snapshot = self.map.clone();
             for v in snapshot.revealed_tiles.iter_mut() {

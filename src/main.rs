@@ -18,10 +18,11 @@ use crate::animal_ai_system::AnimalAI;
 use crate::camera::{render_camera, render_debug_map};
 use crate::damage_system::DamageSystem;
 use crate::gamelog::GameLog;
-use crate::gui::draw_ui;
+use crate::gui::{draw_ui, show_cheat_mode, CheatMenuResult};
 use crate::inventory_system::{
     ItemCollectionSystem, ItemDropSystem, ItemRemoveSystem, ItemUseSystem,
 };
+use crate::lightning_system::LightingSystem;
 use crate::map::dungeon::{
     freeze_level_entities, level_transition, thaw_level_entities, MasterDungeonMap,
 };
@@ -31,6 +32,7 @@ use crate::player::RunState::*;
 mod animal_ai_system;
 pub mod bystander_ai_system;
 mod camera;
+mod cave_decorator;
 mod components;
 mod damage_system;
 mod gamelog;
@@ -38,6 +40,7 @@ mod gamesystem;
 mod gui;
 mod hunger_system;
 mod inventory_system;
+mod lightning_system;
 mod map;
 mod map_builders;
 mod map_indexing_system;
@@ -108,6 +111,9 @@ impl State {
 
         let mut animal_ai = AnimalAI {};
         animal_ai.run_now(&self.ecs);
+
+        let mut lighting = LightingSystem {};
+        lighting.run_now(&self.ecs);
 
         self.ecs.maintain();
     }
@@ -403,6 +409,18 @@ impl GameState for State {
                     }
                 }
             }
+            ShowCheatMenu => {
+                let result = show_cheat_mode(self, ctx);
+                match result {
+                    CheatMenuResult::Cancel => newrunstate = AwaitingInput,
+                    CheatMenuResult::NoResponse => {}
+                    CheatMenuResult::TeleportToExit => {
+                        self.goto_level(1);
+                        self.mapgen_next_state = Some(PreRun);
+                        newrunstate = MapGeneration;
+                    }
+                }
+            }
         }
         {
             let mut runwriter = self.ecs.write_resource::<RunState>();
@@ -418,6 +436,7 @@ fn main() -> rltk::BError {
     let mut context = RltkBuilder::simple(80, 60)
         .unwrap()
         .with_title("Roguelike Tutorial")
+        .with_fps_cap(60.0)
         .build()?;
     context.with_post_scanlines(true);
 
@@ -482,6 +501,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Herbivore>();
     gs.ecs.register::<OtherLevelPosition>();
     gs.ecs.register::<DMSerializationHelper>();
+    gs.ecs.register::<LightSource>();
     gs.ecs.insert(SimpleMarkerAllocator::<SerializeMe>::new());
 
     raws::load_raws();

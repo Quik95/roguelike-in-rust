@@ -7,7 +7,8 @@ use crate::gamelog::GameLog;
 use crate::gui;
 use crate::map::tiletype::TileType;
 use crate::player::RunState::{
-    NextLevel, PlayerTurn, PreviousLevel, SaveGame, ShowDropItem, ShowInventory, ShowRemoveItem,
+    NextLevel, PlayerTurn, PreviousLevel, SaveGame, ShowCheatMenu, ShowDropItem, ShowInventory,
+    ShowRemoveItem,
 };
 
 use super::components::*;
@@ -38,6 +39,7 @@ pub enum RunState {
         row: i32,
     },
     MapGeneration,
+    ShowCheatMenu,
 }
 
 impl Player {
@@ -197,6 +199,7 @@ impl Player {
                 VirtualKeyCode::I => return ShowInventory,
                 VirtualKeyCode::D => return ShowDropItem,
                 VirtualKeyCode::Escape => return SaveGame,
+                VirtualKeyCode::Backslash => return ShowCheatMenu,
                 VirtualKeyCode::Period => {
                     if Self::try_next_level(&mut gs.ecs) {
                         return NextLevel;
