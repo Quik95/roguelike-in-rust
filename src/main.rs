@@ -9,12 +9,10 @@ use specs::saveload::{SimpleMarker, SimpleMarkerAllocator};
 use components::*;
 use map::Map;
 use map_indexing_system::MapIndexingSystem;
-use monster_ai_system::MonsterAI;
 use player::RunState;
 use visibility_system::VisibilitySystem;
 use RunState::PreRun;
 
-use crate::animal_ai_system::AnimalAI;
 use crate::camera::{render_camera, render_debug_map};
 use crate::damage_system::DamageSystem;
 use crate::gamelog::GameLog;
@@ -29,8 +27,7 @@ use crate::map::dungeon::{
 use crate::melee_combat_system::MeleeCombatSystem;
 use crate::player::RunState::*;
 
-mod animal_ai_system;
-pub mod bystander_ai_system;
+mod ai;
 mod camera;
 mod cave_decorator;
 mod components;
@@ -46,7 +43,6 @@ mod map_builders;
 mod map_indexing_system;
 mod melee_combat_system;
 mod menu;
-mod monster_ai_system;
 mod particle_system;
 mod player;
 mod random_table;
@@ -72,12 +68,6 @@ impl State {
     fn run_systems(&mut self) {
         let mut vis = VisibilitySystem {};
         vis.run_now(&self.ecs);
-
-        let mut mob = MonsterAI {};
-        mob.run_now(&self.ecs);
-
-        let mut bystander = bystander_ai_system::BystanderAI {};
-        bystander.run_now(&self.ecs);
 
         let mut mapindex = MapIndexingSystem {};
         mapindex.run_now(&self.ecs);
@@ -109,11 +99,35 @@ impl State {
         let mut triggers = trigger_system::TriggerSystem {};
         triggers.run_now(&self.ecs);
 
-        let mut animal_ai = AnimalAI {};
-        animal_ai.run_now(&self.ecs);
-
         let mut lighting = LightingSystem {};
         lighting.run_now(&self.ecs);
+
+        let mut initiative = ai::InitiativeSystem {};
+        initiative.run_now(&self.ecs);
+
+        let mut turn_status = ai::TurnStatusSystem {};
+        turn_status.run_now(&self.ecs);
+
+        let mut quipper = ai::QuipSystem {};
+        quipper.run_now(&self.ecs);
+
+        let mut adjacent = ai::AdjacentAI {};
+        adjacent.run_now(&self.ecs);
+
+        let mut visible = ai::VisibleAI {};
+        visible.run_now(&self.ecs);
+
+        let mut approach = ai::ApproachAI {};
+        approach.run_now(&self.ecs);
+
+        let mut flee = ai::FleeAI {};
+        flee.run_now(&self.ecs);
+
+        let mut defaultmove = ai::DefaultMoveAI {};
+        defaultmove.run_now(&self.ecs);
+
+        let mut approach = ai::ApproachAI {};
+        approach.run_now(&self.ecs);
 
         self.ecs.maintain();
     }
@@ -232,19 +246,6 @@ impl GameState for State {
             AwaitingInput => {
                 newrunstate = Player::player_input(self, ctx);
             }
-            PlayerTurn => {
-                self.run_systems();
-                self.ecs.maintain();
-                match *self.ecs.fetch::<RunState>() {
-                    MagicMapReveal { .. } => newrunstate = MagicMapReveal { row: 0 },
-                    _ => newrunstate = MonsterTurn,
-                }
-            }
-            MonsterTurn => {
-                self.run_systems();
-                self.ecs.maintain();
-                newrunstate = AwaitingInput;
-            }
             ShowInventory => {
                 let result = gui::show_inventory(self, ctx);
                 match result.0 {
@@ -270,7 +271,7 @@ impl GameState for State {
                                     },
                                 )
                                 .expect("Unable to insert intent");
-                            newrunstate = PlayerTurn;
+                            newrunstate = Ticking;
                         }
                     }
                 }
@@ -289,7 +290,7 @@ impl GameState for State {
                                 WantsToDropItem { item: item_entity },
                             )
                             .expect("Unable to insert drop intent");
-                        newrunstate = PlayerTurn;
+                        newrunstate = Ticking;
                     }
                 }
             }
@@ -309,7 +310,7 @@ impl GameState for State {
                                 },
                             )
                             .expect("Unable to insert intent");
-                        newrunstate = PlayerTurn;
+                        newrunstate = Ticking;
                     }
                 }
             }
@@ -362,7 +363,7 @@ impl GameState for State {
                                 WantsToRemoveItem { item: item_entity },
                             )
                             .expect("Unable to insert drop intent");
-                        newrunstate = PlayerTurn;
+                        newrunstate = Ticking;
                     }
                 }
             }
@@ -385,7 +386,7 @@ impl GameState for State {
                     map.revealed_tiles[idx] = true;
                 }
                 if row == map.height - 1 {
-                    newrunstate = MonsterTurn;
+                    newrunstate = Ticking;
                 } else {
                     newrunstate = MagicMapReveal { row: row + 1 };
                 }
@@ -418,6 +419,17 @@ impl GameState for State {
                         self.goto_level(1);
                         self.mapgen_next_state = Some(PreRun);
                         newrunstate = MapGeneration;
+                    }
+                }
+            }
+            Ticking => {
+                while newrunstate == RunState::Ticking {
+                    self.run_systems();
+                    self.ecs.maintain();
+                    match *self.ecs.fetch::<RunState>() {
+                        AwaitingInput => newrunstate = AwaitingInput,
+                        MagicMapReveal { .. } => newrunstate = MagicMapReveal { row: 0 },
+                        _ => newrunstate = Ticking,
                     }
                 }
             }
@@ -454,7 +466,6 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Renderable>();
     gs.ecs.register::<Player>();
     gs.ecs.register::<Viewshed>();
-    gs.ecs.register::<Monster>();
     gs.ecs.register::<Name>();
     gs.ecs.register::<BlocksTile>();
     gs.ecs.register::<WantsToMelee>();
@@ -487,8 +498,6 @@ fn main() -> rltk::BError {
     gs.ecs.register::<SingleActivation>();
     gs.ecs.register::<BlocksVisibility>();
     gs.ecs.register::<Door>();
-    gs.ecs.register::<Bystander>();
-    gs.ecs.register::<Vendor>();
     gs.ecs.register::<Quips>();
     gs.ecs.register::<Attributes>();
     gs.ecs.register::<Skills>();
@@ -497,11 +506,16 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Wearable>();
     gs.ecs.register::<NaturalAttackDefense>();
     gs.ecs.register::<LootTable>();
-    gs.ecs.register::<Carnivore>();
-    gs.ecs.register::<Herbivore>();
     gs.ecs.register::<OtherLevelPosition>();
     gs.ecs.register::<DMSerializationHelper>();
     gs.ecs.register::<LightSource>();
+    gs.ecs.register::<Initiative>();
+    gs.ecs.register::<MyTurn>();
+    gs.ecs.register::<Faction>();
+    gs.ecs.register::<WantsToApproach>();
+    gs.ecs.register::<WantsToFlee>();
+    gs.ecs.register::<MoveMode>();
+    gs.ecs.register::<Chasing>();
     gs.ecs.insert(SimpleMarkerAllocator::<SerializeMe>::new());
 
     raws::load_raws();

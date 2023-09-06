@@ -7,16 +7,17 @@ use specs::saveload::{MarkedBuilder, SimpleMarker};
 use specs::{Builder, Entity, EntityBuilder, World, WorldExt};
 
 use crate::components::{
-    AreaOfEffect, Attribute, Attributes, BlocksTile, BlocksVisibility, Bystander, Confusion,
-    Consumable, Door, EntryTrigger, EquipmentSlot, Equippable, Hidden, InBackpack, InflictsDamage,
-    LightSource, MagicMapper, MeleeWeapon, Monster, Name, NaturalAttack, NaturalAttackDefense,
-    Pool, Pools, Position, ProvidesFood, ProvidesHealing, Ranged, SerializeMe, SingleActivation,
-    Skill, Skills, Viewshed, WeaponAttribute, Wearable,
+    AreaOfEffect, Attribute, Attributes, BlocksTile, BlocksVisibility, Confusion, Consumable, Door,
+    EntryTrigger, EquipmentSlot, Equippable, Faction, Hidden, InBackpack, InflictsDamage,
+    Initiative, LightSource, MagicMapper, MeleeWeapon, MoveMode, Movement, Name, NaturalAttack,
+    NaturalAttackDefense, Pool, Pools, Position, ProvidesFood, ProvidesHealing, Ranged,
+    SerializeMe, SingleActivation, Skill, Skills, Viewshed, WeaponAttribute, Wearable,
 };
-use crate::components::{Carnivore, Equipped, Herbivore, LootTable};
-use crate::components::{Quips, Renderable, Vendor};
+use crate::components::{Equipped, LootTable};
+use crate::components::{Quips, Renderable};
 use crate::gamesystem::{attr_bonus, mana_at_level, npc_hp, DiceRoll};
 use crate::random_table::RandomTable;
+use crate::raws::faction_structs::Reaction;
 use crate::raws::spawn_table_structs::SpawnTableEntry;
 use crate::raws::Raws;
 
@@ -38,6 +39,7 @@ pub struct RawMaster {
     mob_index: HashMap<String, usize>,
     prop_index: HashMap<String, usize>,
     loot_index: HashMap<String, usize>,
+    faction_index: HashMap<String, HashMap<String, Reaction>>,
 }
 
 impl RawMaster {
@@ -88,6 +90,22 @@ impl RawMaster {
 
         for (i, loot) in self.raws.loot_tables.iter().enumerate() {
             self.loot_index.insert(loot.name.clone(), i);
+        }
+
+        for faction in self.raws.faction_table.iter() {
+            let mut reactions = HashMap::new();
+            for other in faction.responses.iter() {
+                reactions.insert(
+                    other.0.clone(),
+                    match other.1.as_str() {
+                        "ignore" => Reaction::Ignore,
+                        "flee" => Reaction::Flee,
+                        _ => Reaction::Attack,
+                    },
+                );
+            }
+
+            self.faction_index.insert(faction.name.clone(), reactions);
         }
     }
 }
@@ -241,14 +259,6 @@ pub fn spawn_named_mob(
             name: mob_template.name.clone(),
         });
 
-        match mob_template.ai.as_ref() {
-            "melee" => eb = eb.with(Monster {}),
-            "bystander" => eb = eb.with(Bystander {}),
-            "vendor" => eb = eb.with(Vendor {}),
-            "carnivore" => eb = eb.with(Carnivore {}),
-            "herbivore" => eb = eb.with(Herbivore {}),
-            _ => unimplemented!("Unimplemented AI system"),
-        }
         if mob_template.blocks_tile {
             eb = eb.with(BlocksTile {});
         }
@@ -397,6 +407,36 @@ pub fn spawn_named_mob(
             });
         }
 
+        if let Some(faction) = &mob_template.faction {
+            eb = eb.with(Faction {
+                name: faction.clone(),
+            });
+        } else {
+            eb = eb.with(Faction {
+                name: "Mindless".to_string(),
+            })
+        }
+
+        match mob_template.movement.as_ref() {
+            "random" => {
+                eb = eb.with(MoveMode {
+                    mode: Movement::Random,
+                })
+            }
+            "random_waypoint" => {
+                eb = eb.with(MoveMode {
+                    mode: Movement::RandomWaypoint { path: None },
+                })
+            }
+            _ => {
+                eb = eb.with(MoveMode {
+                    mode: Movement::Static,
+                })
+            }
+        }
+
+        eb = eb.with(Initiative { current: 2 });
+
         let new_mob = eb.build();
 
         if let Some(wielding) = &mob_template.equipped {
@@ -540,4 +580,19 @@ pub fn get_item_drop(
     }
 
     None
+}
+
+pub fn faction_reaction(my_faction: &str, their_faction: &str, raws: &RawMaster) -> Reaction {
+    if raws.faction_index.contains_key(my_faction) {
+        let mf = &raws.faction_index[my_faction];
+        return if mf.contains_key(their_faction) {
+            mf[their_faction]
+        } else if mf.contains_key("Default") {
+            mf["Default"]
+        } else {
+            Reaction::Ignore
+        };
+    };
+
+    Reaction::Ignore
 }

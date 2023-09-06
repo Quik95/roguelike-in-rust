@@ -58,7 +58,6 @@ pub fn save_game(ecs: &mut World) {
             Renderable,
             Player,
             Viewshed,
-            Monster,
             Name,
             BlocksTile,
             SufferDamage,
@@ -89,8 +88,6 @@ pub fn save_game(ecs: &mut World) {
             SingleActivation,
             Door,
             BlocksVisibility,
-            Bystander,
-            Vendor,
             Quips,
             Attributes,
             Skills,
@@ -99,11 +96,16 @@ pub fn save_game(ecs: &mut World) {
             Wearable,
             NaturalAttackDefense,
             LootTable,
-            Carnivore,
-            Herbivore,
             OtherLevelPosition,
             DMSerializationHelper,
-            LightSource
+            LightSource,
+            Initiative,
+            MyTurn,
+            Faction,
+            MoveMode,
+            WantsToApproach,
+            WantsToFlee,
+            Chasing
         );
     }
 
@@ -160,7 +162,6 @@ pub fn load_game(ecs: &mut World) {
             Renderable,
             Player,
             Viewshed,
-            Monster,
             Name,
             BlocksTile,
             SufferDamage,
@@ -191,8 +192,6 @@ pub fn load_game(ecs: &mut World) {
             SingleActivation,
             Door,
             BlocksVisibility,
-            Bystander,
-            Vendor,
             Quips,
             Attributes,
             Skills,
@@ -201,11 +200,16 @@ pub fn load_game(ecs: &mut World) {
             Wearable,
             NaturalAttackDefense,
             LootTable,
-            Carnivore,
-            Herbivore,
             OtherLevelPosition,
             DMSerializationHelper,
-            LightSource
+            LightSource,
+            Initiative,
+            MyTurn,
+            Faction,
+            MoveMode,
+            WantsToApproach,
+            WantsToFlee,
+            Chasing
         );
     }
 

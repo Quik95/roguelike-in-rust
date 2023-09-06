@@ -10,7 +10,7 @@ pub struct Mob {
     pub renderable: Option<Renderable>,
     pub blocks_tile: bool,
     pub vision_range: i32,
-    pub ai: String,
+    pub movement: String,
     pub quips: Option<Vec<String>>,
     pub attributes: MobAttributes,
     pub skills: Option<HashMap<String, i32>>,
@@ -21,6 +21,7 @@ pub struct Mob {
     pub natural: Option<MobNatural>,
     pub loot_table: Option<String>,
     pub light: Option<MobLight>,
+    pub faction: Option<String>,
 }
 
 #[derive(Deserialize, Debug)]

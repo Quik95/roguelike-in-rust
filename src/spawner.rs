@@ -9,10 +9,10 @@ use specs::{Builder, Entity, World, WorldExt};
 
 use crate::components::{
     AreaOfEffect, Attribute, Attributes, BlocksTile, BlocksVisibility, Confusion, Consumable,
-    DefenseBonus, Door, EntryTrigger, EquipmentSlot, Equippable, Hidden, HungerClock, HungerState,
-    InflictsDamage, Item, LightSource, MagicMapper, MeleePowerBonus, Monster, Name, Player, Pool,
-    Pools, Position, ProvidesFood, ProvidesHealing, Ranged, Renderable, SerializeMe, Skill, Skills,
-    Viewshed,
+    DefenseBonus, Door, EntryTrigger, EquipmentSlot, Equippable, Faction, Hidden, HungerClock,
+    HungerState, InflictsDamage, Initiative, Item, LightSource, MagicMapper, MeleePowerBonus, Name,
+    Player, Pool, Pools, Position, ProvidesFood, ProvidesHealing, Ranged, Renderable, SerializeMe,
+    Skill, Skills, Viewshed,
 };
 use crate::gamesystem::{attr_bonus, mana_at_level, player_hp_at_level};
 use crate::map::{tiletype::TileType, Map};
@@ -94,6 +94,10 @@ pub fn player(ecs: &mut World, player_x: i32, player_y: i32) -> Entity {
             color: RGB::from_f32(1.0, 1.0, 0.5),
             range: 8,
         })
+        .with(Initiative { current: 0 })
+        .with(Faction {
+            name: "Player".to_string(),
+        })
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
 
@@ -159,7 +163,6 @@ fn monster<S: ToString>(ecs: &mut World, x: i32, y: i32, glyph: rltk::FontCharTy
             range: 8,
             dirty: true,
         })
-        .with(Monster {})
         .with(Name {
             name: name.to_string(),
         })

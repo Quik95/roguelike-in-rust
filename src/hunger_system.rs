@@ -1,7 +1,7 @@
-use specs::{Entities, Entity, Join, ReadExpect, System, WriteExpect, WriteStorage};
+use specs::{Entities, Entity, Join, ReadExpect, ReadStorage, System, WriteExpect, WriteStorage};
 
 use crate::components::HungerState::*;
-use crate::components::{HungerClock, SufferDamage};
+use crate::components::{HungerClock, MyTurn, SufferDamage};
 use crate::gamelog::GameLog;
 use crate::player::RunState;
 use crate::player::RunState::*;
@@ -16,33 +16,21 @@ impl<'a> System<'a> for HungerSystem {
         ReadExpect<'a, RunState>,
         WriteStorage<'a, SufferDamage>,
         WriteExpect<'a, GameLog>,
+        ReadStorage<'a, MyTurn>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
-        let (entities, mut hunger_clock, player_entity, runstate, mut inflict_damage, mut log) =
-            data;
+        let (
+            entities,
+            mut hunger_clock,
+            player_entity,
+            runstate,
+            mut inflict_damage,
+            mut log,
+            turns,
+        ) = data;
 
-        for (entity, mut clock) in (&entities, &mut hunger_clock).join() {
-            let mut proceed = false;
-
-            match *runstate {
-                PlayerTurn => {
-                    if entity == *player_entity {
-                        proceed = true;
-                    }
-                }
-                MonsterTurn => {
-                    if entity != *player_entity {
-                        proceed = true;
-                    }
-                }
-                _ => proceed = false,
-            }
-
-            if !proceed {
-                continue;
-            }
-
+        for (entity, mut clock, _myturn) in (&entities, &mut hunger_clock, &turns).join() {
             clock.duration -= 1;
             if clock.duration >= 1 {
                 continue;
