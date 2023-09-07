@@ -41,6 +41,16 @@ pub enum RunState {
     },
     MapGeneration,
     ShowCheatMenu,
+    ShowVendor {
+        vendor: Entity,
+        mode: VendorMode,
+    },
+}
+
+#[derive(PartialEq, Eq, Copy, Clone)]
+pub enum VendorMode {
+    Buy,
+    Sell,
 }
 
 impl Player {
@@ -59,6 +69,7 @@ impl Player {
         let mut renderables = ecs.write_storage::<Renderable>();
         let factions = ecs.read_storage::<Faction>();
         let mut ppos = ecs.write_resource::<Point>();
+        let vendors = ecs.read_storage::<Vendor>();
 
         let mut result = RunState::AwaitingInput;
         let mut swap_entities = Vec::new();
@@ -77,6 +88,13 @@ impl Player {
 
             result =
                 spatial::for_each_tile_content_with_gamemode(destination_idx, |potential_target| {
+                    if let Some(_vendor) = vendors.get(potential_target) {
+                        return Some(RunState::ShowVendor {
+                            vendor: potential_target,
+                            mode: VendorMode::Sell,
+                        });
+                    }
+
                     let mut hostile = true;
                     if combat_stats.get(potential_target).is_some() {
                         if let Some(faction) = factions.get(potential_target) {

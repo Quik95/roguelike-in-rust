@@ -16,7 +16,7 @@ use RunState::PreRun;
 use crate::camera::{render_camera, render_debug_map};
 use crate::damage_system::DamageSystem;
 use crate::gamelog::GameLog;
-use crate::gui::{draw_ui, show_cheat_mode, CheatMenuResult};
+use crate::gui::{draw_ui, show_cheat_mode, show_vendor_menu, CheatMenuResult, VendorResult};
 use crate::inventory_system::{
     ItemCollectionSystem, ItemDropSystem, ItemRemoveSystem, ItemUseSystem,
 };
@@ -26,6 +26,8 @@ use crate::map::dungeon::{
 };
 use crate::melee_combat_system::MeleeCombatSystem;
 use crate::player::RunState::*;
+use crate::player::VendorMode;
+use crate::raws::rawmaster::{spawn_named_item, SpawnType, RAWS};
 
 mod ai;
 mod camera;
@@ -129,6 +131,9 @@ impl State {
 
         let mut approach = ai::ApproachAI {};
         approach.run_now(&self.ecs);
+
+        let mut encumbrance = ai::EncumbranceSystem {};
+        encumbrance.run_now(&self.ecs);
 
         self.ecs.maintain();
     }
@@ -434,6 +439,59 @@ impl GameState for State {
                     }
                 }
             }
+            RunState::ShowVendor { vendor, mode } => {
+                let result = show_vendor_menu(self, ctx, vendor, mode);
+                match result.0 {
+                    VendorResult::Cancel => newrunstate = RunState::AwaitingInput,
+                    VendorResult::NoResponse => {}
+                    VendorResult::Sell => {
+                        let price = self
+                            .ecs
+                            .read_storage::<Item>()
+                            .get(result.1.unwrap())
+                            .unwrap()
+                            .base_value
+                            * 0.8;
+                        self.ecs
+                            .write_storage::<Pools>()
+                            .get_mut(*self.ecs.fetch::<Entity>())
+                            .unwrap()
+                            .gold += price;
+                        self.ecs
+                            .delete_entity(result.1.unwrap())
+                            .expect("Unable to delete");
+                    }
+                    VendorResult::Buy => {
+                        let tag = result.2.unwrap();
+                        let price = result.3.unwrap();
+                        let mut pools = self.ecs.write_storage::<Pools>();
+                        let player_pools = pools.get_mut(*self.ecs.fetch::<Entity>()).unwrap();
+                        if player_pools.gold >= price {
+                            player_pools.gold -= price;
+                            std::mem::drop(pools);
+                            let player_entity = *self.ecs.fetch::<Entity>();
+                            spawn_named_item(
+                                &RAWS.lock().unwrap(),
+                                &mut self.ecs,
+                                &tag,
+                                SpawnType::Carried { by: player_entity },
+                            );
+                        }
+                    }
+                    VendorResult::BuyMode => {
+                        newrunstate = RunState::ShowVendor {
+                            vendor,
+                            mode: VendorMode::Buy,
+                        }
+                    }
+                    VendorResult::SellMode => {
+                        newrunstate = RunState::ShowVendor {
+                            vendor,
+                            mode: VendorMode::Sell,
+                        }
+                    }
+                }
+            }
         }
         {
             let mut runwriter = self.ecs.write_resource::<RunState>();
@@ -517,6 +575,8 @@ fn main() -> rltk::BError {
     gs.ecs.register::<WantsToFlee>();
     gs.ecs.register::<MoveMode>();
     gs.ecs.register::<Chasing>();
+    gs.ecs.register::<EquipmentChanged>();
+    gs.ecs.register::<Vendor>();
     gs.ecs.insert(SimpleMarkerAllocator::<SerializeMe>::new());
 
     raws::load_raws();

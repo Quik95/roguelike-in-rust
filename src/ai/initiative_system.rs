@@ -1,7 +1,7 @@
 use rltk::{DistanceAlg, Point, RandomNumberGenerator};
 use specs::{Entities, Entity, Join, ReadExpect, ReadStorage, System, WriteExpect, WriteStorage};
 
-use crate::components::{Attributes, Initiative, MyTurn, Position};
+use crate::components::{Attributes, Initiative, MyTurn, Pools, Position};
 use crate::player::RunState;
 
 pub struct InitiativeSystem {}
@@ -17,6 +17,7 @@ impl<'a> System<'a> for InitiativeSystem {
         WriteExpect<'a, RunState>,
         ReadExpect<'a, Entity>,
         ReadExpect<'a, Point>,
+        ReadStorage<'a, Pools>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
@@ -30,6 +31,7 @@ impl<'a> System<'a> for InitiativeSystem {
             mut runstate,
             player,
             player_pos,
+            pools,
         ) = data;
 
         if *runstate != RunState::Ticking {
@@ -47,6 +49,10 @@ impl<'a> System<'a> for InitiativeSystem {
 
                 if let Some(attr) = attributes.get(entity) {
                     initiative.current -= attr.quickness.bonus;
+                }
+
+                if let Some(pools) = pools.get(entity) {
+                    initiative.current += f32::floor(pools.total_initiative_penalty) as i32;
                 }
 
                 if entity == *player {

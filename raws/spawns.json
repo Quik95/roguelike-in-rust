@@ -219,7 +219,10 @@
         "effects": {
           "provides_healing": "8"
         }
-      }
+      },
+      "weight_lbs": 0.5,
+      "base_value": 50.0,
+      "vendor_category": "alchemy"
     },
 
     {
@@ -235,7 +238,10 @@
           "ranged": "6",
           "damage": "20"
         }
-      }
+      },
+      "weight_lbs": 0.5,
+      "base_value": 50.0,
+      "vendor_category": "alchemy"
     },
 
     {
@@ -252,7 +258,10 @@
           "damage": "20",
           "area_of_effect": "3"
         }
-      }
+      },
+      "weight_lbs": 0.5,
+      "base_value": 100.0,
+      "vendor_category": "alchemy"
     },
 
     {
@@ -266,10 +275,12 @@
       "consumable": {
         "effects": {
           "ranged": "6",
-          "damage": "20",
           "confusion": "4"
         }
-      }
+      },
+      "weight_lbs": 0.5,
+      "base_value": 75.0,
+      "vendor_category": "alchemy"
     },
 
     {
@@ -284,7 +295,10 @@
         "effects": {
           "magic_mapping": ""
         }
-      }
+      },
+      "weight_lbs": 0.5,
+      "base_value": 50.0,
+      "vendor_category": "alchemy"
     },
 
     {
@@ -299,7 +313,10 @@
         "effects": {
           "food": ""
         }
-      }
+      },
+      "weight_lbs": 2.0,
+      "base_value": 0.5,
+      "vendor_category": "food"
     },
 
     {
@@ -314,7 +331,10 @@
         "effects": {
           "food": ""
         }
-      }
+      },
+      "weight_lbs": 2.0,
+      "base_value": 0.5,
+      "vendor_category": "food"
     },
 
     {
@@ -324,7 +344,9 @@
         "fg": "#A52A2A",
         "bg": "#000000",
         "order": 2
-      }
+      },
+      "weight_lbs": 2.0,
+      "base_value": 5.0
     },
 
     {
@@ -339,7 +361,9 @@
         "effects": {
           "food": ""
         }
-      }
+      },
+      "weight_lbs": 2.0,
+      "base_value": 0.5
     },
 
     {
@@ -354,7 +378,10 @@
         "effects": {
           "provides_healing": "4"
         }
-      }
+      },
+      "weight_lbs": 2.0,
+      "base_value": 0.5,
+      "vendor_category": "food"
     },
 
     {
@@ -370,7 +397,11 @@
         "attribute": "Might",
         "base_damage": "1d8-1",
         "hit_bonus": -1
-      }
+      },
+      "weight_lbs": 3.0,
+      "base_value": 10.0,
+      "initiative_penalty": 2,
+      "vendor_category": "junk"
     },
 
     {
@@ -386,7 +417,11 @@
         "attribute": "Quickness",
         "base_damage": "1d4",
         "hit_bonus": 0
-      }
+      },
+      "weight_lbs": 1.0,
+      "base_value": 2.0,
+      "initiative_penalty": 0,
+      "vendor_category": "weapon"
     },
 
     {
@@ -402,7 +437,11 @@
         "attribute": "Might",
         "base_damage": "1d6",
         "hit_bonus": 0
-      }
+      },
+      "weight_lbs": 2.0,
+      "base_value": 10.0,
+      "initiative_penalty": 1,
+      "vendor_category": "weapon"
     },
 
     {
@@ -418,7 +457,11 @@
         "attribute": "Might",
         "base_damage": "1d8",
         "hit_bonus": 0
-      }
+      },
+      "weight_lbs": 3.0,
+      "base_value": 15.0,
+      "initiative_penalty": 2,
+      "vendor_category": "weapon"
     },
 
     {
@@ -432,9 +475,13 @@
       "weapon": {
         "range": "melee",
         "attribute": "Might",
-        "base_damage": "1d8+1",
+        "base_damage": "1d8",
         "hit_bonus": 0
-      }
+      },
+      "weight_lbs": 4.0,
+      "base_value": 10.0,
+      "initiative_penalty": 2,
+      "vendor_category": "weapon"
     },
 
     {
@@ -448,7 +495,11 @@
       "wearable": {
         "slot": "Shield",
         "armor_class": 1.0
-      }
+      },
+      "weight_lbs": 5.0,
+      "base_value": 3.0,
+      "initiative_penalty": 0.5,
+      "vendor_category": "armor"
     },
 
     {
@@ -462,7 +513,11 @@
       "wearable": {
         "slot": "Shield",
         "armor_class": 2.0
-      }
+      },
+      "weight_lbs": 45.0,
+      "base_value": 30.0,
+      "initiative_penalty": 1.0,
+      "vendor_category": "armor"
     },
 
     {
@@ -476,7 +531,11 @@
       "wearable": {
         "slot": "Torso",
         "armor_class": 0.1
-      }
+      },
+      "weight_lbs": 1.0,
+      "base_value": 1.0,
+      "initiative_penalty": 0.1,
+      "vendor_category": "junk"
     },
 
     {
@@ -490,7 +549,11 @@
       "wearable": {
         "slot": "Legs",
         "armor_class": 0.1
-      }
+      },
+      "weight_lbs": 1.0,
+      "base_value": 1.0,
+      "initiative_penalty": 0.1,
+      "vendor_category": "junk"
     },
 
     {
@@ -504,7 +567,11 @@
       "wearable": {
         "slot": "Feet",
         "armor_class": 0.1
-      }
+      },
+      "weight_lbs": 1.0,
+      "base_value": 1.0,
+      "initiative_penalty": 0.1,
+      "vendor_category": "junk"
     },
 
     {
@@ -520,7 +587,11 @@
         "attribute": "Quickness",
         "base_damage": "1d4",
         "hit_bonus": 0
-      }
+      },
+      "weight_lbs": 2.0,
+      "base_value": 0.1,
+      "initiative_penalty": 2.0,
+      "vendor_category": "junk"
     },
 
     {
@@ -534,7 +605,11 @@
       "wearable": {
         "slot": "Torso",
         "armor_class": 0.1
-      }
+      },
+      "weight_lbs": 1.0,
+      "base_value": 1.0,
+      "initiative_penalty": 0.1,
+      "vendor_category": "clothes"
     },
 
     {
@@ -548,7 +623,11 @@
       "wearable": {
         "slot": "Legs",
         "armor_class": 0.1
-      }
+      },
+      "weight_lbs": 1.0,
+      "base_value": 1.0,
+      "initiative_penalty": 0.1,
+      "vendor_category": "clothes"
     },
 
     {
@@ -562,7 +641,11 @@
       "wearable": {
         "slot": "Feet",
         "armor_class": 0.1
-      }
+      },
+      "weight_lbs": 1.0,
+      "base_value": 1.0,
+      "initiative_penalty": 0.1,
+      "vendor_category": "clothes"
     },
 
     {
@@ -576,7 +659,11 @@
       "wearable": {
         "slot": "Torso",
         "armor_class": 1.0
-      }
+      },
+      "weight_lbs": 15.0,
+      "base_value": 10.0,
+      "initiative_penalty": 0.5,
+      "vendor_category": "clothes"
     },
 
     {
@@ -590,7 +677,11 @@
       "wearable": {
         "slot": "Feet",
         "armor_class": 0.2
-      }
+      },
+      "weight_lbs": 2.0,
+      "base_value": 5.0,
+      "initiative_penalty": 0.25,
+      "vendor_category": "clothes"
     }
   ],
   "mobs": [
@@ -617,7 +708,11 @@
         "Cloth Pants",
         "Slippers"
       ],
-      "faction": "Townsfolk"
+      "faction": "Townsfolk",
+      "gold": "2d6",
+      "vendor": [
+        "food"
+      ]
     },
 
     {
@@ -638,7 +733,11 @@
         "Cloth Pants",
         "Slippers"
       ],
-      "faction": "Townsfolk"
+      "faction": "Townsfolk",
+      "gold": "2d6",
+      "vendor": [
+        "junk"
+      ]
     },
 
     {
@@ -664,7 +763,8 @@
         "Cloth Pants",
         "Slippers"
       ],
-      "faction": "Townsfolk"
+      "faction": "Townsfolk",
+      "gold": "1d4"
     },
 
     {
@@ -685,7 +785,8 @@
         "Cloth Pants",
         "Slippers"
       ],
-      "faction": "Townsfolk"
+      "faction": "Townsfolk",
+      "gold": "2d6"
     },
 
     {
@@ -711,7 +812,8 @@
         "Cloth Pants",
         "Slippers"
       ],
-      "faction": "Townsfolk"
+      "faction": "Townsfolk",
+      "gold": "1d4"
     },
 
     {
@@ -732,7 +834,12 @@
         "Cloth Pants",
         "Slippers"
       ],
-      "faction": "Townsfolk"
+      "faction": "Townsfolk",
+      "gold": "2d6",
+      "vendor": [
+        "armor",
+        "weapon"
+      ]
     },
 
     {
@@ -753,7 +860,11 @@
         "Cloth Pants",
         "Slippers"
       ],
-      "faction": "Townsfolk"
+      "faction": "Townsfolk",
+      "gold": "2d6",
+      "vendor": [
+        "clothes"
+      ]
     },
 
     {
@@ -774,7 +885,11 @@
         "Cloth Pants",
         "Slippers"
       ],
-      "faction": "Townsfolk"
+      "faction": "Townsfolk",
+      "gold": "2d6",
+      "vendor": [
+        "alchemy"
+      ]
     },
 
     {
@@ -801,7 +916,8 @@
         "Cloth Pants",
         "Slippers"
       ],
-      "faction": "Townsfolk"
+      "faction": "Townsfolk",
+      "gold": "2d6"
     },
 
     {
@@ -825,7 +941,8 @@
         "Cloth Pants",
         "Slippers"
       ],
-      "faction": "Townsfolk"
+      "faction": "Townsfolk",
+      "gold": "1d2"
     },
 
     {
@@ -851,7 +968,8 @@
         "Cloth Pants",
         "Slippers"
       ],
-      "faction": "Townsfolk"
+      "faction": "Townsfolk",
+      "gold": "1d2"
     },
 
     {
@@ -877,7 +995,8 @@
         "Cloth Pants",
         "Slippers"
       ],
-      "faction": "Townsfolk"
+      "faction": "Townsfolk",
+      "gold": "1d2"
     },
 
     {
@@ -903,7 +1022,8 @@
         "Cloth Pants",
         "Slippers"
       ],
-      "faction": "Townsfolk"
+      "faction": "Townsfolk",
+      "gold": "2d6"
     },
 
     {
@@ -929,7 +1049,8 @@
         "Cloth Pants",
         "Slippers"
       ],
-      "faction": "Townsfolk"
+      "faction": "Townsfolk",
+      "gold": "1d2"
     },
 
     {
@@ -1089,7 +1210,8 @@
         "range": 6,
         "color": "#FFFF55"
       },
-      "faction": "Bandits"
+      "faction": "Bandits",
+      "gold": "1d6"
     },
 
     {
@@ -1104,7 +1226,8 @@
       "vision_range": 8,
       "movement": "static",
       "attributes": {},
-      "faction": "Cave Goblins"
+      "faction": "Cave Goblins",
+      "gold": "1d8"
     },
 
     {
@@ -1119,7 +1242,8 @@
       "vision_range": 8,
       "movement": "static",
       "attributes": {},
-      "faction": "Cave Goblins"
+      "faction": "Cave Goblins",
+      "gold": "1d6"
     },
 
     {
@@ -1134,7 +1258,8 @@
       "vision_range": 4,
       "movement": "static",
       "attributes": {},
-      "faction": "Cave Goblins"
+      "faction": "Cave Goblins",
+      "gold": "1d4"
     },
 
     {
@@ -1398,6 +1523,7 @@
       },
       "hidden": false
     },
+
     {
       "name": "Hide Rack",
       "renderable": {

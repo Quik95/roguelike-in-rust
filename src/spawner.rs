@@ -1,18 +1,13 @@
 use std::collections::HashMap;
 
-use rltk::{
-    console, to_cp437, RandomNumberGenerator, BLACK, CHOCOLATE, CYAN, CYAN3, GREEN, MAGENTA,
-    ORANGE, PINK, RGB, YELLOW,
-};
+use rltk::{console, to_cp437, RandomNumberGenerator, RGB};
 use specs::saveload::{MarkedBuilder, SimpleMarker};
 use specs::{Builder, Entity, World, WorldExt};
 
 use crate::components::{
-    AreaOfEffect, Attribute, Attributes, BlocksTile, BlocksVisibility, Confusion, Consumable,
-    DefenseBonus, Door, EntryTrigger, EquipmentSlot, Equippable, Faction, Hidden, HungerClock,
-    HungerState, InflictsDamage, Initiative, Item, LightSource, MagicMapper, MeleePowerBonus, Name,
-    Player, Pool, Pools, Position, ProvidesFood, ProvidesHealing, Ranged, Renderable, SerializeMe,
-    Skill, Skills, Viewshed,
+    Attribute, Attributes, BlocksTile, EquipmentChanged, Faction, HungerClock, HungerState,
+    Initiative, LightSource, Name, Player, Pool, Pools, Position, Renderable, SerializeMe, Skill,
+    Skills, Viewshed,
 };
 use crate::gamesystem::{attr_bonus, mana_at_level, player_hp_at_level};
 use crate::map::{tiletype::TileType, Map};
@@ -89,12 +84,16 @@ pub fn player(ecs: &mut World, player_x: i32, player_y: i32) -> Entity {
             },
             xp: 0,
             level: 1,
+            total_weight: 0.0,
+            total_initiative_penalty: 0.0,
+            gold: 0.0,
         })
         .with(LightSource {
             color: RGB::from_f32(1.0, 1.0, 0.5),
             range: 8,
         })
         .with(Initiative { current: 0 })
+        .with(EquipmentChanged {})
         .with(Faction {
             name: "Player".to_string(),
         })
@@ -252,246 +251,6 @@ pub fn spawn_entity(ecs: &mut World, spawn: &(&usize, &String)) {
     ));
 }
 
-fn health_potion(ecs: &mut World, x: i32, y: i32) {
-    ecs.create_entity()
-        .with(Position { x, y })
-        .with(Renderable {
-            glyph: to_cp437('¡'),
-            fg: RGB::named(MAGENTA),
-            bg: RGB::named(BLACK),
-            render_order: 2,
-        })
-        .with(Name {
-            name: "Health Potion".to_string(),
-        })
-        .with(Item {})
-        .with(Consumable {})
-        .with(ProvidesHealing { heal_amount: 8 })
-        .marked::<SimpleMarker<SerializeMe>>()
-        .build();
-}
-
-fn magic_missile_scroll(ecs: &mut World, x: i32, y: i32) {
-    ecs.create_entity()
-        .with(Position { x, y })
-        .with(Renderable {
-            glyph: to_cp437(')'),
-            fg: RGB::named(CYAN),
-            bg: RGB::named(BLACK),
-            render_order: 2,
-        })
-        .with(Name {
-            name: "Magic Missile Scroll".to_string(),
-        })
-        .with(Item {})
-        .with(Consumable {})
-        .with(Ranged { range: 6 })
-        .with(InflictsDamage { damage: 8 })
-        .marked::<SimpleMarker<SerializeMe>>()
-        .build();
-}
-
-fn fireball_scroll(ecs: &mut World, x: i32, y: i32) {
-    ecs.create_entity()
-        .with(Position { x, y })
-        .with(Renderable {
-            glyph: to_cp437(')'),
-            fg: RGB::named(ORANGE),
-            bg: RGB::named(BLACK),
-            render_order: 2,
-        })
-        .with(Name {
-            name: "Fireball Scroll".to_string(),
-        })
-        .with(Item {})
-        .with(Consumable {})
-        .with(Ranged { range: 6 })
-        .with(InflictsDamage { damage: 20 })
-        .with(AreaOfEffect { radius: 3 })
-        .marked::<SimpleMarker<SerializeMe>>()
-        .build();
-}
-
-fn confusion_scroll(ecs: &mut World, x: i32, y: i32) {
-    ecs.create_entity()
-        .with(Position { x, y })
-        .with(Renderable {
-            glyph: to_cp437(')'),
-            fg: RGB::named(PINK),
-            bg: RGB::named(BLACK),
-            render_order: 2,
-        })
-        .with(Name {
-            name: "Confusion Scroll".to_string(),
-        })
-        .with(Item {})
-        .with(Consumable {})
-        .with(Ranged { range: 6 })
-        .with(Confusion { turns: 4 })
-        .marked::<SimpleMarker<SerializeMe>>()
-        .build();
-}
-
 fn room_table(map_depth: i32) -> RandomTable {
     get_spawn_table_for_depth(&RAWS.lock().unwrap(), map_depth)
-}
-
-fn dagger(ecs: &mut World, x: i32, y: i32) {
-    ecs.create_entity()
-        .with(Position { x, y })
-        .with(Renderable {
-            glyph: to_cp437('/'),
-            fg: RGB::named(CYAN),
-            bg: RGB::named(BLACK),
-            render_order: 2,
-        })
-        .with(Name {
-            name: "Dagger".to_string(),
-        })
-        .with(Item {})
-        .with(Equippable {
-            slot: EquipmentSlot::Melee,
-        })
-        .with(MeleePowerBonus { power: 2 })
-        .marked::<SimpleMarker<SerializeMe>>()
-        .build();
-}
-
-fn shield(ecs: &mut World, x: i32, y: i32) {
-    ecs.create_entity()
-        .with(Position { x, y })
-        .with(Renderable {
-            glyph: to_cp437('('),
-            fg: RGB::named(CYAN),
-            bg: RGB::named(BLACK),
-            render_order: 2,
-        })
-        .with(Name {
-            name: "Shield".to_string(),
-        })
-        .with(Item {})
-        .with(Equippable {
-            slot: EquipmentSlot::Shield,
-        })
-        .with(DefenseBonus { defense: 1 })
-        .marked::<SimpleMarker<SerializeMe>>()
-        .build();
-}
-
-fn longsword(ecs: &mut World, x: i32, y: i32) {
-    ecs.create_entity()
-        .with(Position { x, y })
-        .with(Renderable {
-            glyph: to_cp437('/'),
-            fg: RGB::named(YELLOW),
-            bg: RGB::named(BLACK),
-            render_order: 2,
-        })
-        .with(Name {
-            name: "Longsword".to_string(),
-        })
-        .with(Item {})
-        .with(Equippable {
-            slot: EquipmentSlot::Melee,
-        })
-        .with(MeleePowerBonus { power: 4 })
-        .marked::<SimpleMarker<SerializeMe>>()
-        .build();
-}
-
-fn tower_shield(ecs: &mut World, x: i32, y: i32) {
-    ecs.create_entity()
-        .with(Position { x, y })
-        .with(Renderable {
-            glyph: to_cp437('('),
-            fg: RGB::named(YELLOW),
-            bg: RGB::named(BLACK),
-            render_order: 2,
-        })
-        .with(Name {
-            name: "Tower Shield".to_string(),
-        })
-        .with(Item {})
-        .with(Equippable {
-            slot: EquipmentSlot::Shield,
-        })
-        .with(DefenseBonus { defense: 3 })
-        .marked::<SimpleMarker<SerializeMe>>()
-        .build();
-}
-
-fn rations(ecs: &mut World, x: i32, y: i32) {
-    ecs.create_entity()
-        .with(Position { x, y })
-        .with(Renderable {
-            glyph: to_cp437('%'),
-            fg: RGB::named(GREEN),
-            bg: RGB::named(BLACK),
-            render_order: 2,
-        })
-        .with(Name {
-            name: "Rations".to_string(),
-        })
-        .with(Item {})
-        .with(ProvidesFood {})
-        .with(Consumable {})
-        .marked::<SimpleMarker<SerializeMe>>()
-        .build();
-}
-
-fn magic_mapping_scroll(ecs: &mut World, x: i32, y: i32) {
-    ecs.create_entity()
-        .with(Position { x, y })
-        .with(Renderable {
-            glyph: to_cp437(')'),
-            fg: RGB::named(CYAN3),
-            bg: RGB::named(BLACK),
-            render_order: 2,
-        })
-        .with(Name {
-            name: "Magic Mapping Scroll".to_string(),
-        })
-        .with(Item {})
-        .with(MagicMapper {})
-        .with(Consumable {})
-        .marked::<SimpleMarker<SerializeMe>>()
-        .build();
-}
-
-fn bear_trap(ecs: &mut World, x: i32, y: i32) {
-    ecs.create_entity()
-        .with(Position { x, y })
-        .with(Renderable {
-            glyph: to_cp437('^'),
-            fg: RGB::named(rltk::RED),
-            bg: RGB::named(rltk::BLACK),
-            render_order: 2,
-        })
-        .with(Name {
-            name: "Bear Trap".to_string(),
-        })
-        .with(Hidden {})
-        .with(EntryTrigger {})
-        .with(InflictsDamage { damage: 6 })
-        .marked::<SimpleMarker<SerializeMe>>()
-        .build();
-}
-
-pub fn door(ecs: &mut World, x: i32, y: i32) {
-    ecs.create_entity()
-        .with(Position { x, y })
-        .with(Renderable {
-            glyph: rltk::to_cp437('+'),
-            fg: RGB::named(CHOCOLATE),
-            bg: RGB::named(BLACK),
-            render_order: 2,
-        })
-        .with(Name {
-            name: "Door".to_string(),
-        })
-        .with(BlocksTile {})
-        .with(BlocksVisibility {})
-        .with(Door { open: false })
-        .marked::<SimpleMarker<SerializeMe>>()
-        .build();
 }

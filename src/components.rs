@@ -10,6 +10,7 @@ use specs::saveload::{ConvertSaveload, Marker};
 use specs_derive::*;
 
 use crate::map::dungeon::MasterDungeonMap;
+use crate::raws::rawmaster::LBS_TO_KG_RATIO;
 
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct Position {
@@ -72,7 +73,11 @@ impl SufferDamage {
 }
 
 #[derive(Component, Serialize, Deserialize, Debug, Clone)]
-pub struct Item {}
+pub struct Item {
+    pub initiative_penalty: f32,
+    pub weight: f32,
+    pub base_value: f32,
+}
 
 #[derive(Component, Debug, ConvertSaveload, Clone)]
 pub struct ProvidesHealing {
@@ -256,6 +261,12 @@ pub struct Attributes {
     pub intelligence: Attribute,
 }
 
+impl Attributes {
+    pub fn get_max_carry_capacity(&self) -> u32 {
+        f32::round((self.might.base + self.might.modifiers) as f32 * 15.0 / LBS_TO_KG_RATIO) as u32
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
 pub enum Skill {
     Melee,
@@ -280,6 +291,9 @@ pub struct Pools {
     pub mana: Pool,
     pub xp: i32,
     pub level: i32,
+    pub total_weight: f32,
+    pub total_initiative_penalty: f32,
+    pub gold: f32,
 }
 
 #[derive(Eq, PartialEq, Copy, Clone, Serialize, Deserialize)]
@@ -374,4 +388,12 @@ pub struct MoveMode {
 #[derive(Component, Debug, ConvertSaveload, Clone)]
 pub struct Chasing {
     pub target: Entity,
+}
+
+#[derive(Component, Debug, Serialize, Deserialize, Clone)]
+pub struct EquipmentChanged {}
+
+#[derive(Component, Debug, Serialize, Deserialize, Clone)]
+pub struct Vendor {
+    pub categories: Vec<String>,
 }

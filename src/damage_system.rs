@@ -45,6 +45,7 @@ impl<'a> System<'a> for DamageSystem {
             player_pos,
         ) = data;
         let mut xp_gain = 0;
+        let mut gold_gain = 0.0_f32;
 
         for (entity, mut stats, damage) in (&entities, &mut pools, &damage).join() {
             for dmg in damage.amount.iter() {
@@ -56,6 +57,7 @@ impl<'a> System<'a> for DamageSystem {
                 }
                 if stats.hit_points.current < 1 && dmg.1 {
                     xp_gain += stats.level * 100;
+                    gold_gain += stats.gold;
                     if let Some(pos) = pos {
                         let idx = map.xy_idx(pos.x, pos.y);
                         spatial::remove_entity(entity, idx);
@@ -64,10 +66,11 @@ impl<'a> System<'a> for DamageSystem {
             }
         }
 
-        if xp_gain != 0 {
+        if xp_gain != 0 || gold_gain != 0.0 {
             let player_stats = pools.get_mut(*player).unwrap();
             let player_attributes = attributes.get(*player).unwrap();
             player_stats.xp += xp_gain;
+            player_stats.gold += gold_gain;
             if player_stats.xp >= player_stats.level * 1000 {
                 player_stats.level += 1;
                 player_stats.hit_points.max = player_hp_at_level(

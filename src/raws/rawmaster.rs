@@ -8,10 +8,11 @@ use specs::{Builder, Entity, EntityBuilder, World, WorldExt};
 
 use crate::components::{
     AreaOfEffect, Attribute, Attributes, BlocksTile, BlocksVisibility, Confusion, Consumable, Door,
-    EntryTrigger, EquipmentSlot, Equippable, Faction, Hidden, InBackpack, InflictsDamage,
-    Initiative, LightSource, MagicMapper, MeleeWeapon, MoveMode, Movement, Name, NaturalAttack,
-    NaturalAttackDefense, Pool, Pools, Position, ProvidesFood, ProvidesHealing, Ranged,
-    SerializeMe, SingleActivation, Skill, Skills, Viewshed, WeaponAttribute, Wearable,
+    EntryTrigger, EquipmentChanged, EquipmentSlot, Equippable, Faction, Hidden, InBackpack,
+    InflictsDamage, Initiative, LightSource, MagicMapper, MeleeWeapon, MoveMode, Movement, Name,
+    NaturalAttack, NaturalAttackDefense, Pool, Pools, Position, ProvidesFood, ProvidesHealing,
+    Ranged, SerializeMe, SingleActivation, Skill, Skills, Vendor, Viewshed, WeaponAttribute,
+    Wearable,
 };
 use crate::components::{Equipped, LootTable};
 use crate::components::{Quips, Renderable};
@@ -24,6 +25,8 @@ use crate::raws::Raws;
 lazy_static! {
     pub static ref RAWS: Mutex<RawMaster> = Mutex::new(RawMaster::default());
 }
+
+pub const LBS_TO_KG_RATIO: f32 = 2.205;
 
 #[derive(Eq, PartialEq, Hash, Copy, Clone)]
 pub enum SpawnType {
@@ -157,7 +160,13 @@ pub fn spawn_named_item(
         eb = eb.with(Name {
             name: item_template.name.clone(),
         });
-        eb = eb.with(crate::components::Item {});
+        eb = eb.with(crate::components::Item {
+            initiative_penalty: item_template.initiative_penalty.unwrap_or(0.0),
+            weight: item_template
+                .weight_lbs
+                .map_or_else(|| 0.0, |lbs| lbs / LBS_TO_KG_RATIO),
+            base_value: item_template.base_value.unwrap_or(0.0),
+        });
 
         if let Some(consumable) = &item_template.consumable {
             eb = eb.with(Consumable {});
@@ -344,8 +353,16 @@ pub fn spawn_named_mob(
                 current: mob_mana,
                 max: mob_mana,
             },
+            total_weight: 0.0,
+            total_initiative_penalty: 0.0,
+            gold: mob_template.gold.as_ref().map_or(0.0, |gold| {
+                let mut rng = RandomNumberGenerator::new();
+                let roll: DiceRoll = gold.parse().unwrap();
+                (rng.roll_dice(roll.n_dice, roll.die_type) + roll.die_bonus) as f32
+            }),
         };
         eb = eb.with(pools);
+        eb = eb.with(EquipmentChanged {});
 
         let mut skills = Skills {
             skills: HashMap::new(),
@@ -372,6 +389,12 @@ pub fn spawn_named_mob(
             }
         }
         eb = eb.with(skills);
+
+        if let Some(vendor) = &mob_template.vendor {
+            eb = eb.with(Vendor {
+                categories: vendor.clone(),
+            });
+        }
 
         if let Some(na) = &mob_template.natural {
             let mut nature = NaturalAttackDefense {
@@ -595,4 +618,18 @@ pub fn faction_reaction(my_faction: &str, their_faction: &str, raws: &RawMaster)
     };
 
     Reaction::Ignore
+}
+
+pub fn get_vendor_items(categories: &[String], raws: &RawMaster) -> Vec<(String, f32)> {
+    let mut result = vec![];
+
+    for item in raws.raws.items.iter() {
+        if let Some(cat) = &item.vendor_category {
+            if categories.contains(cat) && item.base_value.is_some() {
+                result.push((item.name.clone(), item.base_value.unwrap()));
+            }
+        }
+    }
+
+    result
 }
