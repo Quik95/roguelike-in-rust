@@ -50,6 +50,7 @@ mod raws;
 mod rect;
 mod rex_assets;
 mod saveload_system;
+mod spatial;
 mod spawner;
 mod trigger_system;
 mod visibility_system;

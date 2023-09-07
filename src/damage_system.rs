@@ -13,6 +13,7 @@ use crate::map::Map;
 use crate::particle_system::ParticleBuilder;
 use crate::player::RunState;
 use crate::raws::rawmaster::{get_item_drop, spawn_named_item, SpawnType, RAWS};
+use crate::spatial;
 
 pub struct DamageSystem {}
 
@@ -45,22 +46,26 @@ impl<'a> System<'a> for DamageSystem {
         ) = data;
         let mut xp_gain = 0;
 
-        for (entity, mut pools, damage) in (&entities, &mut pools, &damage).join() {
+        for (entity, mut stats, damage) in (&entities, &mut pools, &damage).join() {
             for dmg in damage.amount.iter() {
-                pools.hit_points.current -= dmg.0;
+                stats.hit_points.current -= dmg.0;
                 let pos = positions.get(entity);
                 if let Some(pos) = pos {
                     let idx = map.xy_idx(pos.x, pos.y);
                     map.bloodstains.insert(idx);
                 }
-                if pools.hit_points.current < 1 && dmg.1 {
-                    xp_gain += pools.level * 100;
+                if stats.hit_points.current < 1 && dmg.1 {
+                    xp_gain += stats.level * 100;
+                    if let Some(pos) = pos {
+                        let idx = map.xy_idx(pos.x, pos.y);
+                        spatial::remove_entity(entity, idx);
+                    }
                 }
             }
         }
 
         if xp_gain != 0 {
-            let mut player_stats = pools.get_mut(*player).unwrap();
+            let player_stats = pools.get_mut(*player).unwrap();
             let player_attributes = attributes.get(*player).unwrap();
             player_stats.xp += xp_gain;
             if player_stats.xp >= player_stats.level * 1000 {

@@ -12,6 +12,7 @@ use specs::{Builder, Entity, Join, World, WorldExt};
 use crate::components::*;
 use crate::components::{SerializationHelper, SerializeMe};
 use crate::map::dungeon::MasterDungeonMap;
+use crate::spatial;
 
 macro_rules! serialize_individually {
     ($ecs:expr, $ser:expr, $data:expr, $( $type:ty),*) => {
@@ -224,7 +225,7 @@ pub fn load_game(ecs: &mut World) {
         for (e, h) in (&entities, &helper).join() {
             let mut worldmap = ecs.write_resource::<super::map::Map>();
             *worldmap = h.map.clone();
-            worldmap.tile_content = vec![Vec::new(); (worldmap.width * worldmap.height) as usize];
+            spatial::set_size((worldmap.width * worldmap.height) as usize);
             deleteme = Some(e);
         }
 

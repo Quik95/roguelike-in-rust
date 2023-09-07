@@ -61,16 +61,15 @@ impl<'a> System<'a> for ChaseAI {
             );
             if path.success && path.steps.len() > 1 && path.steps.len() < 15 {
                 let mut idx = map.xy_idx(pos.x, pos.y);
-                map.blocked[idx] = false;
                 pos.x = path.steps[1] as i32 % map.width;
                 pos.y = path.steps[1] as i32 / map.width;
                 entity_moved
                     .insert(entity, EntityMoved {})
                     .expect("Unable to insert marker");
-                idx = map.xy_idx(pos.x, pos.y);
-                map.blocked[idx] = true;
+                let new_idx = map.xy_idx(pos.x, pos.y);
                 viewshed.dirty = true;
                 turn_done.push(entity);
+                crate::spatial::move_entity(entity, idx, new_idx);
             } else {
                 end_chase.push(entity);
             }

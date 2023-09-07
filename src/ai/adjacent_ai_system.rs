@@ -5,6 +5,7 @@ use crate::components::{Faction, MyTurn, Position, WantsToMelee};
 use crate::map::Map;
 use crate::raws::rawmaster::{faction_reaction, RAWS};
 use crate::raws::Reaction;
+use crate::spatial;
 
 pub struct AdjacentAI {}
 
@@ -121,12 +122,12 @@ fn evaluate(
     my_faction: &str,
     reactions: &mut Vec<(Entity, Reaction)>,
 ) {
-    for other_entity in map.tile_content[idx].iter() {
-        if let Some(faction) = factions.get(*other_entity) {
+    spatial::for_each_tile_content(idx, |other_entity| {
+        if let Some(faction) = factions.get(other_entity) {
             reactions.push((
-                *other_entity,
+                other_entity,
                 faction_reaction(my_faction, &faction.name, &RAWS.lock().unwrap()),
             ))
         }
-    }
+    });
 }

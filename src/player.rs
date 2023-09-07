@@ -1,8 +1,9 @@
-use rltk::{Point, VirtualKeyCode};
+use std::cmp::{max, min};
+
+use rltk::{to_cp437, Point, VirtualKeyCode};
 use specs::prelude::*;
 
 use crate::gamelog::GameLog;
-use crate::gui;
 use crate::map::tiletype::TileType;
 use crate::player::RunState::{
     NextLevel, PreviousLevel, SaveGame, ShowCheatMenu, ShowDropItem, ShowInventory, ShowRemoveItem,
@@ -10,6 +11,7 @@ use crate::player::RunState::{
 };
 use crate::raws::rawmaster::{faction_reaction, RAWS};
 use crate::raws::Reaction;
+use crate::{gui, spatial};
 
 use super::components::*;
 use super::map::Map;
@@ -46,9 +48,9 @@ impl Player {
         let mut positions = ecs.write_storage::<Position>();
         let mut players = ecs.write_storage::<Self>();
         let mut viewsheds = ecs.write_storage::<Viewshed>();
-        let map = ecs.fetch::<Map>();
-        let combat_stats = ecs.read_storage::<Attributes>();
         let entities = ecs.entities();
+        let combat_stats = ecs.read_storage::<Attributes>();
+        let map = ecs.fetch::<Map>();
         let mut wants_to_melee = ecs.write_storage::<WantsToMelee>();
         let mut entity_moved = ecs.write_storage::<EntityMoved>();
         let mut doors = ecs.write_storage::<Door>();
@@ -73,64 +75,67 @@ impl Player {
             }
             let destination_idx = map.xy_idx(pos.x + delta_x, pos.y + delta_y);
 
-            for potential_target in map.tile_content[destination_idx].iter() {
-                let mut hostile = true;
-                if combat_stats.get(*potential_target).is_some() {
-                    if let Some(faction) = factions.get(*potential_target) {
-                        let reaction =
-                            faction_reaction(&faction.name, "Player", &RAWS.lock().unwrap());
-                        if reaction != Reaction::Attack {
-                            hostile = false;
+            result =
+                spatial::for_each_tile_content_with_gamemode(destination_idx, |potential_target| {
+                    let mut hostile = true;
+                    if combat_stats.get(potential_target).is_some() {
+                        if let Some(faction) = factions.get(potential_target) {
+                            let reaction =
+                                faction_reaction(&faction.name, "Player", &RAWS.lock().unwrap());
+                            if reaction != Reaction::Attack {
+                                hostile = false;
+                            }
                         }
                     }
-                }
-                if !hostile {
-                    // Note that we want to move the bystander
-                    swap_entities.push((*potential_target, pos.x, pos.y));
+                    if !hostile {
+                        swap_entities.push((potential_target, pos.x, pos.y));
 
-                    // Move the player
-                    pos.x = (pos.x + delta_x).clamp(0, map.width - 1);
-                    pos.y = (pos.y + delta_y).clamp(0, map.height - 1);
-                    entity_moved
-                        .insert(entity, EntityMoved {})
-                        .expect("Unable to insert marker");
+                        pos.x = min(map.width - 1, max(0, pos.x + delta_x));
+                        pos.y = min(map.height - 1, max(0, pos.y + delta_y));
+                        entity_moved
+                            .insert(entity, EntityMoved {})
+                            .expect("Unable to insert marker");
 
-                    viewshed.dirty = true;
-                    ppos.x = pos.x;
-                    ppos.y = pos.y;
-                } else {
-                    let target = combat_stats.get(*potential_target);
-                    if let Some(_target) = target {
-                        wants_to_melee
-                            .insert(
-                                entity,
-                                WantsToMelee {
-                                    target: *potential_target,
-                                },
-                            )
-                            .expect("Add target failed");
-                        return RunState::Ticking;
+                        viewshed.dirty = true;
+                        ppos.x = pos.x;
+                        ppos.y = pos.y;
+                        return Some(RunState::Ticking);
+                    } else {
+                        let target = combat_stats.get(potential_target);
+                        if let Some(_target) = target {
+                            wants_to_melee
+                                .insert(
+                                    entity,
+                                    WantsToMelee {
+                                        target: potential_target,
+                                    },
+                                )
+                                .expect("Add target failed");
+                            return Some(RunState::Ticking);
+                        }
                     }
-                }
+                    let door = doors.get_mut(potential_target);
+                    if let Some(door) = door {
+                        door.open = true;
+                        blocks_visibility.remove(potential_target);
+                        blocks_movement.remove(potential_target);
+                        let glyph = renderables.get_mut(potential_target).unwrap();
+                        glyph.glyph = to_cp437('/');
+                        viewshed.dirty = true;
+                        return Some(RunState::Ticking);
+                    }
+                    None
+                });
 
-                let door = doors.get_mut(*potential_target);
-                if let Some(door) = door {
-                    door.open = true;
-                    blocks_visibility.remove(*potential_target);
-                    blocks_movement.remove(*potential_target);
-                    let glyph = renderables.get_mut(*potential_target).unwrap();
-                    glyph.glyph = rltk::to_cp437('/');
-                    viewshed.dirty = true;
-                    result = RunState::Ticking;
-                }
-            }
-
-            if !map.blocked[destination_idx] {
+            if !spatial::is_blocked(destination_idx) {
+                let old_idx = map.xy_idx(pos.x, pos.y);
                 pos.x = i32::min(map.width - 1, i32::max(0, pos.x + delta_x));
                 pos.y = i32::min(map.height - 1, i32::max(0, pos.y + delta_y));
+                let new_idx = map.xy_idx(pos.x, pos.y);
                 entity_moved
                     .insert(entity, EntityMoved {})
                     .expect("Unable to insert marker");
+                spatial::move_entity(entity, old_idx, new_idx);
 
                 viewshed.dirty = true;
                 ppos.x = pos.x;
@@ -147,8 +152,12 @@ impl Player {
         for m in swap_entities.iter() {
             let their_pos = positions.get_mut(m.0);
             if let Some(their_pos) = their_pos {
+                let old_idx = map.xy_idx(their_pos.x, their_pos.y);
                 their_pos.x = m.1;
                 their_pos.y = m.2;
+                let new_idx = map.xy_idx(their_pos.x, their_pos.y);
+                spatial::move_entity(m.0, old_idx, new_idx);
+                result = RunState::Ticking;
             }
         }
 
@@ -305,15 +314,15 @@ impl Player {
         let viewshed = viewshed_components.get(*player_entity).unwrap();
         for tile in viewshed.visible_tiles.iter() {
             let idx = worldmap_resource.xy_idx(tile.x, tile.y);
-            for entity_id in worldmap_resource.tile_content[idx].iter() {
-                let faction = factions.get(*entity_id);
+            spatial::for_each_tile_content(idx, |entity_id| {
+                let faction = factions.get(entity_id);
                 if let Some(faction) = faction {
                     let reaction = faction_reaction(&faction.name, "Player", &RAWS.lock().unwrap());
                     if reaction == Reaction::Attack {
                         can_heal = false;
                     }
                 }
-            }
+            });
         }
 
         let hunger_clock = ecs.read_storage::<HungerClock>();

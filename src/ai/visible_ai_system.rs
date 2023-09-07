@@ -94,13 +94,13 @@ fn evaluate(
     my_faction: &str,
     reactions: &mut Vec<(usize, Reaction, Entity)>,
 ) {
-    for other_entity in map.tile_content[idx].iter() {
-        if let Some(faction) = factions.get(*other_entity) {
+    crate::spatial::for_each_tile_content(idx, |other_entity| {
+        if let Some(faction) = factions.get(other_entity) {
             reactions.push((
                 idx,
                 faction_reaction(my_faction, &faction.name, &RAWS.lock().unwrap()),
-                *other_entity,
+                other_entity,
             ));
         }
-    }
+    });
 }

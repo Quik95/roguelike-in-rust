@@ -7,6 +7,7 @@ use crate::components::{
 use crate::gamelog::GameLog;
 use crate::map::Map;
 use crate::particle_system::ParticleBuilder;
+use crate::spatial;
 
 pub struct TriggerSystem {}
 
@@ -46,45 +47,47 @@ impl<'a> System<'a> for TriggerSystem {
 
         for (entity, mut _entity_moved, pos) in (&entities, &mut entity_moved, &position).join() {
             let idx = map.xy_idx(pos.x, pos.y);
-            for entity_id in map.tile_content[idx].iter() {
-                if entity != *entity_id {
-                    let maybe_trigger = entry_trigger.get(*entity_id);
-                    match maybe_trigger {
-                        None => {}
-                        Some(_trigger) => {
-                            let name = name.get(*entity_id);
-                            if let Some(name) = name {
-                                log.entries.push(format!("{} triggers!", &name.name));
-                            }
+            spatial::for_each_tile_content(idx, |entity_id| {
+                if entity == entity_id {
+                    return;
+                }
 
-                            hidden.remove(*entity_id);
+                let maybe_trigger = entry_trigger.get(entity_id);
+                match maybe_trigger {
+                    None => {}
+                    Some(_trigger) => {
+                        let name = name.get(entity_id);
+                        if let Some(name) = name {
+                            log.entries.push(format!("{} triggers!", &name.name));
+                        }
 
-                            let damage = inflicts_damage.get(*entity_id);
-                            if let Some(damage) = damage {
-                                particle_builder.request(
-                                    pos.x,
-                                    pos.y,
-                                    rltk::RGB::named(rltk::ORANGE),
-                                    rltk::RGB::named(rltk::BLACK),
-                                    rltk::to_cp437('‼'),
-                                    200.0,
-                                );
-                                SufferDamage::new_damage(
-                                    &mut inflict_damage,
-                                    entity,
-                                    damage.damage,
-                                    false,
-                                );
-                            }
+                        hidden.remove(entity_id);
 
-                            let sa = single_activation.get(*entity_id);
-                            if let Some(_sa) = sa {
-                                remove_entity.push(*entity_id);
-                            }
+                        let damage = inflicts_damage.get(entity_id);
+                        if let Some(damage) = damage {
+                            particle_builder.request(
+                                pos.x,
+                                pos.y,
+                                rltk::RGB::named(rltk::ORANGE),
+                                rltk::RGB::named(rltk::BLACK),
+                                rltk::to_cp437('‼'),
+                                200.0,
+                            );
+                            SufferDamage::new_damage(
+                                &mut inflict_damage,
+                                entity,
+                                damage.damage,
+                                false,
+                            );
+                        }
+
+                        let sa = single_activation.get(entity_id);
+                        if let Some(_sa) = sa {
+                            remove_entity.push(entity_id);
                         }
                     }
                 }
-            }
+            });
         }
 
         for trap in remove_entity.iter() {

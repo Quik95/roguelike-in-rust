@@ -10,6 +10,7 @@ use crate::gamelog::GameLog;
 use crate::map::Map;
 use crate::particle_system::ParticleBuilder;
 use crate::player::RunState;
+use crate::spatial;
 
 pub struct ItemCollectionSystem {}
 
@@ -114,9 +115,7 @@ impl<'a> System<'a> for ItemUseSystem {
                     match area_effect {
                         None => {
                             let idx = map.xy_idx(target.x, target.y);
-                            for mob in map.tile_content[idx].iter() {
-                                targets.push(*mob);
-                            }
+                            spatial::for_each_tile_content(idx, |mob| targets.push(mob));
                         }
                         Some(area_effect) => {
                             let mut blast_tiles =
@@ -126,9 +125,7 @@ impl<'a> System<'a> for ItemUseSystem {
                             });
                             for tile_idx in blast_tiles.iter() {
                                 let idx = map.xy_idx(tile_idx.x, tile_idx.y);
-                                for mob in map.tile_content[idx].iter() {
-                                    targets.push(*mob);
-                                }
+                                spatial::for_each_tile_content(idx, |mob| targets.push(mob));
                                 particle_builder.request(
                                     tile_idx.x,
                                     tile_idx.y,

@@ -44,9 +44,8 @@ impl<'a> System<'a> for FleeAI {
             );
             let flee_target = DijkstraMap::find_highest_exit(&flee_map, my_idx, &*map);
             if let Some(flee_target) = flee_target {
-                if !map.blocked[flee_target] {
-                    map.blocked[my_idx] = false;
-                    map.blocked[flee_target] = true;
+                if !crate::spatial::is_blocked(flee_target) {
+                    crate::spatial::move_entity(entity, my_idx, flee_target);
                     viewshed.dirty = true;
                     pos.x = flee_target as i32 % map.width;
                     pos.y = flee_target as i32 / map.width;
