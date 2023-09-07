@@ -360,6 +360,7 @@ pub fn spawn_named_mob(
                 let roll: DiceRoll = gold.parse().unwrap();
                 (rng.roll_dice(roll.n_dice, roll.die_type) + roll.die_bonus) as f32
             }),
+            god_mode: false,
         };
         eb = eb.with(pools);
         eb = eb.with(EquipmentChanged {});
@@ -546,6 +547,18 @@ pub fn spawn_named_prop(
                     _ => {}
                 }
             }
+        }
+
+        if let Some(light) = &prop_template.light {
+            eb = eb.with(LightSource {
+                range: light.range,
+                color: RGB::from_hex(&light.color).expect("Bad Color"),
+            });
+            eb = eb.with(Viewshed {
+                range: light.range,
+                dirty: true,
+                visible_tiles: vec![],
+            });
         }
 
         return Some(eb.build());

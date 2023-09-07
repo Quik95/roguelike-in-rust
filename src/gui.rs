@@ -787,16 +787,19 @@ pub enum CheatMenuResult {
     NoResponse,
     Cancel,
     TeleportToExit,
+    Heal,
+    Reveal,
+    GodMode,
 }
 
 pub fn show_cheat_mode(_gs: &mut State, ctx: &mut Rltk) -> CheatMenuResult {
-    let count = 2;
-    let y = (25 - (count / 2)) as i32;
+    let count = 4;
+    let mut y = (25 - (count / 2));
     ctx.draw_box(
         15,
         y - 2,
         31,
-        (count + 3) as i32,
+        (count + 3),
         RGB::named(WHITE),
         RGB::named(BLACK),
     );
@@ -809,7 +812,7 @@ pub fn show_cheat_mode(_gs: &mut State, ctx: &mut Rltk) -> CheatMenuResult {
     );
     ctx.print_color(
         18,
-        y + count as i32 + 1,
+        y + count + 1,
         RGB::named(YELLOW),
         RGB::named(BLACK),
         "ESCAPE to cancel",
@@ -818,12 +821,32 @@ pub fn show_cheat_mode(_gs: &mut State, ctx: &mut Rltk) -> CheatMenuResult {
     ctx.set(17, y, RGB::named(WHITE), RGB::named(BLACK), to_cp437('('));
     ctx.set(18, y, RGB::named(YELLOW), RGB::named(BLACK), to_cp437('T'));
     ctx.set(19, y, RGB::named(WHITE), RGB::named(BLACK), to_cp437(')'));
+    ctx.print(21, y, "Teleport to next level");
 
-    ctx.print(21, y, "Teleport to exit");
+    y += 1;
+    ctx.set(17, y, RGB::named(WHITE), RGB::named(BLACK), to_cp437('('));
+    ctx.set(18, y, RGB::named(YELLOW), RGB::named(BLACK), to_cp437('H'));
+    ctx.set(19, y, RGB::named(WHITE), RGB::named(BLACK), to_cp437(')'));
+    ctx.print(21, y, "Heal all wounds");
+
+    y += 1;
+    ctx.set(17, y, RGB::named(WHITE), RGB::named(BLACK), to_cp437('('));
+    ctx.set(18, y, RGB::named(YELLOW), RGB::named(BLACK), to_cp437('R'));
+    ctx.set(19, y, RGB::named(WHITE), RGB::named(BLACK), to_cp437(')'));
+    ctx.print(21, y, "Reveal the map");
+
+    y += 1;
+    ctx.set(17, y, RGB::named(WHITE), RGB::named(BLACK), to_cp437('('));
+    ctx.set(18, y, RGB::named(YELLOW), RGB::named(BLACK), to_cp437('G'));
+    ctx.set(19, y, RGB::named(WHITE), RGB::named(BLACK), to_cp437(')'));
+    ctx.print(21, y, "God Mode (No Death)");
 
     ctx.key
         .map_or(CheatMenuResult::NoResponse, |key| match key {
             VirtualKeyCode::T => CheatMenuResult::TeleportToExit,
+            VirtualKeyCode::H => CheatMenuResult::Heal,
+            VirtualKeyCode::R => CheatMenuResult::Reveal,
+            VirtualKeyCode::G => CheatMenuResult::GodMode,
             VirtualKeyCode::Escape => CheatMenuResult::Cancel,
             _ => CheatMenuResult::NoResponse,
         })

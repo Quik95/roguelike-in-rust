@@ -4,14 +4,13 @@
       "name": "Goblin",
       "weight": 10,
       "min_depth": 3,
-      "max_depth": 100
+      "max_depth": 4
     },
     {
       "name": "Orc",
       "weight": 1,
-      "min_depth": 3,
-      "max_depth": 100,
-      "add_map_depth_to_weight": true
+      "min_depth": 4,
+      "max_depth": 100
     },
     {
       "name": "Health Potion",
@@ -64,6 +63,30 @@
       "max_depth": 100
     },
     {
+      "name": "Leather Armor",
+      "weight": 1,
+      "min_depth": 2,
+      "max_depth": 100
+    },
+    {
+      "name": "Leather Boots",
+      "weight": 1,
+      "min_depth": 2,
+      "max_depth": 100
+    },
+    {
+      "name": "Chainmail Armor",
+      "weight": 1,
+      "min_depth": 4,
+      "max_depth": 100
+    },
+    {
+      "name": "Chain Coif",
+      "weight": 1,
+      "min_depth": 4,
+      "max_depth": 100
+    },
+    {
       "name": "Rations",
       "weight": 10,
       "min_depth": 0,
@@ -91,7 +114,7 @@
       "name": "Kobold",
       "weight": 15,
       "min_depth": 3,
-      "max_depth": 5
+      "max_depth": 3
     },
     {
       "name": "Rat",
@@ -665,6 +688,40 @@
       "initiative_penalty": 0.5,
       "vendor_category": "clothes"
     },
+    {
+      "name": "Chainmail Armor",
+      "renderable": {
+        "glyph": "[",
+        "fg": "#00FF00",
+        "bg": "#000000",
+        "order": 2
+      },
+      "wearable": {
+        "slot": "Torso",
+        "armor_class": 2.0
+      },
+      "weight_lbs": 20.0,
+      "base_value": 50.0,
+      "initiative_penalty": 1.0,
+      "vendor_category": "armor"
+    },
+    {
+      "name": "Chain Coif",
+      "renderable": {
+        "glyph": "[",
+        "fg": "#00FF00",
+        "bg": "#000000",
+        "order": 2
+      },
+      "wearable": {
+        "slot": "Head",
+        "armor_class": 1.0
+      },
+      "weight_lbs": 5.0,
+      "base_value": 20.0,
+      "initiative_penalty": 0.5,
+      "vendor_category": "armor"
+    },
 
     {
       "name": "Leather Boots",
@@ -1229,6 +1286,28 @@
       "faction": "Cave Goblins",
       "gold": "1d8"
     },
+    {
+      "name": "Orc Leader",
+      "renderable": {
+        "glyph": "O",
+        "fg": "#FF0000",
+        "bg": "#000000",
+        "order": 1
+      },
+      "blocks_tile": true,
+      "vision_range": 8,
+      "movement": "static",
+      "attributes": {},
+      "faction": "Cave Goblins",
+      "gold": "3d8",
+      "equipped": [
+        "Battleaxe",
+        "Tower Shield",
+        "Leather Armor",
+        "Leather Boots"
+      ],
+      "level": 2
+    },
 
     {
       "name": "Goblin",
@@ -1533,6 +1612,25 @@
         "order": 2
       },
       "hidden": false
+    },
+    {
+      "name": "Watch Fire",
+      "renderable": {
+        "glyph": "☼",
+        "fg": "#FFFF55",
+        "bg": "#000000",
+        "order": 2
+      },
+      "hidden": false,
+      "light": {
+        "range": 6,
+        "color": "#FFFF55"
+      },
+      "entry_trigger": {
+        "effects": {
+          "damage": "6"
+        }
+      }
     }
   ]
 }

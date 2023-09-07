@@ -13,7 +13,9 @@ use crate::map_builders::dla::DlaBuilder;
 use crate::map_builders::door_placement::DoorPlacement;
 use crate::map_builders::drunkard::DrunkardsWalkBuilder;
 use crate::map_builders::forest::forest_builder;
-use crate::map_builders::limestone_cavern::limestone_cavern_builder;
+use crate::map_builders::limestone_cavern::{
+    limestone_cavern_builder, limestone_deep_cavern_builder,
+};
 use crate::map_builders::maze::MazeBuilder;
 use crate::map_builders::prefab_builder::prefab_level::WFC_POPULATED;
 use crate::map_builders::prefab_builder::prefab_section::UNDERGROUND_FORT;
@@ -92,6 +94,7 @@ pub fn level_builder(
         1 => town_builder(new_depth, rng, width, height),
         2 => forest_builder(new_depth, rng, width, height),
         3 => limestone_cavern_builder(new_depth, rng, width, height),
+        4 => limestone_deep_cavern_builder(new_depth, rng, width, height),
         _ => random_builder(new_depth, rng, width, height),
     }
 }

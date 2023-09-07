@@ -6,7 +6,7 @@ use crate::map::Map;
 pub fn tile_glyph(idx: usize, map: &Map) -> (FontCharType, RGB, RGB) {
     let (glyph, mut fg, mut bg) = match map.depth {
         2 => get_forest_glyph(idx, map),
-        3 => get_limestone_cavern_glyph(idx, map),
+        3 | 4 => get_limestone_cavern_glyph(idx, map),
         _ => get_tile_glyph_default(idx, map),
     };
 
@@ -52,7 +52,7 @@ fn get_limestone_cavern_glyph(idx: usize, map: &Map) -> (FontCharType, RGB, RGB)
         }
         TileType::DeepWater => {
             glyph = to_cp437('▓');
-            fg = RGB::named(rltk::BLUE);
+            fg = RGB::from_f32(0.2, 0.2, 1.0);
         }
         TileType::Gravel => {
             glyph = to_cp437(';');

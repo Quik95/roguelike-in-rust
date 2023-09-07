@@ -1,6 +1,6 @@
-use specs::{Entities, Join, System, WriteExpect, WriteStorage};
+use specs::{Entities, Join, ReadStorage, System, WriteExpect, WriteStorage};
 
-use crate::components::{EntityMoved, MyTurn, Position, Viewshed, WantsToApproach};
+use crate::components::{EntityMoved, MyTurn, Name, Position, Viewshed, WantsToApproach};
 use crate::map::Map;
 
 pub struct ApproachAI {}
@@ -14,6 +14,7 @@ impl<'a> System<'a> for ApproachAI {
         WriteStorage<'a, Viewshed>,
         WriteStorage<'a, EntityMoved>,
         Entities<'a>,
+        ReadStorage<'a, Name>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
@@ -25,15 +26,17 @@ impl<'a> System<'a> for ApproachAI {
             mut viewsheds,
             mut entity_moved,
             entities,
+            names,
         ) = data;
 
         let mut turn_done = vec![];
-        for (entity, mut pos, approach, mut viewshed, _myturn) in (
+        for (entity, mut pos, approach, mut viewshed, _myturn, name) in (
             &entities,
             &mut positions,
             &want_approach,
             &mut viewsheds,
             &turns,
+            &names,
         )
             .join()
         {
@@ -41,7 +44,7 @@ impl<'a> System<'a> for ApproachAI {
             let path = rltk::a_star_search(
                 map.xy_idx(pos.x, pos.y) as i32,
                 map.xy_idx(approach.idx % map.width, approach.idx / map.width) as i32,
-                &mut *map,
+                &*map,
             );
             if path.success && path.steps.len() > 1 {
                 let idx = map.xy_idx(pos.x, pos.y);
