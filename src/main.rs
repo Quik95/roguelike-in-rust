@@ -2,6 +2,8 @@
 
 extern crate core;
 
+use std::ops::Deref;
+
 use rltk::{GameState, Point, RandomNumberGenerator};
 use specs::prelude::*;
 use specs::saveload::{SimpleMarker, SimpleMarkerAllocator};
@@ -45,6 +47,7 @@ mod map_builders;
 mod map_indexing_system;
 mod melee_combat_system;
 mod menu;
+mod movement_system;
 mod particle_system;
 mod player;
 mod random_table;
@@ -134,6 +137,9 @@ impl State {
 
         let mut encumbrance = ai::EncumbranceSystem {};
         encumbrance.run_now(&self.ecs);
+
+        let mut moving = movement_system::MovementSystem {};
+        moving.run_now(&self.ecs);
 
         self.ecs.maintain();
     }
@@ -456,6 +462,10 @@ impl GameState for State {
                     match *self.ecs.fetch::<RunState>() {
                         AwaitingInput => newrunstate = AwaitingInput,
                         MagicMapReveal { .. } => newrunstate = MagicMapReveal { row: 0 },
+                        TownPortal => newrunstate = RunState::TownPortal,
+                        RunState::TeleportingToOtherLevel { x, y, depth } => {
+                            newrunstate = RunState::TeleportingToOtherLevel { x, y, depth }
+                        }
                         _ => newrunstate = Ticking,
                     }
                 }
@@ -512,6 +522,28 @@ impl GameState for State {
                         }
                     }
                 }
+            }
+            RunState::TownPortal => {
+                spawner::spawn_town_portal(&mut self.ecs);
+
+                let map_depth = self.ecs.fetch::<Map>().depth;
+                let destination_offset = 0 - (map_depth - 1);
+                self.goto_level(destination_offset);
+                self.mapgen_next_state = Some(RunState::PreRun);
+                newrunstate = RunState::MapGeneration;
+            }
+            RunState::TeleportingToOtherLevel { x, y, depth } => {
+                self.goto_level(depth - 1);
+                let player_entity = self.ecs.fetch::<Entity>();
+                if let Some(pos) = self.ecs.write_storage::<Position>().get_mut(*player_entity) {
+                    pos.x = x;
+                    pos.y = y;
+                }
+                let mut ppos = self.ecs.fetch_mut::<Point>();
+                ppos.x = x;
+                ppos.y = y;
+                self.mapgen_next_state = Some(RunState::PreRun);
+                newrunstate = RunState::MapGeneration;
             }
         }
         {
@@ -598,6 +630,10 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Chasing>();
     gs.ecs.register::<EquipmentChanged>();
     gs.ecs.register::<Vendor>();
+    gs.ecs.register::<components::TownPortal>();
+    gs.ecs.register::<TeleportTo>();
+    gs.ecs.register::<ApplyMove>();
+    gs.ecs.register::<ApplyTeleport>();
     gs.ecs.insert(SimpleMarkerAllocator::<SerializeMe>::new());
 
     raws::load_raws();

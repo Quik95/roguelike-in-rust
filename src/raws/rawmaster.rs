@@ -11,8 +11,8 @@ use crate::components::{
     EntryTrigger, EquipmentChanged, EquipmentSlot, Equippable, Faction, Hidden, InBackpack,
     InflictsDamage, Initiative, LightSource, MagicMapper, MeleeWeapon, MoveMode, Movement, Name,
     NaturalAttack, NaturalAttackDefense, Pool, Pools, Position, ProvidesFood, ProvidesHealing,
-    Ranged, SerializeMe, SingleActivation, Skill, Skills, Vendor, Viewshed, WeaponAttribute,
-    Wearable,
+    Ranged, SerializeMe, SingleActivation, Skill, Skills, TownPortal, Vendor, Viewshed,
+    WeaponAttribute, Wearable,
 };
 use crate::components::{Equipped, LootTable};
 use crate::components::{Quips, Renderable};
@@ -200,6 +200,7 @@ pub fn spawn_named_item(
                     }
                     "magic_mapping" => eb = eb.with(MagicMapper {}),
                     "food" => eb = eb.with(ProvidesFood {}),
+                    "town_portal" => eb = eb.with(TownPortal {}),
                     _ => console::log(format!(
                         "Warning: consumable effect {effect_name} not implemented"
                     )),

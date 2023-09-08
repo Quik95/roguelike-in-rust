@@ -1,8 +1,8 @@
-use specs::{Entities, Join, ReadExpect, ReadStorage, System, WriteExpect, WriteStorage};
+use specs::{Entities, Entity, Join, ReadExpect, ReadStorage, System, WriteExpect, WriteStorage};
 
 use crate::components::{
-    EntityMoved, EntryTrigger, Hidden, InflictsDamage, Name, Position, SingleActivation,
-    SufferDamage,
+    ApplyTeleport, EntityMoved, EntryTrigger, Hidden, InflictsDamage, Name, Position,
+    SingleActivation, SufferDamage, TeleportTo,
 };
 use crate::gamelog::GameLog;
 use crate::map::Map;
@@ -25,6 +25,9 @@ impl<'a> System<'a> for TriggerSystem {
         WriteStorage<'a, SufferDamage>,
         WriteExpect<'a, ParticleBuilder>,
         ReadStorage<'a, SingleActivation>,
+        ReadStorage<'a, TeleportTo>,
+        WriteStorage<'a, ApplyTeleport>,
+        ReadExpect<'a, Entity>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
@@ -41,6 +44,9 @@ impl<'a> System<'a> for TriggerSystem {
             mut inflict_damage,
             mut particle_builder,
             single_activation,
+            teleporters,
+            mut apply_teleport,
+            player_entity,
         ) = data;
 
         let mut remove_entity = Vec::new();
@@ -79,6 +85,23 @@ impl<'a> System<'a> for TriggerSystem {
                                 damage.damage,
                                 false,
                             );
+                        }
+
+                        if let Some(teleport) = teleporters.get(entity_id) {
+                            if (teleport.player_only && entity == *player_entity)
+                                || !teleport.player_only
+                            {
+                                apply_teleport
+                                    .insert(
+                                        entity,
+                                        ApplyTeleport {
+                                            dest_x: teleport.x,
+                                            dest_y: teleport.y,
+                                            dest_depth: teleport.depth,
+                                        },
+                                    )
+                                    .expect("Unable to insert");
+                            }
                         }
 
                         let sa = single_activation.get(entity_id);

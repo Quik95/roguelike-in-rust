@@ -4,8 +4,8 @@ use specs::{Entities, Entity, Join, ReadExpect, ReadStorage, System, WriteExpect
 use crate::components::{
     AreaOfEffect, Confusion, Consumable, EquipmentChanged, Equippable, Equipped, HungerClock,
     HungerState, InBackpack, InflictsDamage, MagicMapper, Name, Pools, Position, ProvidesFood,
-    ProvidesHealing, SufferDamage, WantsToDropItem, WantsToPickupItem, WantsToRemoveItem,
-    WantsToUseItem,
+    ProvidesHealing, SufferDamage, TownPortal, WantsToDropItem, WantsToPickupItem,
+    WantsToRemoveItem, WantsToUseItem,
 };
 use crate::gamelog::GameLog;
 use crate::map::Map;
@@ -90,6 +90,7 @@ impl<'a> System<'a> for ItemUseSystem {
         ReadStorage<'a, MagicMapper>,
         WriteExpect<'a, RunState>,
         WriteStorage<'a, EquipmentChanged>,
+        ReadStorage<'a, TownPortal>,
     );
 
     #[allow(clippy::cognitive_complexity)]
@@ -118,6 +119,7 @@ impl<'a> System<'a> for ItemUseSystem {
             magic_mapper,
             mut runstate,
             mut dirty,
+            town_portal,
         ) = data;
 
         for (entity, useitem) in (&entities, &wants_item).join() {
@@ -318,6 +320,19 @@ impl<'a> System<'a> for ItemUseSystem {
                     .entries
                     .push("The map is revealed to you!".to_string());
                 *runstate = RunState::MagicMapReveal { row: 0 };
+            }
+
+            if let Some(_townportal) = town_portal.get(useitem.item) {
+                if map.depth == 1 {
+                    gamelog
+                        .entries
+                        .push("You are already in town, so the scroll does nothing.".into());
+                } else {
+                    gamelog
+                        .entries
+                        .push("You are teleported back to town!".into());
+                    *runstate = RunState::TownPortal;
+                }
             }
         }
 

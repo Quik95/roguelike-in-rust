@@ -39,6 +39,12 @@
       "max_depth": 100
     },
     {
+      "name": "Town Portal Scroll",
+      "weight": 4,
+      "min_depth": 0,
+      "max_depth": 100
+    },
+    {
       "name": "Dagger",
       "weight": 3,
       "min_depth": 0,
@@ -405,6 +411,23 @@
       "base_value": 50.0,
       "vendor_category": "alchemy"
     },
+    {
+      "name": "Town Portal Scroll",
+      "renderable": {
+        "glyph": ")",
+        "fg": "#AAAAFF",
+        "bg": "#000000",
+        "order": 2
+      },
+      "consumable": {
+        "effects": {
+          "town_portal": ""
+        }
+      },
+      "weight_lbs": 0.5,
+      "base_value": 20.0,
+      "vendor_category": "alchemy"
+    },
 
     {
       "name": "Rations",
@@ -453,6 +476,7 @@
       "weight_lbs": 2.0,
       "base_value": 5.0
     },
+
     {
       "name": "Dragon Scale",
       "renderable": {
@@ -599,6 +623,7 @@
       "initiative_penalty": 2,
       "vendor_category": "weapon"
     },
+
     {
       "name": "War Axe",
       "renderable": {
@@ -818,6 +843,7 @@
       "initiative_penalty": 1.0,
       "vendor_category": "armor"
     },
+
     {
       "name": "Breastplate",
       "renderable": {
@@ -835,6 +861,7 @@
       "initiative_penalty": 2.0,
       "vendor_category": "armor"
     },
+
     {
       "name": "Dwarf-Steel Shirt",
       "renderable": {
@@ -1576,6 +1603,7 @@
         "color": "#550000"
       }
     },
+
     {
       "name": "Dragon Wyrmling",
       "renderable": {
@@ -1610,6 +1638,7 @@
       "level": 3,
       "gold": "3d6"
     },
+
     {
       "name": "Lizardman",
       "renderable": {
@@ -1626,6 +1655,7 @@
       "gold": "1d12",
       "level": 2
     },
+
     {
       "name": "Giant Lizard",
       "renderable": {
@@ -1642,6 +1672,7 @@
       "level": 2,
       "loot_table": "Animal"
     },
+
     {
       "name": "Rock Golem",
       "renderable": {
@@ -1675,6 +1706,7 @@
         }
       }
     },
+
     {
       "name": "Stonefall Trap",
       "renderable": {
@@ -1691,6 +1723,7 @@
         }
       }
     },
+
     {
       "name": "Landmine",
       "renderable": {

@@ -1,7 +1,7 @@
 use rltk::DijkstraMap;
-use specs::{Entities, Join, System, WriteExpect, WriteStorage};
+use specs::{Entities, Join, ReadStorage, System, WriteExpect, WriteStorage};
 
-use crate::components::{EntityMoved, MyTurn, Position, Viewshed, WantsToFlee};
+use crate::components::{ApplyMove, MyTurn, Position, WantsToFlee};
 use crate::map::Map;
 
 pub struct FleeAI {}
@@ -10,28 +10,17 @@ impl<'a> System<'a> for FleeAI {
     type SystemData = (
         WriteStorage<'a, MyTurn>,
         WriteStorage<'a, WantsToFlee>,
-        WriteStorage<'a, Position>,
+        ReadStorage<'a, Position>,
         WriteExpect<'a, Map>,
-        WriteStorage<'a, Viewshed>,
-        WriteStorage<'a, EntityMoved>,
         Entities<'a>,
+        WriteStorage<'a, ApplyMove>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
-        let (
-            mut turns,
-            mut want_flee,
-            mut positons,
-            mut map,
-            mut viewsheds,
-            mut entity_moved,
-            entities,
-        ) = data;
+        let (mut turns, mut want_flee, positions, mut map, entities, mut apply_move) = data;
 
         let mut turn_done = vec![];
-        for (entity, mut pos, flee, mut viewshed, _myturn) in
-            (&entities, &mut positons, &want_flee, &mut viewsheds, &turns).join()
-        {
+        for (entity, mut pos, flee, _myturn) in (&entities, &positions, &want_flee, &turns).join() {
             turn_done.push(entity);
             let my_idx = map.xy_idx(pos.x, pos.y);
             map.populate_blocked();
@@ -45,13 +34,15 @@ impl<'a> System<'a> for FleeAI {
             let flee_target = DijkstraMap::find_highest_exit(&flee_map, my_idx, &*map);
             if let Some(flee_target) = flee_target {
                 if !crate::spatial::is_blocked(flee_target) {
-                    crate::spatial::move_entity(entity, my_idx, flee_target);
-                    viewshed.dirty = true;
-                    pos.x = flee_target as i32 % map.width;
-                    pos.y = flee_target as i32 / map.width;
-                    entity_moved
-                        .insert(entity, EntityMoved {})
-                        .expect("Unable to insert marker");
+                    apply_move
+                        .insert(
+                            entity,
+                            ApplyMove {
+                                dest_idx: flee_target,
+                            },
+                        )
+                        .expect("Unable to insert");
+                    turn_done.push(entity);
                 }
             }
         }

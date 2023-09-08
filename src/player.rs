@@ -45,6 +45,12 @@ pub enum RunState {
         vendor: Entity,
         mode: VendorMode,
     },
+    TownPortal,
+    TeleportingToOtherLevel {
+        x: i32,
+        y: i32,
+        depth: i32,
+    },
 }
 
 #[derive(PartialEq, Eq, Copy, Clone)]

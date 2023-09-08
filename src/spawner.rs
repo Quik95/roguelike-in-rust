@@ -1,15 +1,16 @@
 use std::collections::HashMap;
 
-use rltk::{console, to_cp437, RandomNumberGenerator, RGB};
+use rltk::{console, to_cp437, Point, RandomNumberGenerator, BLACK, CYAN, RGB};
 use specs::saveload::{MarkedBuilder, SimpleMarker};
 use specs::{Builder, Entity, World, WorldExt};
 
 use crate::components::{
-    Attribute, Attributes, BlocksTile, EquipmentChanged, Faction, HungerClock, HungerState,
-    Initiative, LightSource, Name, Player, Pool, Pools, Position, Renderable, SerializeMe, Skill,
-    Skills, Viewshed,
+    Attribute, Attributes, BlocksTile, EntryTrigger, EquipmentChanged, Faction, HungerClock,
+    HungerState, Initiative, LightSource, Name, OtherLevelPosition, Player, Pool, Pools, Position,
+    Renderable, SerializeMe, SingleActivation, Skill, Skills, TeleportTo, Viewshed,
 };
 use crate::gamesystem::{attr_bonus, mana_at_level, player_hp_at_level};
+use crate::map::dungeon::MasterDungeonMap;
 use crate::map::{tiletype::TileType, Map};
 use crate::random_table::RandomTable;
 use crate::raws::rawmaster::{get_spawn_table_for_depth, spawn_named_entity, SpawnType, RAWS};
@@ -137,6 +138,12 @@ pub fn player(ecs: &mut World, player_x: i32, player_y: i32) -> Entity {
         "Old Boots",
         SpawnType::Equipped { by: player },
     );
+    spawn_named_entity(
+        &RAWS.lock().unwrap(),
+        ecs,
+        "Town Portal Scroll",
+        SpawnType::Carried { by: player },
+    );
 
     player
 }
@@ -254,4 +261,52 @@ pub fn spawn_entity(ecs: &mut World, spawn: &(&usize, &String)) {
 
 fn room_table(map_depth: i32) -> RandomTable {
     get_spawn_table_for_depth(&RAWS.lock().unwrap(), map_depth)
+}
+
+pub fn spawn_town_portal(ecs: &mut World) {
+    let map = ecs.fetch::<Map>();
+    let player_depth = map.depth;
+    let player_pos = ecs.fetch::<Point>();
+    let player_x = player_pos.x;
+    let player_y = player_pos.y;
+    std::mem::drop(player_pos);
+    std::mem::drop(map);
+
+    let dm = ecs.fetch::<MasterDungeonMap>();
+    let town_map = dm.get_map(1).unwrap();
+    let mut stairs_idx = 0;
+    for (idx, tt) in town_map.tiles.iter().enumerate() {
+        if *tt == TileType::DownStairs {
+            stairs_idx = idx;
+        }
+    }
+    let portal_x = (stairs_idx as i32 % town_map.width) - 2;
+    let portal_y = stairs_idx as i32 / town_map.width;
+
+    std::mem::drop(dm);
+
+    ecs.create_entity()
+        .with(OtherLevelPosition {
+            x: portal_x,
+            y: portal_y,
+            depth: 1,
+        })
+        .with(Renderable {
+            glyph: to_cp437('♥'),
+            fg: RGB::named(CYAN),
+            bg: RGB::named(BLACK),
+            render_order: 0,
+        })
+        .with(EntryTrigger {})
+        .with(TeleportTo {
+            x: player_x,
+            y: player_y,
+            depth: player_depth,
+            player_only: true,
+        })
+        .with(Name {
+            name: "Town Portal".into(),
+        })
+        .with(SingleActivation {})
+        .build();
 }
