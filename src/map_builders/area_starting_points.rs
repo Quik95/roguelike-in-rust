@@ -1,21 +1,98 @@
-use rltk::{Point, RandomNumberGenerator};
 use rltk::DistanceAlg::PythagorasSquared;
+use rltk::{DistanceAlg, Point, RandomNumberGenerator};
 
 use crate::components::Position;
+use crate::map::tiletype::TileType;
 use crate::map_builders::{BuilderMap, MetaMapBuilder};
 
-pub enum XStart { Left, Center, Right }
+pub enum XStart {
+    Left,
+    Center,
+    Right,
+}
 
-pub enum YStart { Top, Center, Bottom }
+pub enum XEnd {
+    Left,
+    Center,
+    Right,
+}
+
+pub enum YStart {
+    Top,
+    Center,
+    Bottom,
+}
+
+pub enum YEnd {
+    Top,
+    Center,
+    Bottom,
+}
 
 pub struct AreaStartingPosition {
     x: XStart,
     y: YStart,
 }
 
+pub struct AreaEndingPosition {
+    x: XEnd,
+    y: YEnd,
+}
+
 impl MetaMapBuilder for AreaStartingPosition {
     fn build_map(&mut self, rng: &mut RandomNumberGenerator, build_data: &mut BuilderMap) {
         self.build(rng, build_data);
+    }
+}
+
+impl MetaMapBuilder for AreaEndingPosition {
+    fn build_map(&mut self, rng: &mut RandomNumberGenerator, build_data: &mut BuilderMap) {
+        self.build(rng, build_data)
+    }
+}
+
+impl AreaEndingPosition {
+    pub fn new(x: XEnd, y: YEnd) -> Box<Self> {
+        Box::new(Self { x, y })
+    }
+
+    fn build(&mut self, _rng: &mut RandomNumberGenerator, build_data: &mut BuilderMap) {
+        let seed_x;
+        let seed_y;
+
+        match self.x {
+            XEnd::Left => seed_x = 1,
+            XEnd::Center => seed_x = build_data.map.width / 2,
+            XEnd::Right => seed_x = build_data.map.width - 2,
+        }
+
+        match self.y {
+            YEnd::Top => seed_y = 1,
+            YEnd::Center => seed_y = build_data.map.height / 2,
+            YEnd::Bottom => seed_y = build_data.map.height - 2,
+        }
+
+        let mut available_floors = vec![];
+        for (idx, tiletype) in build_data.map.tiles.iter().enumerate() {
+            if tiletype.is_walkable() {
+                available_floors.push((
+                    idx,
+                    DistanceAlg::PythagorasSquared.distance2d(
+                        Point::new(
+                            idx as i32 % build_data.map.width,
+                            idx as i32 / build_data.map.width,
+                        ),
+                        Point::new(seed_x, seed_y),
+                    ),
+                ));
+            }
+        }
+        if available_floors.is_empty() {
+            panic!("No valid floors to start on");
+        }
+
+        available_floors.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
+        build_data.map.tiles[available_floors[0].0] = TileType::DownStairs;
     }
 }
 
@@ -28,27 +105,28 @@ impl AreaStartingPosition {
         let seed_x = match self.x {
             XStart::Left => 1,
             XStart::Center => build_data.map.width / 2,
-            XStart::Right => build_data.map.width - 2
+            XStart::Right => build_data.map.width - 2,
         };
 
         let seed_y = match self.y {
             YStart::Top => 1,
             YStart::Center => build_data.map.height / 2,
-            YStart::Bottom => build_data.map.height - 2
+            YStart::Bottom => build_data.map.height - 2,
         };
 
         let mut available_floors = Vec::new();
         for (idx, tiletype) in build_data.map.tiles.iter().enumerate() {
             if tiletype.is_walkable() {
-                available_floors.push(
-                    (
-                        idx,
-                        PythagorasSquared.distance2d(
-                            Point::new(idx as i32 % build_data.map.width, idx as i32 / build_data.map.width),
-                            Point::new(seed_x, seed_y),
-                        )
-                    )
-                );
+                available_floors.push((
+                    idx,
+                    PythagorasSquared.distance2d(
+                        Point::new(
+                            idx as i32 % build_data.map.width,
+                            idx as i32 / build_data.map.width,
+                        ),
+                        Point::new(seed_x, seed_y),
+                    ),
+                ));
             }
         }
         if available_floors.is_empty() {
@@ -60,6 +138,9 @@ impl AreaStartingPosition {
         let start_x = available_floors[0].0 as i32 % build_data.map.width;
         let start_y = available_floors[0].0 as i32 / build_data.map.width;
 
-        build_data.starting_position = Some(Position { x: start_x, y: start_y });
+        build_data.starting_position = Some(Position {
+            x: start_x,
+            y: start_y,
+        });
     }
 }

@@ -14,7 +14,7 @@ use crate::map_builders::door_placement::DoorPlacement;
 use crate::map_builders::drunkard::DrunkardsWalkBuilder;
 use crate::map_builders::forest::forest_builder;
 use crate::map_builders::limestone_cavern::{
-    limestone_cavern_builder, limestone_deep_cavern_builder,
+    limestone_cavern_builder, limestone_deep_cavern_builder, limestone_transition_builder,
 };
 use crate::map_builders::maze::MazeBuilder;
 use crate::map_builders::prefab_builder::prefab_level::WFC_POPULATED;
@@ -41,6 +41,7 @@ use crate::{spawner, SHOW_MAPGEN_VISUALIZER};
 mod area_starting_points;
 mod bsp_dungeon;
 mod bsp_interior;
+mod cave_transition;
 mod cellular_automata;
 mod common;
 mod cull_unreachable;
@@ -95,6 +96,7 @@ pub fn level_builder(
         2 => forest_builder(new_depth, rng, width, height),
         3 => limestone_cavern_builder(new_depth, rng, width, height),
         4 => limestone_deep_cavern_builder(new_depth, rng, width, height),
+        5 => limestone_transition_builder(new_depth, rng, width, height),
         _ => random_builder(new_depth, rng, width, height),
     }
 }

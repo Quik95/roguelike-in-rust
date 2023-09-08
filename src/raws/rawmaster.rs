@@ -221,9 +221,10 @@ pub fn spawn_named_item(
                 damage_bonus: roll.die_bonus,
             };
             match weapon.attribute.as_str() {
-                "Quickness" => wpn.attribute = WeaponAttribute::Quickness,
-                "Might" => wpn.attribute = WeaponAttribute::Might,
-                _ => unreachable!(),
+                "Quickness" | "quickness" => wpn.attribute = WeaponAttribute::Quickness,
+                "Might" | "might" => wpn.attribute = WeaponAttribute::Might,
+                "Fitness" | "fitness" => {}
+                unknown => unreachable!("Unknown attribute: {unknown}"),
             }
             eb = eb.with(wpn);
         }
