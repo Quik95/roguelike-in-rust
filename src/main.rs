@@ -555,13 +555,16 @@ impl GameState for State {
     }
 }
 
-fn main() -> rltk::BError {
+fn main() -> color_eyre::Result<()> {
+    color_eyre::install()?;
+
     use rltk::RltkBuilder;
     let mut context = RltkBuilder::simple(80, 60)
         .unwrap()
         .with_title("Roguelike Tutorial")
         .with_fps_cap(60.0)
-        .build()?;
+        .build()
+        .expect("Failed to construct a builder.");
     context.with_post_scanlines(true);
 
     let mut gs = State {
@@ -653,5 +656,7 @@ fn main() -> rltk::BError {
 
     gs.generate_world_map(1, 0);
 
-    rltk::main_loop(context, gs)
+    rltk::main_loop(context, gs).expect("Failed to run main loop");
+
+    Ok(())
 }
