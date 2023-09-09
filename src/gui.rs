@@ -1,18 +1,22 @@
-use rltk::{
-    to_cp437, Point, Rltk, VirtualKeyCode, BLACK, GOLD, GREEN, MAGENTA, RGB, WHITE, YELLOW,
-};
+use lazy_static::lazy_static;
+use rltk::{to_cp437, Point, Rltk, VirtualKeyCode, GOLD, GREEN, MAGENTA, RGB, WHITE, YELLOW};
 use specs::prelude::*;
 
 use crate::camera::get_screen_bounds;
 use crate::components::HungerState::*;
 use crate::components::{
-    Attribute, Attributes, Consumable, Equipped, Hidden, HungerClock, HungerState, Item, Pools,
-    Vendor,
+    Attribute, Attributes, Consumable, Equipped, Hidden, HungerClock, HungerState, Item, MagicItem,
+    MagicItemClass, ObfuscatedName, Pools, Vendor,
 };
+use crate::map::dungeon::MasterDungeonMap;
 use crate::player::VendorMode;
 use crate::raws::rawmaster::{get_vendor_items, RAWS};
 
 use super::{gamelog::GameLog, InBackpack, Map, Name, Position, State, Viewshed};
+
+lazy_static! {
+    static ref BLACK: RGB = RGB::named(rltk::BLACK);
+}
 
 #[derive(Eq, PartialEq, Copy, Clone)]
 pub enum VendorResult {
@@ -26,7 +30,7 @@ pub enum VendorResult {
 
 pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
     let box_gray = RGB::from_hex("#999999").unwrap();
-    let black = RGB::named(BLACK);
+    let black = *BLACK;
     let white = RGB::named(WHITE);
 
     draw_hollow_box(ctx, 0, 0, 79, 59, box_gray, black);
@@ -75,7 +79,7 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
         player_pools.hit_points.current,
         player_pools.hit_points.max,
         RGB::named(rltk::RED),
-        RGB::named(rltk::BLACK),
+        *BLACK,
     );
     ctx.draw_bar_horizontal(
         64,
@@ -84,7 +88,7 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
         player_pools.mana.current,
         player_pools.mana.max,
         RGB::named(rltk::BLUE),
-        RGB::named(rltk::BLACK),
+        *BLACK,
     );
 
     let xp = format!("Level:  {}", player_pools.level);
@@ -97,7 +101,7 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
         player_pools.xp - xp_level_start,
         1000,
         RGB::named(GOLD),
-        RGB::named(BLACK),
+        *BLACK,
     );
 
     let attributes = ecs.read_storage::<Attributes>();
@@ -137,11 +141,17 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
     );
 
     let mut y = 13;
+    let entities = ecs.entities();
     let equipped = ecs.read_storage::<Equipped>();
-    let name = ecs.read_storage::<Name>();
-    for (equipped_by, item_name) in (&equipped, &name).join() {
+    for (entity, equipped_by) in (&entities, &equipped).join() {
         if equipped_by.owner == *player_entity {
-            ctx.print_color(50, y, white, black, &item_name.name);
+            ctx.print_color(
+                50,
+                y,
+                get_item_color(ecs, entity),
+                black,
+                &get_item_display_name(ecs, entity),
+            );
             y += 1;
         }
     }
@@ -152,10 +162,16 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
     let consumables = ecs.read_storage::<Consumable>();
     let backpack = ecs.read_storage::<InBackpack>();
     let mut index = 1;
-    for (carried_by, _consumable, item_name) in (&backpack, &consumables, &name).join() {
+    for (entity, carried_by, _consumable) in (&entities, &backpack, &consumables).join() {
         if carried_by.owner == *player_entity && index < 10 {
             ctx.print_color(50, y, yellow, black, &format!("↑{}", index));
-            ctx.print_color(53, y, green, black, &item_name.name);
+            ctx.print_color(
+                53,
+                y,
+                get_item_color(ecs, entity),
+                black,
+                &get_item_display_name(ecs, entity),
+            );
             y += 1;
             index += 1;
         }
@@ -164,22 +180,10 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
     let hunger = ecs.read_storage::<HungerClock>();
     let hc = hunger.get(*player_entity).unwrap();
     match hc.state {
-        WellFed => ctx.print_color(50, 44, RGB::named(GREEN), RGB::named(BLACK), "Well Fed"),
+        WellFed => ctx.print_color(50, 44, RGB::named(GREEN), *BLACK, "Well Fed"),
         Normal => {}
-        HungerState::Hungry => ctx.print_color(
-            50,
-            44,
-            RGB::named(rltk::ORANGE),
-            RGB::named(rltk::BLACK),
-            "Hungry",
-        ),
-        HungerState::Starving => ctx.print_color(
-            50,
-            44,
-            RGB::named(rltk::RED),
-            RGB::named(rltk::BLACK),
-            "Starving",
-        ),
+        HungerState::Hungry => ctx.print_color(50, 44, RGB::named(rltk::ORANGE), *BLACK, "Hungry"),
+        HungerState::Starving => ctx.print_color(50, 44, RGB::named(rltk::RED), *BLACK, "Starving"),
     }
 
     let log = ecs.fetch::<GameLog>();
@@ -195,7 +199,7 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
 }
 
 fn draw_attribute(name: &str, attribute: &Attribute, y: i32, ctx: &mut Rltk) {
-    let black = RGB::named(rltk::BLACK);
+    let black = *BLACK;
     let attr_gray: RGB = RGB::from_hex("#CCCCCC").expect("Oops");
     ctx.print_color(50, y, attr_gray, black, name);
     let color: RGB = match attribute.modifiers {
@@ -242,7 +246,6 @@ pub fn draw_hollow_box(
 fn draw_tooltips(ecs: &World, ctx: &mut Rltk) {
     let (min_x, _max_x, min_y, _max_y) = get_screen_bounds(ecs, ctx);
     let map = ecs.fetch::<Map>();
-    let names = ecs.read_storage::<Name>();
     let positions = ecs.read_storage::<Position>();
     let hidden = ecs.read_storage::<Hidden>();
     let attributes = ecs.read_storage::<Attributes>();
@@ -265,10 +268,10 @@ fn draw_tooltips(ecs: &World, ctx: &mut Rltk) {
     }
 
     let mut tip_boxes: Vec<Tooltip> = Vec::new();
-    for (entity, name, position, _hidden) in (&entities, &names, &positions, !&hidden).join() {
+    for (entity, position, _hidden) in (&entities, &positions, !&hidden).join() {
         if position.x == mouse_map_pos.0 && position.y == mouse_map_pos.1 {
             let mut tip = Tooltip::default();
-            tip.add(name.name.to_string());
+            tip.add(get_item_display_name(ecs, entity));
 
             // Comment on attributes
             let attr = attributes.get(entity);
@@ -381,52 +384,40 @@ pub fn show_inventory(gs: &mut State, ctx: &mut Rltk) -> (ItemMenuResult, Option
         31,
         (count + 3) as i32,
         RGB::named(rltk::WHITE),
-        RGB::named(rltk::BLACK),
+        *BLACK,
     );
-    ctx.print_color(
-        18,
-        y - 2,
-        RGB::named(rltk::YELLOW),
-        RGB::named(rltk::BLACK),
-        "Inventory",
-    );
+    ctx.print_color(18, y - 2, RGB::named(rltk::YELLOW), *BLACK, "Inventory");
     ctx.print_color(
         18,
         y + count as i32 + 1,
         RGB::named(rltk::YELLOW),
-        RGB::named(rltk::BLACK),
+        *BLACK,
         "ESCAPE to cancel",
     );
 
     let mut equippable: Vec<Entity> = Vec::new();
-    for (j, (entity, _pack, name)) in (&entities, &backpack, &names)
+    for (j, (entity, _pack)) in (&entities, &backpack)
         .join()
         .filter(|item| item.1.owner == *player_entity)
         .enumerate()
     {
-        ctx.set(
-            17,
-            y,
-            RGB::named(rltk::WHITE),
-            RGB::named(rltk::BLACK),
-            rltk::to_cp437('('),
-        );
+        ctx.set(17, y, RGB::named(rltk::WHITE), *BLACK, rltk::to_cp437('('));
         ctx.set(
             18,
             y,
             RGB::named(rltk::YELLOW),
-            RGB::named(rltk::BLACK),
+            *BLACK,
             97 + j as rltk::FontCharType,
         );
-        ctx.set(
-            19,
-            y,
-            RGB::named(rltk::WHITE),
-            RGB::named(rltk::BLACK),
-            rltk::to_cp437(')'),
-        );
+        ctx.set(19, y, RGB::named(rltk::WHITE), *BLACK, rltk::to_cp437(')'));
 
-        ctx.print(21, y, &name.name.to_string());
+        ctx.print_color(
+            21,
+            y,
+            get_item_color(&gs.ecs, entity),
+            *BLACK,
+            &get_item_display_name(&gs.ecs, entity),
+        );
         equippable.push(entity);
         y += 1;
     }
@@ -467,52 +458,46 @@ pub fn drop_item_menu(gs: &mut State, ctx: &mut Rltk) -> (ItemMenuResult, Option
         31,
         (count + 3) as i32,
         RGB::named(rltk::WHITE),
-        RGB::named(rltk::BLACK),
+        *BLACK,
     );
     ctx.print_color(
         18,
         y - 2,
         RGB::named(rltk::YELLOW),
-        RGB::named(rltk::BLACK),
+        *BLACK,
         "Drop Which Item?",
     );
     ctx.print_color(
         18,
         y + count as i32 + 1,
         RGB::named(rltk::YELLOW),
-        RGB::named(rltk::BLACK),
+        *BLACK,
         "ESCAPE to cancel",
     );
 
     let mut equippable: Vec<Entity> = Vec::new();
-    for (j, (entity, _pack, name)) in (&entities, &backpack, &names)
+    for (j, (entity, _pack)) in (&entities, &backpack)
         .join()
         .filter(|item| item.1.owner == *player_entity)
         .enumerate()
     {
-        ctx.set(
-            17,
-            y,
-            RGB::named(rltk::WHITE),
-            RGB::named(rltk::BLACK),
-            rltk::to_cp437('('),
-        );
+        ctx.set(17, y, RGB::named(rltk::WHITE), *BLACK, rltk::to_cp437('('));
         ctx.set(
             18,
             y,
             RGB::named(rltk::YELLOW),
-            RGB::named(rltk::BLACK),
+            *BLACK,
             97 + j as rltk::FontCharType,
         );
-        ctx.set(
-            19,
-            y,
-            RGB::named(rltk::WHITE),
-            RGB::named(rltk::BLACK),
-            rltk::to_cp437(')'),
-        );
+        ctx.set(19, y, RGB::named(rltk::WHITE), *BLACK, rltk::to_cp437(')'));
 
-        ctx.print(21, y, &name.name.to_string());
+        ctx.print_color(
+            21,
+            y,
+            get_item_color(&gs.ecs, entity),
+            *BLACK,
+            &get_item_display_name(&gs.ecs, entity),
+        );
         equippable.push(entity);
         y += 1;
     }
@@ -545,13 +530,7 @@ pub fn ranged_target(
     let player_pos = gs.ecs.fetch::<Point>();
     let viewsheds = gs.ecs.read_storage::<Viewshed>();
 
-    ctx.print_color(
-        5,
-        0,
-        RGB::named(rltk::YELLOW),
-        RGB::named(rltk::BLACK),
-        "Select Target:",
-    );
+    ctx.print_color(5, 0, RGB::named(rltk::YELLOW), *BLACK, "Select Target:");
 
     // Highlight available target cells
     let mut available_cells = Vec::new();
@@ -632,58 +611,39 @@ pub fn remove_item_menu(gs: &mut State, ctx: &mut Rltk) -> (ItemMenuResult, Opti
     let count = inventory.count();
 
     let mut y = (25 - (count / 2)) as i32;
-    ctx.draw_box(
-        15,
-        y - 2,
-        31,
-        (count + 3) as i32,
-        RGB::named(WHITE),
-        RGB::named(BLACK),
-    );
-    ctx.print_color(
-        18,
-        y - 2,
-        RGB::named(YELLOW),
-        RGB::named(BLACK),
-        "Remove Which Item?",
-    );
+    ctx.draw_box(15, y - 2, 31, (count + 3) as i32, RGB::named(WHITE), *BLACK);
+    ctx.print_color(18, y - 2, RGB::named(YELLOW), *BLACK, "Remove Which Item?");
     ctx.print_color(
         18,
         y + count as i32 + 1,
         RGB::named(YELLOW),
-        RGB::named(BLACK),
+        *BLACK,
         "ESCAPE to cancel",
     );
 
     let mut equippable: Vec<Entity> = Vec::new();
-    for (j, (entity, _pack, name)) in (&entities, &backpack, &names)
+    for (j, (entity, _pack)) in (&entities, &backpack)
         .join()
         .filter(|item| item.1.owner == *player_entity)
         .enumerate()
     {
-        ctx.set(
-            17,
-            y,
-            RGB::named(WHITE),
-            RGB::named(BLACK),
-            rltk::to_cp437('('),
-        );
+        ctx.set(17, y, RGB::named(WHITE), *BLACK, rltk::to_cp437('('));
         ctx.set(
             18,
             y,
             RGB::named(YELLOW),
-            RGB::named(BLACK),
+            *BLACK,
             97 + j as rltk::FontCharType,
         );
-        ctx.set(
-            19,
-            y,
-            RGB::named(WHITE),
-            RGB::named(BLACK),
-            rltk::to_cp437(')'),
-        );
+        ctx.set(19, y, RGB::named(WHITE), *BLACK, rltk::to_cp437(')'));
 
-        ctx.print(21, y, &name.name.to_string());
+        ctx.print_color(
+            21,
+            y,
+            get_item_color(&gs.ecs, entity),
+            *BLACK,
+            &get_item_display_name(&gs.ecs, entity),
+        );
         equippable.push(entity);
         y += 1;
     }
@@ -713,29 +673,24 @@ pub enum GameOverResult {
 }
 
 pub fn game_over(ctx: &mut Rltk) -> GameOverResult {
-    ctx.print_color_centered(
-        15,
-        RGB::named(YELLOW),
-        RGB::named(BLACK),
-        "Your journey has ended!",
-    );
+    ctx.print_color_centered(15, RGB::named(YELLOW), *BLACK, "Your journey has ended!");
     ctx.print_color_centered(
         17,
         RGB::named(WHITE),
-        RGB::named(BLACK),
+        *BLACK,
         "One day, we'll tell you all about how you did.",
     );
     ctx.print_color_centered(
         18,
         RGB::named(WHITE),
-        RGB::named(BLACK),
+        *BLACK,
         "That day, sadly, is not in this chapter...",
     );
 
     ctx.print_color_centered(
         20,
         RGB::named(MAGENTA),
-        RGB::named(BLACK),
+        *BLACK,
         "Press ENTER to return to the menu.",
     );
 
@@ -773,7 +728,7 @@ impl Tooltip {
         let box_gray: RGB = RGB::from_hex("#999999").expect("Oops");
         let light_gray: RGB = RGB::from_hex("#DDDDDD").expect("Oops");
         let white = RGB::named(rltk::WHITE);
-        let black = RGB::named(rltk::BLACK);
+        let black = *BLACK;
         ctx.draw_box(x, y, self.width() - 1, self.height() - 1, white, box_gray);
         for (i, s) in self.lines.iter().enumerate() {
             let col = if i == 0 { white } else { light_gray };
@@ -795,50 +750,37 @@ pub enum CheatMenuResult {
 pub fn show_cheat_mode(_gs: &mut State, ctx: &mut Rltk) -> CheatMenuResult {
     let count = 4;
     let mut y = (25 - (count / 2));
-    ctx.draw_box(
-        15,
-        y - 2,
-        31,
-        (count + 3),
-        RGB::named(WHITE),
-        RGB::named(BLACK),
-    );
-    ctx.print_color(
-        18,
-        y - 2,
-        RGB::named(YELLOW),
-        RGB::named(BLACK),
-        "Cheating!",
-    );
+    ctx.draw_box(15, y - 2, 31, (count + 3), RGB::named(WHITE), *BLACK);
+    ctx.print_color(18, y - 2, RGB::named(YELLOW), *BLACK, "Cheating!");
     ctx.print_color(
         18,
         y + count + 1,
         RGB::named(YELLOW),
-        RGB::named(BLACK),
+        *BLACK,
         "ESCAPE to cancel",
     );
 
-    ctx.set(17, y, RGB::named(WHITE), RGB::named(BLACK), to_cp437('('));
-    ctx.set(18, y, RGB::named(YELLOW), RGB::named(BLACK), to_cp437('T'));
-    ctx.set(19, y, RGB::named(WHITE), RGB::named(BLACK), to_cp437(')'));
+    ctx.set(17, y, RGB::named(WHITE), *BLACK, to_cp437('('));
+    ctx.set(18, y, RGB::named(YELLOW), *BLACK, to_cp437('T'));
+    ctx.set(19, y, RGB::named(WHITE), *BLACK, to_cp437(')'));
     ctx.print(21, y, "Teleport to next level");
 
     y += 1;
-    ctx.set(17, y, RGB::named(WHITE), RGB::named(BLACK), to_cp437('('));
-    ctx.set(18, y, RGB::named(YELLOW), RGB::named(BLACK), to_cp437('H'));
-    ctx.set(19, y, RGB::named(WHITE), RGB::named(BLACK), to_cp437(')'));
+    ctx.set(17, y, RGB::named(WHITE), *BLACK, to_cp437('('));
+    ctx.set(18, y, RGB::named(YELLOW), *BLACK, to_cp437('H'));
+    ctx.set(19, y, RGB::named(WHITE), *BLACK, to_cp437(')'));
     ctx.print(21, y, "Heal all wounds");
 
     y += 1;
-    ctx.set(17, y, RGB::named(WHITE), RGB::named(BLACK), to_cp437('('));
-    ctx.set(18, y, RGB::named(YELLOW), RGB::named(BLACK), to_cp437('R'));
-    ctx.set(19, y, RGB::named(WHITE), RGB::named(BLACK), to_cp437(')'));
+    ctx.set(17, y, RGB::named(WHITE), *BLACK, to_cp437('('));
+    ctx.set(18, y, RGB::named(YELLOW), *BLACK, to_cp437('R'));
+    ctx.set(19, y, RGB::named(WHITE), *BLACK, to_cp437(')'));
     ctx.print(21, y, "Reveal the map");
 
     y += 1;
-    ctx.set(17, y, RGB::named(WHITE), RGB::named(BLACK), to_cp437('('));
-    ctx.set(18, y, RGB::named(YELLOW), RGB::named(BLACK), to_cp437('G'));
-    ctx.set(19, y, RGB::named(WHITE), RGB::named(BLACK), to_cp437(')'));
+    ctx.set(17, y, RGB::named(WHITE), *BLACK, to_cp437('('));
+    ctx.set(18, y, RGB::named(YELLOW), *BLACK, to_cp437('G'));
+    ctx.set(19, y, RGB::named(WHITE), *BLACK, to_cp437(')'));
     ctx.print(21, y, "God Mode (No Death)");
 
     ctx.key
@@ -888,52 +830,46 @@ fn vendor_sell_menu(
         51,
         (count + 3) as i32,
         RGB::named(rltk::WHITE),
-        RGB::named(rltk::BLACK),
+        *BLACK,
     );
     ctx.print_color(
         18,
         y - 2,
         RGB::named(rltk::YELLOW),
-        RGB::named(rltk::BLACK),
+        *BLACK,
         "Sell Which Item? (space to switch to buy mode)",
     );
     ctx.print_color(
         18,
         y + count as i32 + 1,
         RGB::named(rltk::YELLOW),
-        RGB::named(rltk::BLACK),
+        *BLACK,
         "ESCAPE to cancel",
     );
 
     let mut equippable: Vec<Entity> = Vec::new();
     let mut j = 0;
-    for (entity, _pack, name, item) in (&entities, &backpack, &names, &items)
+    for (entity, _pack, item) in (&entities, &backpack, &items)
         .join()
         .filter(|item| item.1.owner == *player_entity)
     {
-        ctx.set(
-            17,
-            y,
-            RGB::named(rltk::WHITE),
-            RGB::named(rltk::BLACK),
-            rltk::to_cp437('('),
-        );
+        ctx.set(17, y, RGB::named(rltk::WHITE), *BLACK, rltk::to_cp437('('));
         ctx.set(
             18,
             y,
             RGB::named(rltk::YELLOW),
-            RGB::named(rltk::BLACK),
+            *BLACK,
             97 + j as rltk::FontCharType,
         );
-        ctx.set(
-            19,
-            y,
-            RGB::named(rltk::WHITE),
-            RGB::named(rltk::BLACK),
-            rltk::to_cp437(')'),
-        );
+        ctx.set(19, y, RGB::named(rltk::WHITE), *BLACK, rltk::to_cp437(')'));
 
-        ctx.print(21, y, &name.name.to_string());
+        ctx.print_color(
+            21,
+            y,
+            get_item_color(&gs.ecs, entity),
+            *BLACK,
+            &get_item_display_name(&gs.ecs, entity),
+        );
         ctx.print(50, y, &format!("{:.1} gp", item.base_value * 0.8));
         equippable.push(entity);
         y += 1;
@@ -982,45 +918,33 @@ fn vendor_buy_menu(
         51,
         (count + 3) as i32,
         RGB::named(rltk::WHITE),
-        RGB::named(rltk::BLACK),
+        *BLACK,
     );
     ctx.print_color(
         18,
         y - 2,
         RGB::named(rltk::YELLOW),
-        RGB::named(rltk::BLACK),
+        *BLACK,
         "Buy Which Item? (space to switch to sell mode)",
     );
     ctx.print_color(
         18,
         y + count as i32 + 1,
         RGB::named(rltk::YELLOW),
-        RGB::named(rltk::BLACK),
+        *BLACK,
         "ESCAPE to cancel",
     );
 
     for (j, sale) in inventory.iter().enumerate() {
-        ctx.set(
-            17,
-            y,
-            RGB::named(rltk::WHITE),
-            RGB::named(rltk::BLACK),
-            rltk::to_cp437('('),
-        );
+        ctx.set(17, y, RGB::named(rltk::WHITE), *BLACK, rltk::to_cp437('('));
         ctx.set(
             18,
             y,
             RGB::named(rltk::YELLOW),
-            RGB::named(rltk::BLACK),
+            *BLACK,
             97 + j as rltk::FontCharType,
         );
-        ctx.set(
-            19,
-            y,
-            RGB::named(rltk::WHITE),
-            RGB::named(rltk::BLACK),
-            rltk::to_cp437(')'),
-        );
+        ctx.set(19, y, RGB::named(rltk::WHITE), *BLACK, rltk::to_cp437(')'));
 
         ctx.print(21, y, &sale.0);
         ctx.print(50, y, &format!("{:.1} gp", sale.1 * 1.2));
@@ -1045,5 +969,35 @@ fn vendor_buy_menu(
                 (VendorResult::NoResponse, None, None, None)
             }
         },
+    }
+}
+
+pub fn get_item_color(ecs: &World, item: Entity) -> RGB {
+    if let Some(magic) = ecs.read_storage::<MagicItem>().get(item) {
+        return match magic.class {
+            MagicItemClass::Common => RGB::from_f32(0.5, 1.0, 0.5),
+            MagicItemClass::Rare => RGB::from_f32(0.0, 1.0, 1.0),
+            MagicItemClass::Legendary => RGB::from_f32(0.71, 0.15, 0.93),
+        };
+    }
+    RGB::from_f32(1.0, 1.0, 1.0)
+}
+
+pub fn get_item_display_name(ecs: &World, item: Entity) -> String {
+    if let Some(name) = ecs.read_storage::<Name>().get(item) {
+        if ecs.read_storage::<MagicItem>().get(item).is_some() {
+            let dm = ecs.fetch::<MasterDungeonMap>();
+            if dm.identified_items.contains(&name.name) {
+                name.name.clone()
+            } else if let Some(obfuscated) = ecs.read_storage::<ObfuscatedName>().get(item) {
+                obfuscated.name.clone()
+            } else {
+                "Unidentified magic item".to_string()
+            }
+        } else {
+            name.name.clone()
+        }
+    } else {
+        "Nameless item (bug)".to_string()
     }
 }

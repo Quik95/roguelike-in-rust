@@ -9,14 +9,15 @@ use specs::{Builder, Entity, EntityBuilder, World, WorldExt};
 use crate::components::{
     AreaOfEffect, Attribute, Attributes, BlocksTile, BlocksVisibility, Confusion, Consumable, Door,
     EntryTrigger, EquipmentChanged, EquipmentSlot, Equippable, Faction, Hidden, InBackpack,
-    InflictsDamage, Initiative, LightSource, MagicMapper, MeleeWeapon, MoveMode, Movement, Name,
-    NaturalAttack, NaturalAttackDefense, Pool, Pools, Position, ProvidesFood, ProvidesHealing,
-    Ranged, SerializeMe, SingleActivation, Skill, Skills, TownPortal, Vendor, Viewshed,
-    WeaponAttribute, Wearable,
+    InflictsDamage, Initiative, LightSource, MagicItem, MagicItemClass, MagicMapper, MeleeWeapon,
+    MoveMode, Movement, Name, NaturalAttack, NaturalAttackDefense, ObfuscatedName, Pool, Pools,
+    Position, ProvidesFood, ProvidesHealing, Ranged, SerializeMe, SingleActivation, Skill, Skills,
+    TownPortal, Vendor, Viewshed, WeaponAttribute, Wearable,
 };
 use crate::components::{Equipped, LootTable};
 use crate::components::{Quips, Renderable};
 use crate::gamesystem::{attr_bonus, mana_at_level, npc_hp, DiceRoll};
+use crate::map::dungeon::MasterDungeonMap;
 use crate::random_table::RandomTable;
 use crate::raws::faction_structs::Reaction;
 use crate::raws::spawn_table_structs::SpawnTableEntry;
@@ -149,6 +150,12 @@ pub fn spawn_named_item(
     if raws.item_index.contains_key(key) {
         let item_template = &raws.raws.items[raws.item_index[key]];
 
+        let dm = ecs.fetch::<MasterDungeonMap>();
+        let scroll_names = dm.scroll_mappings.clone();
+        let potion_names = dm.potion_mappings.clone();
+        let identified = dm.identified_items.clone();
+        std::mem::drop(dm);
+
         let mut eb = ecs.create_entity().marked::<SimpleMarker<SerializeMe>>();
 
         eb = spawn_position(pos, eb, key, raws);
@@ -206,7 +213,6 @@ pub fn spawn_named_item(
                     )),
                 }
             }
-            return Some(eb.build());
         }
 
         if let Some(weapon) = &item_template.weapon {
@@ -237,6 +243,36 @@ pub fn spawn_named_item(
                 slot,
                 armor_class: wearable.armor_class,
             });
+        }
+
+        if let Some(magic) = &item_template.magic {
+            let class = match magic.class.as_str() {
+                "rare" => MagicItemClass::Rare,
+                "legendary" => MagicItemClass::Legendary,
+                "common" => MagicItemClass::Common,
+                unknown => unreachable!("Unknown magic level: {unknown}"),
+            };
+            eb = eb.with(MagicItem { class });
+
+            if !identified.contains(&item_template.name) {
+                match magic.naming.as_str() {
+                    "scroll" => {
+                        eb = eb.with(ObfuscatedName {
+                            name: scroll_names[&item_template.name].clone(),
+                        });
+                    }
+                    "potion" => {
+                        eb = eb.with(ObfuscatedName {
+                            name: potion_names[&item_template.name].clone(),
+                        });
+                    }
+                    _ => {
+                        eb = eb.with(ObfuscatedName {
+                            name: magic.naming.clone(),
+                        });
+                    }
+                }
+            }
         }
 
         return Some(eb.build());
@@ -642,6 +678,46 @@ pub fn get_vendor_items(categories: &[String], raws: &RawMaster) -> Vec<(String,
         if let Some(cat) = &item.vendor_category {
             if categories.contains(cat) && item.base_value.is_some() {
                 result.push((item.name.clone(), item.base_value.unwrap()));
+            }
+        }
+    }
+
+    result
+}
+
+pub fn get_scroll_tags() -> Vec<String> {
+    let raws = &RAWS.lock().unwrap();
+    let mut result = vec![];
+
+    for item in raws.raws.items.iter() {
+        if let Some(magic) = &item.magic {
+            if &magic.naming == "scroll" {
+                result.push(item.name.clone());
+            }
+        }
+    }
+
+    result
+}
+
+pub fn is_tag_magic(tag: &str) -> bool {
+    let raws = &RAWS.lock().unwrap();
+    if raws.item_index.contains_key(tag) {
+        let item_template = &raws.raws.items[raws.item_index[tag]];
+        item_template.magic.is_some()
+    } else {
+        false
+    }
+}
+
+pub fn get_potion_tag() -> Vec<String> {
+    let raws = &RAWS.lock().unwrap();
+    let mut result = Vec::new();
+
+    for item in raws.raws.items.iter() {
+        if let Some(magic) = &item.magic {
+            if &magic.naming == "potion" {
+                result.push(item.name.clone());
             }
         }
     }

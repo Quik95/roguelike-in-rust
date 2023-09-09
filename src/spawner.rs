@@ -106,7 +106,7 @@ pub fn player(ecs: &mut World, player_x: i32, player_y: i32) -> Entity {
         &RAWS.lock().unwrap(),
         ecs,
         "Rusty Longsword",
-        SpawnType::Carried { by: player },
+        SpawnType::Equipped { by: player },
     );
     spawn_named_entity(
         &RAWS.lock().unwrap(),
@@ -137,12 +137,6 @@ pub fn player(ecs: &mut World, player_x: i32, player_y: i32) -> Entity {
         ecs,
         "Old Boots",
         SpawnType::Equipped { by: player },
-    );
-    spawn_named_entity(
-        &RAWS.lock().unwrap(),
-        ecs,
-        "Town Portal Scroll",
-        SpawnType::Carried { by: player },
     );
 
     player

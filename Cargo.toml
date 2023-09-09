@@ -10,8 +10,8 @@ color-eyre = "0.6.2"
 itertools = "0.11.0"
 lazy_static = "1.4.0"
 regex = "1.9.3"
+#rltk = { version = "0.8.7", features = ["serde"] }
 # rltk = { version = "0.8.7", features = ["webgpu", "serde"], default-features = false }
-# rltk = { version = "0.8.7", features = ["serde"] }
 rltk = { git = "https://github.com/amethyst/bracket-lib.git", features = ["serde"] }
 serde = { version = "1.0.171", features = ["derive"] }
 serde_json = "1.0.103"
