@@ -132,7 +132,7 @@ pub fn patterns_to_constraints(patterns: Vec<Vec<TileType>>, chunk_size: i32) ->
             has_exits: true,
             compatible_with: [Vec::new(), Vec::new(), Vec::new(), Vec::new()],
         };
-        for exit in new_chunk.exits.iter_mut() {
+        for exit in &mut new_chunk.exits {
             for _i in 0..chunk_size {
                 exit.push(false);
             }
@@ -178,11 +178,11 @@ pub fn patterns_to_constraints(patterns: Vec<Vec<TileType>>, chunk_size: i32) ->
 
     // Build compatibility matrix
     let ch = constraints.clone();
-    for c in constraints.iter_mut() {
+    for c in &mut constraints {
         for (j, potential) in ch.iter().enumerate() {
             // If there are no exits at all, it's compatible
             if !c.has_exits || !potential.has_exits {
-                for compat in c.compatible_with.iter_mut() {
+                for compat in &mut c.compatible_with {
                     compat.push(j);
                 }
             } else {

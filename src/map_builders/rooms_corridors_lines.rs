@@ -22,7 +22,7 @@ impl StraightLineCorridors {
     fn corridors(&mut self, _: &mut RandomNumberGenerator, build_data: &mut BuilderMap) {
         let rooms = build_data.rooms.as_ref().map_or_else(
             || panic!("Straight Line Corridors require a builder with room structures."),
-            |room_builder| room_builder.clone(),
+            std::clone::Clone::clone,
         );
 
         let mut connected = HashSet::new();
@@ -35,7 +35,8 @@ impl StraightLineCorridors {
                 if i != j && !connected.contains(&j) {
                     let other_center = other_room.center();
                     let other_center_pt = Point::new(other_center.0, other_center.1);
-                    let distance = DistanceAlg::Pythagoras.distance2d(room_center_pt, other_center_pt);
+                    let distance =
+                        DistanceAlg::Pythagoras.distance2d(room_center_pt, other_center_pt);
                     room_distance.push((j, distance));
                 }
             }
@@ -43,9 +44,13 @@ impl StraightLineCorridors {
             if !room_distance.is_empty() {
                 room_distance.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
                 let dest_center = rooms[room_distance[0].0].center();
-                let line = rltk::line2d(LineAlg::Bresenham, room_center_pt, Point::new(dest_center.0, dest_center.1));
+                let line = rltk::line2d(
+                    LineAlg::Bresenham,
+                    room_center_pt,
+                    Point::new(dest_center.0, dest_center.1),
+                );
                 let mut corridor = Vec::new();
-                for cell in line.iter() {
+                for cell in &line {
                     let idx = build_data.map.xy_idx(cell.x, cell.y);
                     if build_data.map.tiles[idx] != TileType::Floor {
                         build_data.map.tiles[idx] = TileType::Floor;

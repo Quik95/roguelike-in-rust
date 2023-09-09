@@ -1,6 +1,6 @@
 use specs::{Entities, Entity, Join, ReadExpect, ReadStorage, System, WriteExpect, WriteStorage};
 
-use crate::components::HungerState::*;
+use crate::components::HungerState::{Hungry, Normal, Starving, WellFed};
 use crate::components::{HungerClock, MyTurn};
 use crate::effects::{add_effect, EffectType, Targets};
 use crate::gamelog::GameLog;

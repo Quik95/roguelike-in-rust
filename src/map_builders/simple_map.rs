@@ -30,8 +30,10 @@ impl SimpleMapBuilder {
             let y = rng.roll_dice(1, build_data.map.height - h - 1) - 1;
             let new_room = Rect::new(x, y, w, h);
             let mut ok = true;
-            for other_room in rooms.iter() {
-                if new_room.intersects(other_room) { ok = false; }
+            for other_room in &rooms {
+                if new_room.intersects(other_room) {
+                    ok = false;
+                }
             }
             if ok {
                 rooms.push(new_room);

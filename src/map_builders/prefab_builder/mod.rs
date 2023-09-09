@@ -157,7 +157,7 @@ impl PrefabBuilder {
             .chars()
             .filter(|a| *a != '\r' && *a != '\n')
             .collect();
-        for c in string_vec.iter_mut() {
+        for c in &mut string_vec {
             if *c as u8 == 160u8 {
                 *c = ' ';
             }
@@ -251,7 +251,7 @@ impl PrefabBuilder {
 
         let master_vault_list = vec![TOTALLY_NOT_A_TRAP, SILLY_SIMPLE, CHECKERBOARD];
 
-        for vault in master_vault_list.iter() {
+        for vault in &master_vault_list {
             assert_eq!(
                 vault.template.len(),
                 vault.width * vault.height,

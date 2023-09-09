@@ -1,6 +1,9 @@
 use serde::{Deserialize, Serialize};
 
-use TileType::*;
+use TileType::{
+    Bridge, DeepWater, DownStairs, Floor, Grass, Gravel, Road, ShallowWater, Stalactite,
+    Stalagmite, UpStairs, Wall, WoodFloor,
+};
 
 #[derive(PartialEq, Eq, Hash, Copy, Clone, Serialize, Deserialize)]
 pub enum TileType {
@@ -20,7 +23,7 @@ pub enum TileType {
 }
 
 impl TileType {
-    pub fn is_walkable(&self) -> bool {
+    pub const fn is_walkable(&self) -> bool {
         match self {
             Floor | DownStairs | Road | Grass | ShallowWater | WoodFloor | Bridge | Gravel
             | UpStairs => true,
@@ -28,14 +31,11 @@ impl TileType {
         }
     }
 
-    pub fn is_opaque(&self) -> bool {
-        match self {
-            Wall | Stalactite | Stalagmite => true,
-            _ => false,
-        }
+    pub const fn is_opaque(&self) -> bool {
+        matches!(self, Wall | Stalactite | Stalagmite)
     }
 
-    pub fn get_cost(&self) -> f32 {
+    pub const fn get_cost(&self) -> f32 {
         match self {
             Road => 0.8,
             Grass => 1.1,

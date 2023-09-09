@@ -4,7 +4,7 @@ use crate::effects::{EffectSpawner, EffectType};
 use crate::map::Map;
 use crate::particle_system::ParticleBuilder;
 
-pub fn particle_to_tile(ecs: &mut World, tile_idx: i32, effect: &EffectSpawner) {
+pub fn particle_to_tile(ecs: &World, tile_idx: i32, effect: &EffectSpawner) {
     if let EffectType::Particle {
         glyph,
         fg,

@@ -105,7 +105,7 @@ impl BuilderMap {
     pub(crate) fn take_snapshot(&mut self) {
         if SHOW_MAPGEN_VISUALIZER {
             let mut snapshot = self.map.clone();
-            for v in snapshot.revealed_tiles.iter_mut() {
+            for v in &mut snapshot.revealed_tiles {
                 *v = true;
             }
             self.history.push(snapshot);
@@ -163,13 +163,13 @@ impl BuilderChain {
             Some(starter) => starter.build_map(rng, &mut self.build_data),
         }
 
-        for metabuilder in self.builders.iter_mut() {
+        for metabuilder in &mut self.builders {
             metabuilder.build_map(rng, &mut self.build_data);
         }
     }
 
     pub fn spawn_entities(&mut self, ecs: &mut World) {
-        for entity in self.build_data.spawn_list.iter() {
+        for entity in &self.build_data.spawn_list {
             spawner::spawn_entity(ecs, &(&entity.0, &entity.1));
         }
     }

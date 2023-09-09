@@ -3,7 +3,7 @@ use specs::{Entity, World, WorldExt};
 use crate::components::ApplyTeleport;
 use crate::effects::{EffectSpawner, EffectType};
 
-pub fn apply_teleport(ecs: &mut World, destination: &EffectSpawner, target: Entity) {
+pub fn apply_teleport(ecs: &World, destination: &EffectSpawner, target: Entity) {
     let player_entity = ecs.fetch::<Entity>();
     if let EffectType::TeleportTo {
         x,

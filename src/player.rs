@@ -1,5 +1,3 @@
-use std::cmp::{max, min};
-
 use rltk::{to_cp437, Point, VirtualKeyCode};
 use specs::prelude::*;
 
@@ -13,7 +11,11 @@ use crate::raws::rawmaster::{faction_reaction, RAWS};
 use crate::raws::Reaction;
 use crate::{gui, spatial};
 
-use super::components::*;
+use super::components::{
+    Attributes, BlocksTile, BlocksVisibility, Consumable, Door, EntityMoved, Faction, HungerClock,
+    HungerState, InBackpack, Item, Player, Pools, Position, Ranged, Renderable, Vendor, Viewshed,
+    WantsToMelee, WantsToPickupItem, WantsToUseItem,
+};
 use super::map::Map;
 use super::State;
 
@@ -60,7 +62,7 @@ pub enum VendorMode {
 }
 
 impl Player {
-    pub fn try_move_player(delta_x: i32, delta_y: i32, ecs: &mut World) -> RunState {
+    pub fn try_move_player(delta_x: i32, delta_y: i32, ecs: &World) -> RunState {
         let mut positions = ecs.write_storage::<Position>();
         let mut players = ecs.write_storage::<Self>();
         let mut viewsheds = ecs.write_storage::<Viewshed>();
@@ -114,8 +116,8 @@ impl Player {
                     if !hostile {
                         swap_entities.push((potential_target, pos.x, pos.y));
 
-                        pos.x = min(map.width - 1, max(0, pos.x + delta_x));
-                        pos.y = min(map.height - 1, max(0, pos.y + delta_y));
+                        pos.x = (pos.x + delta_x).clamp(0, map.width - 1);
+                        pos.x = (pos.y + delta_y).clamp(0, map.height - 1);
                         entity_moved
                             .insert(entity, EntityMoved {})
                             .expect("Unable to insert marker");
@@ -173,7 +175,7 @@ impl Player {
             }
         }
 
-        for m in swap_entities.iter() {
+        for m in &swap_entities {
             let their_pos = positions.get_mut(m.0);
             if let Some(their_pos) = their_pos {
                 let old_idx = map.xy_idx(their_pos.x, their_pos.y);
@@ -188,7 +190,7 @@ impl Player {
         result
     }
 
-    pub fn player_input(gs: &mut State, ctx: &mut rltk::Rltk) -> RunState {
+    pub fn player_input(gs: &State, ctx: &mut rltk::Rltk) -> RunState {
         // TODO: fix this
         if ctx.shift && ctx.key.is_some() {
             let key: Option<i32> = match ctx.key.unwrap() {
@@ -212,48 +214,46 @@ impl Player {
             None => return RunState::AwaitingInput,
             Some(key) => match key {
                 VirtualKeyCode::Left | VirtualKeyCode::Numpad4 | VirtualKeyCode::H => {
-                    return Self::try_move_player(-1, 0, &mut gs.ecs)
+                    return Self::try_move_player(-1, 0, &gs.ecs)
                 }
                 VirtualKeyCode::Right | VirtualKeyCode::Numpad6 | VirtualKeyCode::L => {
-                    return Self::try_move_player(1, 0, &mut gs.ecs)
+                    return Self::try_move_player(1, 0, &gs.ecs)
                 }
                 VirtualKeyCode::Up | VirtualKeyCode::Numpad8 | VirtualKeyCode::K => {
-                    return Self::try_move_player(0, -1, &mut gs.ecs)
+                    return Self::try_move_player(0, -1, &gs.ecs)
                 }
                 VirtualKeyCode::Down | VirtualKeyCode::Numpad2 | VirtualKeyCode::J => {
-                    return Self::try_move_player(0, 1, &mut gs.ecs)
+                    return Self::try_move_player(0, 1, &gs.ecs)
                 }
                 // Diagonals
                 VirtualKeyCode::Numpad9 | VirtualKeyCode::U => {
-                    return Self::try_move_player(1, -1, &mut gs.ecs)
+                    return Self::try_move_player(1, -1, &gs.ecs)
                 }
                 VirtualKeyCode::Numpad7 | VirtualKeyCode::Y => {
-                    return Self::try_move_player(-1, -1, &mut gs.ecs)
+                    return Self::try_move_player(-1, -1, &gs.ecs)
                 }
                 VirtualKeyCode::Numpad3 | VirtualKeyCode::N => {
-                    return Self::try_move_player(1, 1, &mut gs.ecs)
+                    return Self::try_move_player(1, 1, &gs.ecs)
                 }
                 VirtualKeyCode::Numpad1 | VirtualKeyCode::B => {
-                    return Self::try_move_player(-1, 1, &mut gs.ecs)
+                    return Self::try_move_player(-1, 1, &gs.ecs)
                 }
-                VirtualKeyCode::G => Self::get_item(&mut gs.ecs),
+                VirtualKeyCode::G => Self::get_item(&gs.ecs),
                 VirtualKeyCode::I => return ShowInventory,
                 VirtualKeyCode::D => return ShowDropItem,
                 VirtualKeyCode::Escape => return SaveGame,
                 VirtualKeyCode::Backslash => return ShowCheatMenu,
                 VirtualKeyCode::Period => {
-                    if Self::try_next_level(&mut gs.ecs) {
+                    if Self::try_next_level(&gs.ecs) {
                         return NextLevel;
                     }
                 }
                 VirtualKeyCode::Comma => {
-                    if Self::try_previous_level(&mut gs.ecs) {
+                    if Self::try_previous_level(&gs.ecs) {
                         return PreviousLevel;
                     }
                 }
-                VirtualKeyCode::Numpad5 | VirtualKeyCode::Space => {
-                    return Self::skip_turn(&mut gs.ecs)
-                }
+                VirtualKeyCode::Numpad5 | VirtualKeyCode::Space => return Self::skip_turn(&gs.ecs),
                 VirtualKeyCode::R => return ShowRemoveItem,
                 VirtualKeyCode::Q => ctx.quit(),
                 _ => return RunState::AwaitingInput,
@@ -263,7 +263,7 @@ impl Player {
         RunState::Ticking
     }
 
-    fn get_item(ecs: &mut World) {
+    fn get_item(ecs: &World) {
         let player_pos = ecs.fetch::<Point>();
         let player_entity = ecs.fetch::<Entity>();
         let entities = ecs.entities();
@@ -297,7 +297,7 @@ impl Player {
         }
     }
 
-    fn try_next_level(ecs: &mut World) -> bool {
+    fn try_next_level(ecs: &World) -> bool {
         let player_pos = ecs.fetch::<Point>();
         let map = ecs.fetch::<Map>();
         let player_idx = map.xy_idx(player_pos.x, player_pos.y);
@@ -312,7 +312,7 @@ impl Player {
         };
     }
 
-    fn try_previous_level(ecs: &mut World) -> bool {
+    fn try_previous_level(ecs: &World) -> bool {
         let player_pos = ecs.fetch::<Point>();
         let map = ecs.fetch::<Map>();
         let player_idx = map.xy_idx(player_pos.x, player_pos.y);
@@ -327,7 +327,7 @@ impl Player {
         };
     }
 
-    fn skip_turn(ecs: &mut World) -> RunState {
+    fn skip_turn(ecs: &World) -> RunState {
         let player_entity = ecs.fetch::<Entity>();
         let viewshed_components = ecs.read_storage::<Viewshed>();
         let factions = ecs.read_storage::<Faction>();
@@ -336,7 +336,7 @@ impl Player {
 
         let mut can_heal = true;
         let viewshed = viewshed_components.get(*player_entity).unwrap();
-        for tile in viewshed.visible_tiles.iter() {
+        for tile in &viewshed.visible_tiles {
             let idx = worldmap_resource.xy_idx(tile.x, tile.y);
             spatial::for_each_tile_content(idx, |entity_id| {
                 let faction = factions.get(entity_id);
@@ -368,7 +368,7 @@ impl Player {
     }
 }
 
-fn use_consumable_hotkey(gs: &mut State, key: i32) -> RunState {
+fn use_consumable_hotkey(gs: &State, key: i32) -> RunState {
     let consumables = gs.ecs.read_storage::<Consumable>();
     let backpack = gs.ecs.read_storage::<InBackpack>();
     let player_entity = gs.ecs.fetch::<Entity>();

@@ -62,7 +62,7 @@ pub fn render_camera(ecs: &World, ctx: &mut Rltk) {
         .join()
         .collect::<Vec<_>>();
     data.sort_by(|&a, &b| b.1.render_order.cmp(&a.1.render_order));
-    for (pos, render, _hidden) in data.iter() {
+    for (pos, render, _hidden) in &data {
         let idx = map.xy_idx(pos.x, pos.y);
         if map.visible_tiles[idx] {
             let entity_screen_x = pos.x - min_x;

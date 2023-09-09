@@ -47,7 +47,7 @@ impl<'a> System<'a> for ItemEquipOnUse {
                         }
                     }
                 }
-                for item in to_unequip.iter() {
+                for item in &to_unequip {
                     equipped.remove(*item);
                     backpack
                         .insert(*item, InBackpack { owner: target })
@@ -77,11 +77,11 @@ impl<'a> System<'a> for ItemEquipOnUse {
             }
         }
 
-        remove_use.iter().for_each(|e| {
+        for e in &remove_use {
             dirty
                 .insert(*e, EquipmentChanged {})
                 .expect("Unable to insert");
             wants_use.remove(*e).expect("Unable to remove");
-        });
+        }
     }
 }

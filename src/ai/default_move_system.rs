@@ -1,5 +1,5 @@
 use rltk::RandomNumberGenerator;
-use specs::{Entities, Join, ReadStorage, System, WriteExpect, WriteStorage};
+use specs::{Entities, Join, ReadExpect, ReadStorage, System, WriteExpect, WriteStorage};
 
 use crate::components::{ApplyMove, MoveMode, Movement, MyTurn, Position};
 use crate::map::Map;
@@ -11,15 +11,14 @@ impl<'a> System<'a> for DefaultMoveAI {
         WriteStorage<'a, MyTurn>,
         WriteStorage<'a, MoveMode>,
         ReadStorage<'a, Position>,
-        WriteExpect<'a, Map>,
+        ReadExpect<'a, Map>,
         WriteExpect<'a, RandomNumberGenerator>,
         Entities<'a>,
         WriteStorage<'a, ApplyMove>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
-        let (mut turns, mut move_mode, positions, mut map, mut rng, entities, mut apply_move) =
-            data;
+        let (mut turns, mut move_mode, positions, map, mut rng, entities, mut apply_move) = data;
 
         let mut turn_done = vec![];
         for (entity, pos, mode, _myturn) in (&entities, &positions, &mut move_mode, &turns).join() {
@@ -48,7 +47,7 @@ impl<'a> System<'a> for DefaultMoveAI {
                             let path = rltk::a_star_search(
                                 map.xy_idx(pos.x, pos.y) as i32,
                                 map.xy_idx(target_x, target_y) as i32,
-                                &mut *map,
+                                &*map,
                             );
                             if path.success && path.steps.len() > 1 {
                                 mode.mode = Movement::RandomWaypoint {
@@ -83,7 +82,7 @@ impl<'a> System<'a> for DefaultMoveAI {
             }
         }
 
-        for done in turn_done.iter() {
+        for done in &turn_done {
             turns.remove(*done);
         }
     }

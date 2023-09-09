@@ -22,14 +22,14 @@ impl<'a> System<'a> for LightingSystem {
         }
 
         let black = RGB::named(BLACK);
-        for l in map.light.iter_mut() {
+        for l in &mut map.light {
             *l = black;
         }
 
         for (viewshed, pos, light) in (&viewshed, &positions, &lighting).join() {
             let light_point = Point::new(pos.x, pos.y);
             let range_f = light.range as f32;
-            for t in viewshed.visible_tiles.iter() {
+            for t in &viewshed.visible_tiles {
                 if t.x > 0 && t.x < map.width && t.y > 0 && t.y < map.height {
                     let idx = map.xy_idx(t.x, t.y);
                     let distance = DistanceAlg::Pythagoras.distance2d(light_point, *t);

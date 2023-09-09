@@ -83,17 +83,21 @@ impl Solver {
     }
 
     pub fn iteration(&mut self, map: &mut Map, rng: &mut super::RandomNumberGenerator) -> bool {
-        if self.remaining.is_empty() { return true; }
+        if self.remaining.is_empty() {
+            return true;
+        }
 
         // Populate the neighbor count of the remaining list
         let mut remain_copy = self.remaining.clone();
         let mut neighbors_exist = false;
-        for r in remain_copy.iter_mut() {
+        for r in &mut remain_copy {
             let idx = r.0;
             let chunk_x = idx % self.chunks_x;
             let chunk_y = idx / self.chunks_x;
             let neighbor_count = self.count_neighbors(chunk_x, chunk_y);
-            if neighbor_count > 0 { neighbors_exist = true; }
+            if neighbor_count > 0 {
+                neighbors_exist = true;
+            }
             *r = (r.0, neighbor_count);
         }
         remain_copy.sort_by(|a, b| b.1.cmp(&a.1));
@@ -167,7 +171,6 @@ impl Solver {
             let top_y = chunk_y as i32 * self.chunk_size;
             let bottom_y = (chunk_y as i32 + 1) * self.chunk_size;
 
-
             let mut i: usize = 0;
             for y in top_y..bottom_y {
                 for x in left_x..right_x {
@@ -180,17 +183,19 @@ impl Solver {
         } else {
             // There are neighbors, so we try to be compatible with them
             let mut options_to_check: HashSet<usize> = HashSet::new();
-            for o in options.iter() {
-                for i in o.iter() {
+            for o in &options {
+                for i in o {
                     options_to_check.insert(*i);
                 }
             }
 
             let mut possible_options: Vec<usize> = Vec::new();
-            for new_chunk_idx in options_to_check.iter() {
+            for new_chunk_idx in &options_to_check {
                 let mut possible = true;
-                for o in options.iter() {
-                    if !o.contains(new_chunk_idx) { possible = false; }
+                for o in &options {
+                    if !o.contains(new_chunk_idx) {
+                        possible = false;
+                    }
                 }
                 if possible {
                     possible_options.push(*new_chunk_idx);
@@ -202,7 +207,11 @@ impl Solver {
                 self.possible = false;
                 return true;
             } else {
-                let new_chunk_idx = if possible_options.len() == 1 { 0 } else { rng.roll_dice(1, possible_options.len() as i32) - 1 };
+                let new_chunk_idx = if possible_options.len() == 1 {
+                    0
+                } else {
+                    rng.roll_dice(1, possible_options.len() as i32) - 1
+                };
 
                 self.chunks[chunk_index] = Some(possible_options[new_chunk_idx as usize]);
                 let left_x = chunk_x as i32 * self.chunk_size;
@@ -210,12 +219,12 @@ impl Solver {
                 let top_y = chunk_y as i32 * self.chunk_size;
                 let bottom_y = (chunk_y as i32 + 1) * self.chunk_size;
 
-
                 let mut i: usize = 0;
                 for y in top_y..bottom_y {
                     for x in left_x..right_x {
                         let mapidx = map.xy_idx(x, y);
-                        let tile = self.constraints[possible_options[new_chunk_idx as usize]].pattern[i];
+                        let tile =
+                            self.constraints[possible_options[new_chunk_idx as usize]].pattern[i];
                         map.tiles[mapidx] = tile;
                         i += 1;
                     }

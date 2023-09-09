@@ -12,7 +12,7 @@ pub struct CaveTransition {}
 
 impl MetaMapBuilder for CaveTransition {
     fn build_map(&mut self, rng: &mut RandomNumberGenerator, build_data: &mut BuilderMap) {
-        self.build(rng, build_data)
+        self.build(rng, build_data);
     }
 }
 
@@ -34,7 +34,7 @@ impl CaveTransition {
         builder.with(RoomBasedSpawner::new());
         builder.build_map(rng);
 
-        for h in builder.build_data.history.iter() {
+        for h in &builder.build_data.history {
             build_data.history.push(h.clone());
         }
         build_data.take_snapshot();
@@ -53,7 +53,7 @@ impl CaveTransition {
             x < w / 2
         });
 
-        for s in builder.build_data.spawn_list.iter() {
+        for s in &builder.build_data.spawn_list {
             let x = s.0 as i32 / w;
             if x > w / 2 {
                 build_data.spawn_list.push(s.clone());

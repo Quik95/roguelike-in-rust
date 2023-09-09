@@ -42,8 +42,14 @@ impl VoronoiSpawning {
             }
         }
 
-        for area in noise_areas.iter() {
-            spawner::spawn_region(&build_data.map, rng, area.1, build_data.map.depth, &mut build_data.spawn_list);
+        for area in &noise_areas {
+            spawner::spawn_region(
+                &build_data.map,
+                rng,
+                area.1,
+                build_data.map.depth,
+                &mut build_data.spawn_list,
+            );
         }
     }
 }

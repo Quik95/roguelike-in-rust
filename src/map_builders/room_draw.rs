@@ -38,7 +38,8 @@ impl RoomDrawer {
                 let distance = DistanceAlg::Pythagoras.distance2d(center_pt, Point::new(x, y));
                 if idx > 0
                     && idx < ((build_data.map.width * build_data.map.height) - 1) as usize
-                    && distance <= radius {
+                    && distance <= radius
+                {
                     build_data.map.tiles[idx] = TileType::Floor;
                 }
             }
@@ -48,14 +49,14 @@ impl RoomDrawer {
     fn build(&mut self, rng: &mut RandomNumberGenerator, build_data: &mut BuilderMap) {
         let rooms = build_data.rooms.as_ref().map_or_else(
             || panic!("Room rounding requires a builder with room structures."),
-            |room_builder| room_builder.clone(),
+            std::clone::Clone::clone,
         );
 
-        for room in rooms.iter() {
+        for room in &rooms {
             let room_type = rng.roll_dice(1, 4);
             match room_type {
                 1 => self.circle(build_data, room),
-                _ => self.rectangle(build_data, room)
+                _ => self.rectangle(build_data, room),
             }
             build_data.take_snapshot();
         }

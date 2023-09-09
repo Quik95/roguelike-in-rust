@@ -44,7 +44,7 @@ pub fn delete_the_dead(ecs: &mut World) {
         let mut positions = ecs.write_storage::<Position>();
         let loot_table = ecs.read_storage::<LootTable>();
         let mut rng = ecs.write_resource::<RandomNumberGenerator>();
-        for victim in dead.iter() {
+        for victim in &dead {
             let pos = positions.get(*victim);
             for (entity, equipped) in (&entities, &equipped).join() {
                 if equipped.owner == *victim {
@@ -71,7 +71,7 @@ pub fn delete_the_dead(ecs: &mut World) {
             }
         }
 
-        for drop in to_drop.iter() {
+        for drop in &to_drop {
             equipped.remove(drop.0);
             carried.remove(drop.0);
             positions
@@ -81,7 +81,7 @@ pub fn delete_the_dead(ecs: &mut World) {
     }
 
     {
-        for drop in to_spawn.iter() {
+        for drop in &to_spawn {
             spawn_named_item(
                 &RAWS.lock().unwrap(),
                 ecs,

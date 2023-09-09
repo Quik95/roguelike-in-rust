@@ -29,13 +29,13 @@ impl Default for MasterDungeonMap {
         };
 
         let mut rng = RandomNumberGenerator::new();
-        for scroll_tag in get_scroll_tags().iter() {
+        for scroll_tag in &get_scroll_tags() {
             let masked_name = make_scroll_name(&mut rng);
             dm.scroll_mappings.insert(scroll_tag.into(), masked_name);
         }
 
         let mut used_potion_names = HashSet::new();
-        for potion_tag in get_potion_tag().iter() {
+        for potion_tag in &get_potion_tag() {
             let masked_name = make_potion_name(&mut rng, &mut used_potion_names);
             dm.potion_mappings
                 .insert(potion_tag.to_string(), masked_name);
@@ -147,7 +147,7 @@ pub fn level_transition(ecs: &mut World, new_depth: i32, offset: i32) -> Option<
     }
 }
 
-fn transition_to_existing_map(ecs: &mut World, new_depth: i32, offset: i32) {
+fn transition_to_existing_map(ecs: &World, new_depth: i32, offset: i32) {
     let dungeon_master = ecs.read_resource::<MasterDungeonMap>();
     let map = dungeon_master.get_map(new_depth).unwrap();
     let mut worldmap_resource = ecs.write_resource::<Map>();
@@ -236,7 +236,7 @@ fn transition_to_new_map(ecs: &mut World, new_depth: i32) -> Vec<Map> {
     mapgen_history
 }
 
-pub fn freeze_level_entities(ecs: &mut World) {
+pub fn freeze_level_entities(ecs: &World) {
     // Obtain ECS access
     let entities = ecs.entities();
     let mut positions = ecs.write_storage::<Position>();
@@ -263,12 +263,12 @@ pub fn freeze_level_entities(ecs: &mut World) {
     }
 
     // Remove positions
-    for p in pos_to_delete.iter() {
+    for p in &pos_to_delete {
         positions.remove(*p);
     }
 }
 
-pub fn thaw_level_entities(ecs: &mut World) {
+pub fn thaw_level_entities(ecs: &World) {
     // Obtain ECS access
     let entities = ecs.entities();
     let mut positions = ecs.write_storage::<Position>();
@@ -288,7 +288,7 @@ pub fn thaw_level_entities(ecs: &mut World) {
     }
 
     // Remove positions
-    for p in pos_to_delete.iter() {
+    for p in &pos_to_delete {
         other_level_positions.remove(*p);
     }
 }

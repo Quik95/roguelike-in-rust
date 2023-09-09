@@ -91,16 +91,16 @@ impl BaseMap for Map {
 
         // Cardinal directions
         if self.is_exit_valid(x - 1, y) {
-            exits.push((idx - 1, tt.get_cost()))
+            exits.push((idx - 1, tt.get_cost()));
         };
         if self.is_exit_valid(x + 1, y) {
-            exits.push((idx + 1, tt.get_cost()))
+            exits.push((idx + 1, tt.get_cost()));
         };
         if self.is_exit_valid(x, y - 1) {
-            exits.push((idx - w, tt.get_cost()))
+            exits.push((idx - w, tt.get_cost()));
         };
         if self.is_exit_valid(x, y + 1) {
-            exits.push((idx + w, tt.get_cost()))
+            exits.push((idx + w, tt.get_cost()));
         };
 
         // Diagonals

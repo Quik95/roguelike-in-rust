@@ -3,7 +3,7 @@ use rltk::{to_cp437, Point, Rltk, VirtualKeyCode, GOLD, GREEN, MAGENTA, RGB, WHI
 use specs::prelude::*;
 
 use crate::camera::get_screen_bounds;
-use crate::components::HungerState::*;
+use crate::components::HungerState::{Normal, WellFed};
 use crate::components::{
     Attribute, Attributes, Consumable, Equipped, Hidden, HungerClock, HungerState, Item, MagicItem,
     MagicItemClass, ObfuscatedName, Pools, Vendor,
@@ -164,7 +164,7 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
     let mut index = 1;
     for (entity, carried_by, _consumable) in (&entities, &backpack, &consumables).join() {
         if carried_by.owner == *player_entity && index < 10 {
-            ctx.print_color(50, y, yellow, black, &format!("↑{}", index));
+            ctx.print_color(50, y, yellow, black, &format!("↑{index}"));
             ctx.print_color(
                 53,
                 y,
@@ -276,30 +276,30 @@ fn draw_tooltips(ecs: &World, ctx: &mut Rltk) {
             // Comment on attributes
             let attr = attributes.get(entity);
             if let Some(attr) = attr {
-                let mut s = "".to_string();
+                let mut s = String::new();
                 if attr.might.bonus < 0 {
-                    s += "Weak. "
+                    s += "Weak. ";
                 };
                 if attr.might.bonus > 0 {
-                    s += "Strong. "
+                    s += "Strong. ";
                 };
                 if attr.quickness.bonus < 0 {
-                    s += "Clumsy. "
+                    s += "Clumsy. ";
                 };
                 if attr.quickness.bonus > 0 {
-                    s += "Agile. "
+                    s += "Agile. ";
                 };
                 if attr.fitness.bonus < 0 {
-                    s += "Unheathy. "
+                    s += "Unheathy. ";
                 };
                 if attr.fitness.bonus > 0 {
-                    s += "Healthy."
+                    s += "Healthy.";
                 };
                 if attr.intelligence.bonus < 0 {
-                    s += "Unintelligent. "
+                    s += "Unintelligent. ";
                 };
                 if attr.intelligence.bonus > 0 {
-                    s += "Smart. "
+                    s += "Smart. ";
                 };
                 if s.is_empty() {
                     s = "Quite Average".to_string();
@@ -339,7 +339,7 @@ fn draw_tooltips(ecs: &World, ctx: &mut Rltk) {
     ctx.set(arrow_x, arrow_y, white, box_gray, arrow);
 
     let mut total_height = 0;
-    for tt in tip_boxes.iter() {
+    for tt in &tip_boxes {
         total_height += tt.height();
     }
 
@@ -348,7 +348,7 @@ fn draw_tooltips(ecs: &World, ctx: &mut Rltk) {
         y -= 1;
     }
 
-    for tt in tip_boxes.iter() {
+    for tt in &tip_boxes {
         let x = if mouse_pos.0 < 40 {
             mouse_pos.0 - (1 + tt.width())
         } else {
@@ -366,7 +366,7 @@ pub enum ItemMenuResult {
     Selected,
 }
 
-pub fn show_inventory(gs: &mut State, ctx: &mut Rltk) -> (ItemMenuResult, Option<Entity>) {
+pub fn show_inventory(gs: &State, ctx: &mut Rltk) -> (ItemMenuResult, Option<Entity>) {
     let player_entity = gs.ecs.fetch::<Entity>();
     let names = gs.ecs.read_storage::<Name>();
     let backpack = gs.ecs.read_storage::<InBackpack>();
@@ -440,7 +440,7 @@ pub fn show_inventory(gs: &mut State, ctx: &mut Rltk) -> (ItemMenuResult, Option
     }
 }
 
-pub fn drop_item_menu(gs: &mut State, ctx: &mut Rltk) -> (ItemMenuResult, Option<Entity>) {
+pub fn drop_item_menu(gs: &State, ctx: &mut Rltk) -> (ItemMenuResult, Option<Entity>) {
     let player_entity = gs.ecs.fetch::<Entity>();
     let names = gs.ecs.read_storage::<Name>();
     let backpack = gs.ecs.read_storage::<InBackpack>();
@@ -520,11 +520,7 @@ pub fn drop_item_menu(gs: &mut State, ctx: &mut Rltk) -> (ItemMenuResult, Option
     }
 }
 
-pub fn ranged_target(
-    gs: &mut State,
-    ctx: &mut Rltk,
-    range: i32,
-) -> (ItemMenuResult, Option<Point>) {
+pub fn ranged_target(gs: &State, ctx: &mut Rltk, range: i32) -> (ItemMenuResult, Option<Point>) {
     let (min_x, max_x, min_y, max_y) = get_screen_bounds(&gs.ecs, ctx);
     let player_entity = gs.ecs.fetch::<Entity>();
     let player_pos = gs.ecs.fetch::<Point>();
@@ -537,7 +533,7 @@ pub fn ranged_target(
     let visible = viewsheds.get(*player_entity);
     if let Some(visible) = visible {
         // We have a viewshed
-        for idx in visible.visible_tiles.iter() {
+        for idx in &visible.visible_tiles {
             let distance = rltk::DistanceAlg::Pythagoras.distance2d(*player_pos, *idx);
             if distance <= range as f32 {
                 let screen_x = idx.x - min_x;
@@ -563,7 +559,7 @@ pub fn ranged_target(
     mouse_map_pos.1 += min_y;
 
     let mut valid_target = false;
-    for idx in available_cells.iter() {
+    for idx in &available_cells {
         if idx.x == mouse_map_pos.0 && idx.y == mouse_map_pos.1 {
             valid_target = true;
         }
@@ -599,7 +595,7 @@ pub enum MainMenuResult {
     Selected { selected: MainMenuSelection },
 }
 
-pub fn remove_item_menu(gs: &mut State, ctx: &mut Rltk) -> (ItemMenuResult, Option<Entity>) {
+pub fn remove_item_menu(gs: &State, ctx: &mut Rltk) -> (ItemMenuResult, Option<Entity>) {
     let player_entity = gs.ecs.fetch::<Entity>();
     let names = gs.ecs.read_storage::<Name>();
     let backpack = gs.ecs.read_storage::<Equipped>();
@@ -707,12 +703,12 @@ struct Tooltip {
 
 impl Tooltip {
     fn add(&mut self, line: impl ToString) {
-        self.lines.push(line.to_string())
+        self.lines.push(line.to_string());
     }
 
     fn width(&self) -> i32 {
         let mut max = 0;
-        for s in self.lines.iter() {
+        for s in &self.lines {
             if s.len() > max {
                 max = s.len();
             }
@@ -737,7 +733,7 @@ impl Tooltip {
     }
 }
 
-#[derive(PartialEq, Copy, Clone)]
+#[derive(Eq, PartialEq, Copy, Clone)]
 pub enum CheatMenuResult {
     NoResponse,
     Cancel,
@@ -795,7 +791,7 @@ pub fn show_cheat_mode(_gs: &mut State, ctx: &mut Rltk) -> CheatMenuResult {
 }
 
 pub fn show_vendor_menu(
-    gs: &mut State,
+    gs: &State,
     ctx: &mut Rltk,
     vendor: Entity,
     mode: VendorMode,
@@ -807,7 +803,7 @@ pub fn show_vendor_menu(
 }
 
 fn vendor_sell_menu(
-    gs: &mut State,
+    gs: &State,
     ctx: &mut Rltk,
     _vendor: Entity,
     _mode: VendorMode,
@@ -848,10 +844,10 @@ fn vendor_sell_menu(
     );
 
     let mut equippable: Vec<Entity> = Vec::new();
-    let mut j = 0;
-    for (entity, _pack, item) in (&entities, &backpack, &items)
+    for (j, (entity, _pack, item)) in (&entities, &backpack, &items)
         .join()
         .filter(|item| item.1.owner == *player_entity)
+        .enumerate()
     {
         ctx.set(17, y, RGB::named(rltk::WHITE), *BLACK, rltk::to_cp437('('));
         ctx.set(
@@ -873,7 +869,6 @@ fn vendor_sell_menu(
         ctx.print(50, y, &format!("{:.1} gp", item.base_value * 0.8));
         equippable.push(entity);
         y += 1;
-        j += 1;
     }
 
     match ctx.key {
@@ -898,7 +893,7 @@ fn vendor_sell_menu(
 }
 
 fn vendor_buy_menu(
-    gs: &mut State,
+    gs: &State,
     ctx: &mut Rltk,
     vendor: Entity,
     _mode: VendorMode,
@@ -984,20 +979,20 @@ pub fn get_item_color(ecs: &World, item: Entity) -> RGB {
 }
 
 pub fn get_item_display_name(ecs: &World, item: Entity) -> String {
-    if let Some(name) = ecs.read_storage::<Name>().get(item) {
-        if ecs.read_storage::<MagicItem>().get(item).is_some() {
-            let dm = ecs.fetch::<MasterDungeonMap>();
-            if dm.identified_items.contains(&name.name) {
-                name.name.clone()
-            } else if let Some(obfuscated) = ecs.read_storage::<ObfuscatedName>().get(item) {
-                obfuscated.name.clone()
+    ecs.read_storage::<Name>()
+        .get(item)
+        .map_or("Nameless item (bug)".into(), |name| {
+            if ecs.read_storage::<MagicItem>().get(item).is_some() {
+                let dm = ecs.fetch::<MasterDungeonMap>();
+                if dm.identified_items.contains(&name.name) {
+                    name.name.clone()
+                } else if let Some(obfuscated) = ecs.read_storage::<ObfuscatedName>().get(item) {
+                    obfuscated.name.clone()
+                } else {
+                    "Unidentified magic item".to_string()
+                }
             } else {
-                "Unidentified magic item".to_string()
+                name.name.clone()
             }
-        } else {
-            name.name.clone()
-        }
-    } else {
-        "Nameless item (bug)".to_string()
-    }
+        })
 }

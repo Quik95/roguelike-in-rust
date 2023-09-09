@@ -40,7 +40,7 @@ impl InitialMapBuilder for TownBuilder {
 }
 
 impl TownBuilder {
-    pub fn new() -> Box<TownBuilder> {
+    pub fn new() -> Box<Self> {
         Box::new(Self {})
     }
 
@@ -49,8 +49,8 @@ impl TownBuilder {
         self.water_and_piers(rng, build_data);
 
         let (mut available_building_tiles, wall_gap_y) = self.town_walls(rng, build_data);
-        let mut buildings = self.buildings(rng, build_data, &mut available_building_tiles);
-        let doors = self.add_doors(rng, build_data, &mut buildings, wall_gap_y);
+        let buildings = self.buildings(rng, build_data, &mut available_building_tiles);
+        let doors = self.add_doors(rng, build_data, &buildings, wall_gap_y);
         self.add_paths(build_data, &doors);
         for y in wall_gap_y - 3..wall_gap_y + 4 {
             let exit_idx = build_data.map.xy_idx(build_data.width - 2, y);
@@ -58,19 +58,19 @@ impl TownBuilder {
         }
 
         self.spawn_dockers(build_data, rng);
-        self.spawn_townsfolk(build_data, rng, &mut available_building_tiles);
+        self.spawn_townsfolk(build_data, rng, &available_building_tiles);
 
         let buildings_sorted = self.sort_buildings(&buildings);
         self.building_factory(rng, build_data, &buildings, &buildings_sorted);
 
-        for t in build_data.map.visible_tiles.iter_mut() {
+        for t in &mut build_data.map.visible_tiles {
             *t = true;
         }
 
         build_data.take_snapshot();
     }
     fn grass_layer(&self, build_data: &mut BuilderMap) {
-        for t in build_data.map.tiles.iter_mut() {
+        for t in &mut build_data.map.tiles {
             *t = TileType::Grass;
         }
         build_data.take_snapshot();
@@ -222,11 +222,11 @@ impl TownBuilder {
         &self,
         rng: &mut RandomNumberGenerator,
         build_data: &mut BuilderMap,
-        buildings: &mut Vec<(i32, i32, i32, i32)>,
+        buildings: &[(i32, i32, i32, i32)],
         wall_gap_y: i32,
     ) -> Vec<usize> {
         let mut doors = Vec::new();
-        for building in buildings.iter() {
+        for building in buildings {
             let door_x = building.0 + 1 + rng.roll_dice(1, building.2 - 3);
             let cy = building.1 + (building.3 / 2);
             let idx = if cy > wall_gap_y {
@@ -242,7 +242,7 @@ impl TownBuilder {
         build_data.take_snapshot();
         doors
     }
-    fn add_paths(&self, build_data: &mut BuilderMap, doors: &Vec<usize>) {
+    fn add_paths(&self, build_data: &mut BuilderMap, doors: &[usize]) {
         let mut roads = Vec::new();
         for y in 0..build_data.height {
             for x in 0..build_data.width {
@@ -254,13 +254,13 @@ impl TownBuilder {
         }
 
         build_data.map.populate_blocked();
-        for door_idx in doors.iter() {
+        for door_idx in doors {
             let mut nearest_roads = Vec::new();
             let door_pt = rltk::Point::new(
                 *door_idx as i32 % build_data.map.width,
                 *door_idx as i32 / build_data.map.width,
             );
-            for r in roads.iter() {
+            for r in &roads {
                 nearest_roads.push((
                     *r,
                     DistanceAlg::PythagorasSquared.distance2d(
@@ -275,9 +275,9 @@ impl TownBuilder {
             nearest_roads.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
 
             let destination = nearest_roads[0].0;
-            let path = rltk::a_star_search(*door_idx, destination, &mut build_data.map);
+            let path = rltk::a_star_search(*door_idx, destination, &build_data.map);
             if path.success {
-                for step in path.steps.iter() {
+                for step in &path.steps {
                     let idx = *step;
                     build_data.map.tiles[idx] = TileType::Road;
                     roads.push(idx);
@@ -501,9 +501,9 @@ impl TownBuilder {
         &self,
         build_data: &mut BuilderMap,
         rng: &mut RandomNumberGenerator,
-        available_building_tiles: &mut HashSet<usize>,
+        available_building_tiles: &HashSet<usize>,
     ) {
-        for idx in available_building_tiles.iter() {
+        for idx in available_building_tiles {
             if rng.roll_dice(1, 10) == 1 {
                 let roll = rng.roll_dice(1, 4);
                 match roll {

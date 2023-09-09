@@ -24,19 +24,19 @@ fn obfuscate_name(
     obfuscated_names: &ReadStorage<ObfuscatedName>,
     dm: &MasterDungeonMap,
 ) -> String {
-    if let Some(name) = names.get(item) {
-        if magic_items.get(item).is_some() {
-            if dm.identified_items.contains(&name.name) {
-                name.name.clone()
-            } else if let Some(obfuscated) = obfuscated_names.get(item) {
-                obfuscated.name.clone()
+    names
+        .get(item)
+        .map_or("Nameless item (bug)".into(), |name| {
+            if magic_items.get(item).is_some() {
+                if dm.identified_items.contains(&name.name) {
+                    name.name.clone()
+                } else if let Some(obfuscated) = obfuscated_names.get(item) {
+                    obfuscated.name.clone()
+                } else {
+                    "Unidentified magic item".into()
+                }
             } else {
-                "Unidentified magic item".into()
+                name.name.clone()
             }
-        } else {
-            name.name.clone()
-        }
-    } else {
-        "Nameless item (bug)".into()
-    }
+        })
 }

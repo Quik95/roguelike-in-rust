@@ -12,7 +12,7 @@ use crate::gamelog::GameLog;
 use crate::map::Map;
 use crate::player::RunState;
 
-pub fn item_trigger(creator: Option<Entity>, item: Entity, targets: &Targets, ecs: &mut World) {
+pub fn item_trigger(creator: Option<Entity>, item: Entity, targets: &Targets, ecs: &World) {
     let did_something = event_trigger(creator, item, targets, ecs);
 
     if did_something && ecs.read_storage::<Consumable>().get(item).is_some() {
@@ -20,12 +20,7 @@ pub fn item_trigger(creator: Option<Entity>, item: Entity, targets: &Targets, ec
     }
 }
 
-fn event_trigger(
-    creator: Option<Entity>,
-    entity: Entity,
-    targets: &Targets,
-    ecs: &mut World,
-) -> bool {
+fn event_trigger(creator: Option<Entity>, entity: Entity, targets: &Targets, ecs: &World) -> bool {
     let mut did_something = false;
     let mut gamelog = ecs.fetch_mut::<GameLog>();
 
@@ -140,7 +135,7 @@ fn event_trigger(
     did_something
 }
 
-pub fn trigger(creator: Option<Entity>, trigger: Entity, targets: &Targets, ecs: &mut World) {
+pub fn trigger(creator: Option<Entity>, trigger: Entity, targets: &Targets, ecs: &World) {
     ecs.write_storage::<Hidden>().remove(trigger);
 
     let did_something = event_trigger(creator, trigger, targets, ecs);
@@ -160,7 +155,7 @@ fn spawn_line_particles(ecs: &World, start: i32, end: i32, part: &SpawnParticleL
     let start_pt = Point::new(start % map.width, end / map.width);
     let end_pt = Point::new(end % map.width, end / map.width);
     let line = rltk::line2d_bresenham(start_pt, end_pt);
-    for pt in line.iter() {
+    for pt in &line {
         add_effect(
             None,
             EffectType::Particle {

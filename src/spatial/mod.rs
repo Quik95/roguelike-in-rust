@@ -29,7 +29,7 @@ pub fn clear() {
         b.0 = false;
         b.1 = false;
     });
-    for content in lock.tile_content.iter_mut() {
+    for content in &mut lock.tile_content {
         content.clear();
     }
 }
@@ -61,7 +61,7 @@ pub fn is_blocked(idx: usize) -> bool {
 
 pub fn for_each_tile_content(idx: usize, mut f: impl FnMut(Entity)) {
     let lock = SPATIAL_MAP.lock().unwrap();
-    for entity in lock.tile_content[idx].iter() {
+    for entity in &lock.tile_content[idx] {
         f(entity.0);
     }
 }
@@ -104,7 +104,7 @@ pub fn for_each_tile_content_with_gamemode(
     mut f: impl FnMut(Entity) -> Option<RunState>,
 ) -> RunState {
     let lock = SPATIAL_MAP.lock().unwrap();
-    for entity in lock.tile_content[idx].iter() {
+    for entity in &lock.tile_content[idx] {
         if let Some(rs) = f(entity.0) {
             return rs;
         }

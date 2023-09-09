@@ -5,9 +5,9 @@ use specs::saveload::{MarkedBuilder, SimpleMarker};
 use specs::{Builder, Entity, World, WorldExt};
 
 use crate::components::{
-    Attribute, Attributes, BlocksTile, EntryTrigger, EquipmentChanged, Faction, HungerClock,
-    HungerState, Initiative, LightSource, Name, OtherLevelPosition, Player, Pool, Pools, Position,
-    Renderable, SerializeMe, SingleActivation, Skill, Skills, TeleportTo, Viewshed,
+    Attribute, Attributes, EntryTrigger, EquipmentChanged, Faction, HungerClock, HungerState,
+    Initiative, LightSource, Name, OtherLevelPosition, Player, Pool, Pools, Position, Renderable,
+    SerializeMe, SingleActivation, Skill, Skills, TeleportTo, Viewshed,
 };
 use crate::gamesystem::{attr_bonus, mana_at_level, player_hp_at_level};
 use crate::map::dungeon::MasterDungeonMap;
@@ -142,36 +142,6 @@ pub fn player(ecs: &mut World, player_x: i32, player_y: i32) -> Entity {
     player
 }
 
-fn orc(ecs: &mut World, x: i32, y: i32) {
-    monster(ecs, x, y, to_cp437('o'), "Orc");
-}
-
-fn goblin(ecs: &mut World, x: i32, y: i32) {
-    monster(ecs, x, y, to_cp437('g'), "Goblin");
-}
-
-fn monster<S: ToString>(ecs: &mut World, x: i32, y: i32, glyph: rltk::FontCharType, name: S) {
-    ecs.create_entity()
-        .with(Position { x, y })
-        .with(Renderable {
-            glyph,
-            fg: RGB::named(rltk::RED),
-            bg: RGB::named(rltk::BLACK),
-            render_order: 1,
-        })
-        .with(Viewshed {
-            visible_tiles: Vec::new(),
-            range: 8,
-            dirty: true,
-        })
-        .with(Name {
-            name: name.to_string(),
-        })
-        .with(BlocksTile {})
-        .marked::<SimpleMarker<SerializeMe>>()
-        .build();
-}
-
 pub fn spawn_room(
     map: &Map,
     rng: &mut RandomNumberGenerator,
@@ -226,7 +196,7 @@ pub fn spawn_region(
         }
     }
 
-    for spawn in spawn_points.iter() {
+    for spawn in &spawn_points {
         spawn_list.push((*spawn.0, spawn.1.to_string()));
     }
 }

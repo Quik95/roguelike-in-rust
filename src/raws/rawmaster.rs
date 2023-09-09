@@ -83,7 +83,7 @@ impl RawMaster {
             used_names.insert(prop.name.clone());
         }
 
-        for spawn in self.raws.spawn_table.iter() {
+        for spawn in &self.raws.spawn_table {
             if !used_names.contains(&spawn.name) {
                 console::log(format!(
                     "WARNING - Spawn table references unspecified entity {}",
@@ -96,9 +96,9 @@ impl RawMaster {
             self.loot_index.insert(loot.name.clone(), i);
         }
 
-        for faction in self.raws.faction_table.iter() {
+        for faction in &self.raws.faction_table {
             let mut reactions = HashMap::new();
-            for other in faction.responses.iter() {
+            for other in &faction.responses {
                 reactions.insert(
                     other.0.clone(),
                     match other.1.as_str() {
@@ -434,7 +434,7 @@ pub fn spawn_named_mob(
         skills.skills.insert(Skill::Defense, 1);
         skills.skills.insert(Skill::Magic, 1);
         if let Some(mobskills) = &mob_template.skills {
-            for sk in mobskills.iter() {
+            for sk in mobskills {
                 match sk.0.as_str() {
                     "Melee" => {
                         skills.skills.insert(Skill::Melee, *sk.1);
@@ -465,7 +465,7 @@ pub fn spawn_named_mob(
                 attacks: Vec::new(),
             };
             if let Some(attacks) = &na.attacks {
-                for nattack in attacks.iter() {
+                for nattack in attacks {
                     let roll: DiceRoll = nattack.damage.parse().unwrap();
                     let attack = NaturalAttack {
                         name: nattack.name.clone(),
@@ -500,24 +500,24 @@ pub fn spawn_named_mob(
         } else {
             eb = eb.with(Faction {
                 name: "Mindless".to_string(),
-            })
+            });
         }
 
         match mob_template.movement.as_ref() {
             "random" => {
                 eb = eb.with(MoveMode {
                     mode: Movement::Random,
-                })
+                });
             }
             "random_waypoint" => {
                 eb = eb.with(MoveMode {
                     mode: Movement::RandomWaypoint { path: None },
-                })
+                });
             }
             _ => {
                 eb = eb.with(MoveMode {
                     mode: Movement::Static,
-                })
+                });
             }
         }
 
@@ -526,7 +526,7 @@ pub fn spawn_named_mob(
         let new_mob = eb.build();
 
         if let Some(wielding) = &mob_template.equipped {
-            for tag in wielding.iter() {
+            for tag in wielding {
                 spawn_named_entity(raws, ecs, tag, SpawnType::Equipped { by: new_mob });
             }
         }
@@ -577,23 +577,23 @@ pub fn spawn_named_prop(
 
         if let Some(hidden) = prop_template.hidden {
             if hidden {
-                eb = eb.with(Hidden {})
+                eb = eb.with(Hidden {});
             };
         }
 
         if let Some(blocks_tile) = prop_template.blocks_tile {
             if blocks_tile {
-                eb = eb.with(BlocksTile {})
+                eb = eb.with(BlocksTile {});
             };
         }
         if let Some(blocks_visibility) = prop_template.blocks_visibility {
             if blocks_visibility {
-                eb = eb.with(BlocksVisibility {})
+                eb = eb.with(BlocksVisibility {});
             };
         }
         if let Some(door_open) = prop_template.door_open {
             if door_open {
-                eb = eb.with(Door { open: door_open })
+                eb = eb.with(Door { open: door_open });
             };
         }
         if let Some(entry_trigger) = &prop_template.entry_trigger {
@@ -628,7 +628,7 @@ pub fn get_spawn_table_for_depth(raws: &RawMaster, depth: i32) -> RandomTable {
         .collect();
 
     let mut rt = RandomTable::new();
-    for e in available_options.iter() {
+    for e in &available_options {
         let mut weight = e.weight;
         if e.add_map_depth_to_weight.is_some() {
             weight += depth;
@@ -640,9 +640,10 @@ pub fn get_spawn_table_for_depth(raws: &RawMaster, depth: i32) -> RandomTable {
 }
 
 fn find_slot_for_equippable_item(tag: &str, raws: &RawMaster) -> EquipmentSlot {
-    if !raws.item_index.contains_key(tag) {
-        panic!("Trying to equip an unknown item: {tag}");
-    }
+    assert!(
+        raws.item_index.contains_key(tag),
+        "Trying to equip an unknown item: {tag}"
+    );
     let item_index = raws.item_index[tag];
     let item = &raws.raws.items[item_index];
     if let Some(_wpn) = &item.weapon {
@@ -661,7 +662,7 @@ pub fn get_item_drop(
     if raws.loot_index.contains_key(table) {
         let mut rt = RandomTable::new();
         let available_options = &raws.raws.loot_tables[raws.loot_index[table]];
-        for item in available_options.drops.iter() {
+        for item in &available_options.drops {
             rt = rt.add(item.name.clone(), item.weight);
         }
         return Some(rt.roll(rng));
@@ -688,7 +689,7 @@ pub fn faction_reaction(my_faction: &str, their_faction: &str, raws: &RawMaster)
 pub fn get_vendor_items(categories: &[String], raws: &RawMaster) -> Vec<(String, f32)> {
     let mut result = vec![];
 
-    for item in raws.raws.items.iter() {
+    for item in &raws.raws.items {
         if let Some(cat) = &item.vendor_category {
             if categories.contains(cat) && item.base_value.is_some() {
                 result.push((item.name.clone(), item.base_value.unwrap()));
@@ -703,7 +704,7 @@ pub fn get_scroll_tags() -> Vec<String> {
     let raws = &RAWS.lock().unwrap();
     let mut result = vec![];
 
-    for item in raws.raws.items.iter() {
+    for item in &raws.raws.items {
         if let Some(magic) = &item.magic {
             if &magic.naming == "scroll" {
                 result.push(item.name.clone());
@@ -728,7 +729,7 @@ pub fn get_potion_tag() -> Vec<String> {
     let raws = &RAWS.lock().unwrap();
     let mut result = Vec::new();
 
-    for item in raws.raws.items.iter() {
+    for item in &raws.raws.items {
         if let Some(magic) = &item.magic {
             if &magic.naming == "potion" {
                 result.push(item.name.clone());

@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-use itertools::Itertools;
 use specs::{Entities, Entity, Join, ReadExpect, ReadStorage, System, WriteExpect, WriteStorage};
 
 use crate::components::{Attributes, EquipmentChanged, Equipped, InBackpack, Item, Pools};
@@ -61,7 +60,7 @@ impl<'a> System<'a> for EncumbranceSystem {
             }
         }
 
-        for (entity, (weight, initiative)) in to_update.iter() {
+        for (entity, (weight, initiative)) in &to_update {
             if let Some(pool) = pools.get_mut(*entity) {
                 pool.total_weight = *weight;
                 pool.total_initiative_penalty = *initiative;

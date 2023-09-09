@@ -31,10 +31,10 @@ impl<'a> System<'a> for ChaseAI {
                 |target_pos| {
                     targets.insert(entity, (target_pos.x, target_pos.y));
                 },
-            )
+            );
         }
 
-        for done in end_chase.iter() {
+        for done in &end_chase {
             chasing.remove(*done);
         }
         end_chase.clear();
@@ -63,10 +63,10 @@ impl<'a> System<'a> for ChaseAI {
             }
         }
 
-        for done in end_chase.iter() {
+        for done in &end_chase {
             chasing.remove(*done);
         }
-        for done in turn_done.iter() {
+        for done in &turn_done {
             turns.remove(*done);
         }
     }

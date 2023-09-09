@@ -7,7 +7,7 @@ pub struct CaveDecorator {}
 
 impl MetaMapBuilder for CaveDecorator {
     fn build_map(&mut self, rng: &mut RandomNumberGenerator, build_data: &mut BuilderMap) {
-        self.build(rng, build_data)
+        self.build(rng, build_data);
     }
 }
 

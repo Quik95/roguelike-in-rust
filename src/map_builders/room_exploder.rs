@@ -1,8 +1,8 @@
 use rltk::RandomNumberGenerator;
 
 use crate::map::tiletype::TileType;
-use crate::map_builders::{BuilderMap, MetaMapBuilder};
 use crate::map_builders::common::{paint, Symmetry};
+use crate::map_builders::{BuilderMap, MetaMapBuilder};
 
 pub struct RoomExploder {}
 
@@ -12,11 +12,14 @@ impl RoomExploder {
     }
 
     pub(crate) fn build(&self, rng: &mut RandomNumberGenerator, build_data: &mut BuilderMap) {
-        let rooms = build_data.rooms.as_ref().map_or_else(|| {
-            panic!("Room Explosion requires a builder with room structures");
-        }, |rooms_builder| rooms_builder.clone());
+        let rooms = build_data.rooms.as_ref().map_or_else(
+            || {
+                panic!("Room Explosion requires a builder with room structures");
+            },
+            std::clone::Clone::clone,
+        );
 
-        for room in rooms.iter() {
+        for room in &rooms {
             let start = room.center();
             let n_diggers = rng.roll_dice(1, 20) - 5;
             if n_diggers > 0 {
@@ -37,11 +40,27 @@ impl RoomExploder {
 
                         let stagger_direction = rng.roll_dice(1, 4);
                         match stagger_direction {
-                            1 => { if drunk_x > 2 { drunk_x -= 1; } }
-                            2 => { if drunk_x < build_data.map.width - 2 { drunk_x += 1; } }
-                            3 => { if drunk_y > 2 { drunk_y -= 1; } }
-                            4 => { if drunk_y < build_data.map.height - 2 { drunk_y += 1; } }
-                            _ => unreachable!()
+                            1 => {
+                                if drunk_x > 2 {
+                                    drunk_x -= 1;
+                                }
+                            }
+                            2 => {
+                                if drunk_x < build_data.map.width - 2 {
+                                    drunk_x += 1;
+                                }
+                            }
+                            3 => {
+                                if drunk_y > 2 {
+                                    drunk_y -= 1;
+                                }
+                            }
+                            4 => {
+                                if drunk_y < build_data.map.height - 2 {
+                                    drunk_y += 1;
+                                }
+                            }
+                            _ => unreachable!(),
                         }
                         drunk_life -= 1;
                     }
@@ -49,7 +68,7 @@ impl RoomExploder {
                         build_data.take_snapshot();
                     }
 
-                    for t in build_data.map.tiles.iter_mut() {
+                    for t in &mut build_data.map.tiles {
                         if *t == TileType::DownStairs {
                             *t = TileType::Floor;
                         }

@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use specs::error::NoError;
 use specs::prelude::*;
 use specs::saveload::{ConvertSaveload, Marker};
-use specs_derive::*;
+use specs_derive::{Component, ConvertSaveload};
 
 use crate::map::dungeon::MasterDungeonMap;
 use crate::raws::rawmaster::LBS_TO_KG_RATIO;

@@ -7,8 +7,6 @@ use specs::{Entity, World};
 
 pub use targeting::*;
 
-use crate::effects::targeting::entity_position;
-
 mod damage;
 mod hunger;
 mod movement;
@@ -74,7 +72,7 @@ pub fn add_effect(creator: Option<Entity>, effect_type: EffectType, targets: Tar
     });
 }
 
-pub fn run_effects_queue(ecs: &mut World) {
+pub fn run_effects_queue(ecs: &World) {
     loop {
         let effect = EFFECT_QUEUE.lock().unwrap().pop_front();
         if let Some(effect) = effect {
@@ -85,7 +83,7 @@ pub fn run_effects_queue(ecs: &mut World) {
     }
 }
 
-fn target_applicator(ecs: &mut World, effect: &EffectSpawner) {
+fn target_applicator(ecs: &World, effect: &EffectSpawner) {
     if let EffectType::ItemUse { item } = effect.effect_type {
         triggers::item_trigger(effect.creator, item, &effect.targets, ecs);
     } else if let EffectType::TriggerFire { trigger } = effect.effect_type {
@@ -101,17 +99,17 @@ fn target_applicator(ecs: &mut World, effect: &EffectSpawner) {
     }
 }
 
-fn affect_entity(ecs: &mut World, effect: &EffectSpawner, target: Entity) {
+fn affect_entity(ecs: &World, effect: &EffectSpawner, target: Entity) {
     match &effect.effect_type {
         EffectType::Damage { .. } => damage::inflict_damage(ecs, effect, target),
         EffectType::Bloodstain { .. } => {
             if let Some(pos) = entity_position(ecs, target) {
-                damage::bloodstain(ecs, pos)
+                damage::bloodstain(ecs, pos);
             }
         }
         EffectType::Particle { .. } => {
             if let Some(pos) = entity_position(ecs, target) {
-                particles::particle_to_tile(ecs, pos, effect)
+                particles::particle_to_tile(ecs, pos, effect);
             }
         }
         EffectType::EntityDeath => damage::death(ecs, effect, target),
@@ -123,7 +121,7 @@ fn affect_entity(ecs: &mut World, effect: &EffectSpawner, target: Entity) {
     }
 }
 
-fn affect_tile(ecs: &mut World, effect: &EffectSpawner, tile_idx: i32) {
+fn affect_tile(ecs: &World, effect: &EffectSpawner, tile_idx: i32) {
     if tile_effect_hits_entities(&effect.effect_type) {
         let content = crate::spatial::get_tile_content_clone(tile_idx as usize);
         content
@@ -138,13 +136,13 @@ fn affect_tile(ecs: &mut World, effect: &EffectSpawner, tile_idx: i32) {
     }
 }
 
-fn tile_effect_hits_entities(effect: &EffectType) -> bool {
-    match effect {
-        EffectType::Damage { .. } => true,
-        EffectType::WellFed => true,
-        EffectType::Healing { .. } => true,
-        EffectType::Confusion { .. } => true,
-        EffectType::TeleportTo { .. } => true,
-        _ => false,
-    }
+const fn tile_effect_hits_entities(effect: &EffectType) -> bool {
+    matches!(
+        effect,
+        EffectType::Damage { .. }
+            | EffectType::WellFed
+            | EffectType::Healing { .. }
+            | EffectType::Confusion { .. }
+            | EffectType::TeleportTo { .. }
+    )
 }

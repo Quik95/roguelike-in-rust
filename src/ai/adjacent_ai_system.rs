@@ -1,4 +1,3 @@
-use specs::hibitset::BitSetLike;
 use specs::{Entities, Entity, Join, ReadExpect, ReadStorage, System, WriteStorage};
 
 use crate::components::{Faction, MyTurn, Position, WantsToMelee};
@@ -96,7 +95,7 @@ impl<'a> System<'a> for AdjacentAI {
             }
 
             let mut done = false;
-            for reaction in reactions.iter() {
+            for reaction in &reactions {
                 if reaction.1 == Reaction::Attack {
                     want_melee
                         .insert(entity, WantsToMelee { target: reaction.0 })
@@ -109,7 +108,7 @@ impl<'a> System<'a> for AdjacentAI {
                 turn_done.push(entity);
             }
         }
-        for done in turn_done.iter() {
+        for done in &turn_done {
             turns.remove(*done);
         }
     }
@@ -127,7 +126,7 @@ fn evaluate(
             reactions.push((
                 other_entity,
                 faction_reaction(my_faction, &faction.name, &RAWS.lock().unwrap()),
-            ))
+            ));
         }
     });
 }

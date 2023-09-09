@@ -5,6 +5,7 @@ use specs::{Entity, World, WorldExt};
 use crate::components::{Equipped, InBackpack, Position};
 use crate::map::Map;
 
+#[must_use]
 pub fn entity_position(ecs: &World, target: Entity) -> Option<i32> {
     if let Some(pos) = ecs.read_storage::<Position>().get(target) {
         let map = ecs.fetch::<Map>();
@@ -13,6 +14,7 @@ pub fn entity_position(ecs: &World, target: Entity) -> Option<i32> {
     None
 }
 
+#[must_use]
 pub fn aoe_tiles(map: &Map, target: Point, radius: i32) -> Vec<i32> {
     let mut blast_tiles = rltk::field_of_view(target, radius, map);
     blast_tiles.retain(|p| p.x > 0 && p.x < map.width - 1 && p.y > 0 && p.y < map.height - 1);
@@ -23,6 +25,7 @@ pub fn aoe_tiles(map: &Map, target: Point, radius: i32) -> Vec<i32> {
         .collect_vec()
 }
 
+#[must_use]
 pub fn find_item_position(ecs: &World, target: Entity) -> Option<i32> {
     let positions = ecs.read_storage::<Position>();
     let map = ecs.fetch::<Map>();

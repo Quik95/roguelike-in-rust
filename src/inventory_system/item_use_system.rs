@@ -51,22 +51,21 @@ impl<'a> System<'a> for ItemUseSystem {
             add_effect(
                 Some(entity),
                 EffectType::ItemUse { item: useitem.item },
-                match useitem.target {
-                    None => Targets::Single {
+                useitem.target.map_or(
+                    Targets::Single {
                         target: *player_entity,
                     },
-                    Some(target) => {
-                        if let Some(aoe) = aoe.get(useitem.item) {
-                            Targets::Tiles {
-                                tiles: effects::aoe_tiles(&map, target, aoe.radius),
-                            }
-                        } else {
+                    |target| {
+                        aoe.get(useitem.item).map_or(
                             Targets::Tile {
                                 tile_idx: map.xy_idx(target.x, target.y) as i32,
-                            }
-                        }
-                    }
-                },
+                            },
+                            |aoe| Targets::Tiles {
+                                tiles: effects::aoe_tiles(&map, target, aoe.radius),
+                            },
+                        )
+                    },
+                ),
             );
         }
 

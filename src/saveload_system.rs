@@ -9,7 +9,17 @@ use specs::saveload::{
 };
 use specs::{Builder, Entity, Join, World, WorldExt};
 
-use crate::components::*;
+use crate::components::{
+    ApplyMove, ApplyTeleport, AreaOfEffect, Attributes, BlocksTile, BlocksVisibility, Chasing,
+    Confusion, Consumable, DMSerializationHelper, DefenseBonus, Door, EntityMoved, EntryTrigger,
+    EquipmentChanged, Equippable, Faction, Hidden, HungerClock, IdentifiedItem, InBackpack,
+    InflictsDamage, Initiative, Item, LightSource, LootTable, MagicItem, MagicMapper,
+    MeleePowerBonus, MeleeWeapon, MoveMode, MyTurn, Name, NaturalAttackDefense, ObfuscatedName,
+    OtherLevelPosition, ParticleLifetime, Player, Pools, Position, ProvidesFood, ProvidesHealing,
+    Quips, Ranged, Renderable, SingleActivation, Skills, SpawnParticleBurst, SpawnParticleLine,
+    TeleportTo, TownPortal, Vendor, Viewshed, WantsToApproach, WantsToDropItem, WantsToFlee,
+    WantsToMelee, WantsToPickupItem, WantsToRemoveItem, WantsToUseItem, Wearable,
+};
 use crate::components::{SerializationHelper, SerializeMe};
 use crate::map::dungeon::MasterDungeonMap;
 use crate::spatial;
@@ -151,7 +161,7 @@ pub fn load_game(ecs: &mut World) {
         for e in ecs.entities().join() {
             to_delete.push(e);
         }
-        for del in to_delete.iter() {
+        for del in &to_delete {
             ecs.delete_entity(*del).expect("Deletion failed");
         }
     }

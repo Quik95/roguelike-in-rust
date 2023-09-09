@@ -2,15 +2,18 @@ use rltk::RandomNumberGenerator;
 
 use crate::components::Position;
 use crate::map::tiletype::TileType;
-use crate::map_builders::{BuilderMap, InitialMapBuilder, MetaMapBuilder};
 use crate::map_builders::common::{paint, Symmetry};
+use crate::map_builders::{BuilderMap, InitialMapBuilder, MetaMapBuilder};
 
 pub struct DrunkardsWalkBuilder {
     settings: DrunkardSettings,
 }
 
 #[derive(PartialEq, Eq, Copy, Clone)]
-pub enum DrunkSpawnMode { StartingPoint, Random }
+pub enum DrunkSpawnMode {
+    StartingPoint,
+    Random,
+}
 
 pub struct DrunkardSettings {
     pub spawn_mode: DrunkSpawnMode,
@@ -99,13 +102,23 @@ impl DrunkardsWalkBuilder {
     }
 
     fn build(&mut self, rng: &mut RandomNumberGenerator, build_data: &mut BuilderMap) {
-        let starting_position = Position { x: build_data.map.width / 2, y: build_data.map.height / 2 };
-        let start_idx = build_data.map.xy_idx(starting_position.x, starting_position.y);
+        let starting_position = Position {
+            x: build_data.map.width / 2,
+            y: build_data.map.height / 2,
+        };
+        let start_idx = build_data
+            .map
+            .xy_idx(starting_position.x, starting_position.y);
         build_data.map.tiles[start_idx] = TileType::Floor;
 
         let total_tiles = build_data.map.width * build_data.map.height;
         let desired_floor_tiles = (self.settings.floor_percent * total_tiles as f32) as usize;
-        let mut floor_tile_count = build_data.map.tiles.iter().filter(|a| **a == TileType::Floor).count();
+        let mut floor_tile_count = build_data
+            .map
+            .tiles
+            .iter()
+            .filter(|a| **a == TileType::Floor)
+            .count();
         let mut digger_count = 0;
 
         while floor_tile_count < desired_floor_tiles {
@@ -136,16 +149,38 @@ impl DrunkardsWalkBuilder {
                 if build_data.map.tiles[drunk_idx] == TileType::Wall {
                     did_something = true;
                 }
-                paint(&mut build_data.map, self.settings.symmetry, self.settings.brush_size, drunk_x, drunk_y);
+                paint(
+                    &mut build_data.map,
+                    self.settings.symmetry,
+                    self.settings.brush_size,
+                    drunk_x,
+                    drunk_y,
+                );
                 build_data.map.tiles[drunk_idx] = TileType::DownStairs;
 
                 let stagger_direction = rng.roll_dice(1, 4);
                 match stagger_direction {
-                    1 => { if drunk_x > 2 { drunk_x -= 1; } }
-                    2 => { if drunk_x < build_data.map.width - 2 { drunk_x += 1; } }
-                    3 => { if drunk_y > 2 { drunk_y -= 1; } }
-                    4 => { if drunk_y < build_data.map.height - 2 { drunk_y += 1; } }
-                    _ => unreachable!()
+                    1 => {
+                        if drunk_x > 2 {
+                            drunk_x -= 1;
+                        }
+                    }
+                    2 => {
+                        if drunk_x < build_data.map.width - 2 {
+                            drunk_x += 1;
+                        }
+                    }
+                    3 => {
+                        if drunk_y > 2 {
+                            drunk_y -= 1;
+                        }
+                    }
+                    4 => {
+                        if drunk_y < build_data.map.height - 2 {
+                            drunk_y += 1;
+                        }
+                    }
+                    _ => unreachable!(),
                 }
 
                 drunk_life -= 1;
@@ -155,12 +190,17 @@ impl DrunkardsWalkBuilder {
             }
 
             digger_count += 1;
-            for t in build_data.map.tiles.iter_mut() {
+            for t in &mut build_data.map.tiles {
                 if *t == TileType::DownStairs {
                     *t = TileType::Floor;
                 }
             }
-            floor_tile_count = build_data.map.tiles.iter().filter(|a| **a == TileType::Floor).count();
+            floor_tile_count = build_data
+                .map
+                .tiles
+                .iter()
+                .filter(|a| **a == TileType::Floor)
+                .count();
         }
     }
 }

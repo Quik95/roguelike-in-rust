@@ -8,7 +8,7 @@ use crate::gamelog::GameLog;
 use crate::gamesystem::{mana_at_level, player_hp_at_level};
 use crate::map::Map;
 
-pub fn inflict_damage(ecs: &mut World, damage: &EffectSpawner, target: Entity) {
+pub fn inflict_damage(ecs: &World, damage: &EffectSpawner, target: Entity) {
     let mut pools = ecs.write_storage::<Pools>();
     if let Some(pool) = pools.get_mut(target) {
         if pool.god_mode {
@@ -41,12 +41,12 @@ pub fn inflict_damage(ecs: &mut World, damage: &EffectSpawner, target: Entity) {
     }
 }
 
-pub fn bloodstain(ecs: &mut World, tile_idx: i32) {
+pub fn bloodstain(ecs: &World, tile_idx: i32) {
     let mut map = ecs.fetch_mut::<Map>();
     map.bloodstains.insert(tile_idx as usize);
 }
 
-pub fn death(ecs: &mut World, effect: &EffectSpawner, target: Entity) {
+pub fn death(ecs: &World, effect: &EffectSpawner, target: Entity) {
     let mut xp_gain = 0;
     let mut gold_gain = 0.0_f32;
 
@@ -113,7 +113,7 @@ pub fn death(ecs: &mut World, effect: &EffectSpawner, target: Entity) {
     }
 }
 
-pub fn heal_damage(ecs: &mut World, heal: &EffectSpawner, target: Entity) {
+pub fn heal_damage(ecs: &World, heal: &EffectSpawner, target: Entity) {
     let mut pools = ecs.write_storage::<Pools>();
     if let Some(pool) = pools.get_mut(target) {
         if let EffectType::Healing { amount } = heal.effect_type {
@@ -133,7 +133,7 @@ pub fn heal_damage(ecs: &mut World, heal: &EffectSpawner, target: Entity) {
     }
 }
 
-pub fn add_confusion(ecs: &mut World, effect: &EffectSpawner, target: Entity) {
+pub fn add_confusion(ecs: &World, effect: &EffectSpawner, target: Entity) {
     if let EffectType::Confusion { turns } = &effect.effect_type {
         ecs.write_storage::<Confusion>()
             .insert(target, Confusion { turns: *turns })

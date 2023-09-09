@@ -1,8 +1,8 @@
 use rltk::RandomNumberGenerator;
 
-use common::*;
-use constraints::*;
-use solver::*;
+use common::MapChunk;
+use constraints::{build_patterns, patterns_to_constraints, render_pattern_to_map};
+use solver::Solver;
 
 use super::{BuilderMap, Map, MetaMapBuilder};
 

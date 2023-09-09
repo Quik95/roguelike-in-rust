@@ -16,7 +16,7 @@ impl YellowBrickRoad {
         Box::new(Self {})
     }
 
-    fn find_exit(&self, build_data: &mut BuilderMap, seed_x: i32, seed_y: i32) -> (i32, i32) {
+    fn find_exit(&self, build_data: &BuilderMap, seed_x: i32, seed_y: i32) -> (i32, i32) {
         let mut available_floors = Vec::new();
         for (idx, tiletype) in build_data.map.tiles.iter().enumerate() {
             if tiletype.is_walkable() {
@@ -32,9 +32,7 @@ impl YellowBrickRoad {
                 ));
             }
         }
-        if available_floors.is_empty() {
-            panic!("No valid floors to start on");
-        }
+        assert!(!available_floors.is_empty(), "No valid floors to start on");
 
         available_floors.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
 
@@ -67,11 +65,11 @@ impl YellowBrickRoad {
         build_data.map.tiles[end_idx] = TileType::DownStairs;
 
         build_data.map.populate_blocked();
-        let path = rltk::a_star_search(start_idx, end_idx, &mut build_data.map);
+        let path = rltk::a_star_search(start_idx, end_idx, &build_data.map);
         //if !path.success {
         //    panic!("No valid path for the road");
         //}
-        for idx in path.steps.iter() {
+        for idx in &path.steps {
             let x = *idx as i32 % build_data.map.width;
             let y = *idx as i32 / build_data.map.width;
             self.paint_road(build_data, x, y);
@@ -100,8 +98,8 @@ impl YellowBrickRoad {
 
         let (stream_x, stream_y) = self.find_exit(build_data, stream_startx, stream_starty);
         let stream_idx = build_data.map.xy_idx(stream_x, stream_y);
-        let stream = rltk::a_star_search(stairs_idx, stream_idx, &mut build_data.map);
-        for tile in stream.steps.iter() {
+        let stream = rltk::a_star_search(stairs_idx, stream_idx, &build_data.map);
+        for tile in &stream.steps {
             if build_data.map.tiles[*tile] == TileType::Floor {
                 build_data.map.tiles[*tile] = TileType::ShallowWater;
             }

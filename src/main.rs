@@ -6,7 +6,18 @@ use rltk::{GameState, Point, RandomNumberGenerator};
 use specs::prelude::*;
 use specs::saveload::{SimpleMarker, SimpleMarkerAllocator};
 
-use components::*;
+use components::{
+    ApplyMove, ApplyTeleport, AreaOfEffect, Attributes, BlocksTile, BlocksVisibility, Chasing,
+    Confusion, Consumable, DMSerializationHelper, DefenseBonus, Door, EntityMoved, EntryTrigger,
+    EquipmentChanged, Equippable, Equipped, Faction, Hidden, HungerClock, IdentifiedItem,
+    InBackpack, InflictsDamage, Initiative, Item, LightSource, LootTable, MagicItem, MagicMapper,
+    MeleePowerBonus, MeleeWeapon, MoveMode, MyTurn, Name, NaturalAttackDefense, ObfuscatedName,
+    OtherLevelPosition, ParticleLifetime, Player, Pools, Position, ProvidesFood, ProvidesHealing,
+    Quips, Ranged, Renderable, SerializationHelper, SerializeMe, SingleActivation, Skills,
+    SpawnParticleBurst, SpawnParticleLine, TeleportTo, Vendor, Viewshed, WantsToApproach,
+    WantsToDropItem, WantsToFlee, WantsToMelee, WantsToPickupItem, WantsToRemoveItem,
+    WantsToUseItem, Wearable,
+};
 use map::Map;
 use map_indexing_system::MapIndexingSystem;
 use player::RunState;
@@ -24,7 +35,11 @@ use crate::map::dungeon::{
     freeze_level_entities, level_transition, thaw_level_entities, MasterDungeonMap,
 };
 use crate::melee_combat_system::MeleeCombatSystem;
-use crate::player::RunState::*;
+use crate::player::RunState::{
+    AwaitingInput, GameOver, MagicMapReveal, MainMenu, MapGeneration, NextLevel, PreviousLevel,
+    SaveGame, ShowCheatMenu, ShowDropItem, ShowInventory, ShowRemoveItem, ShowTargeting, Ticking,
+    TownPortal,
+};
 use crate::player::VendorMode;
 use crate::raws::rawmaster::{spawn_named_item, SpawnType, RAWS};
 
@@ -136,7 +151,7 @@ impl State {
         let mut hunger = hunger_system::HungerSystem {};
         hunger.run_now(&self.ecs);
 
-        effects::run_effects_queue(&mut self.ecs);
+        effects::run_effects_queue(&self.ecs);
         let mut particles = particle_system::ParticleSpawnSystem {};
         particles.run_now(&self.ecs);
 
@@ -154,52 +169,12 @@ impl State {
         if let Some(history) = map_building_info {
             self.mapgen_history = history;
         } else {
-            thaw_level_entities(&mut self.ecs);
+            thaw_level_entities(&self.ecs);
         }
-    }
-
-    fn entities_to_remove_on_level_change(&mut self) -> Vec<Entity> {
-        let entities = self.ecs.entities();
-        let player = self.ecs.read_storage::<Player>();
-        let backpack = self.ecs.read_storage::<InBackpack>();
-        let player_entity = self.ecs.fetch::<Entity>();
-        let equipped = self.ecs.read_storage::<Equipped>();
-
-        let mut to_delete: Vec<Entity> = Vec::new();
-        for entity in entities.join() {
-            let mut should_delete = true;
-
-            // Don't delete the player
-            let p = player.get(entity);
-            if let Some(_p) = p {
-                should_delete = false;
-            }
-
-            // Don't delete the player's equipment
-            let bp = backpack.get(entity);
-            if let Some(bp) = bp {
-                if bp.owner == *player_entity {
-                    should_delete = false;
-                }
-            }
-
-            let eq = equipped.get(entity);
-            if let Some(eq) = eq {
-                if eq.owner == *player_entity {
-                    should_delete = false;
-                }
-            }
-
-            if should_delete {
-                to_delete.push(entity);
-            }
-        }
-
-        to_delete
     }
 
     fn goto_level(&mut self, offset: i32) {
-        freeze_level_entities(&mut self.ecs);
+        freeze_level_entities(&self.ecs);
 
         // Build a new map and place the player
         let current_depth = self.ecs.fetch::<Map>().depth;
@@ -216,7 +191,7 @@ impl State {
             to_delete.push(e);
         }
 
-        for del in to_delete.iter() {
+        for del in &to_delete {
             self.ecs.delete_entity(*del).expect("Deletion failed");
         }
 
@@ -443,7 +418,7 @@ impl GameState for State {
                     }
                     CheatMenuResult::Reveal => {
                         let mut map = self.ecs.fetch_mut::<Map>();
-                        for v in map.revealed_tiles.iter_mut() {
+                        for v in &mut map.revealed_tiles {
                             *v = true;
                         }
                         newrunstate = RunState::AwaitingInput;

@@ -2,14 +2,13 @@ use std::cmp;
 
 use rltk::RandomNumberGenerator;
 
-use crate::map::{Map, tiletype::TileType};
+use crate::map::{tiletype::TileType, Map};
 use crate::map_builders::{BuilderMap, InitialMapBuilder};
 
 const TOP: usize = 0;
 const RIGHT: usize = 1;
 const BOTTOM: usize = 2;
 const LEFT: usize = 3;
-
 
 pub struct MazeBuilder {}
 
@@ -25,7 +24,11 @@ impl MazeBuilder {
     }
 
     pub(crate) fn build(&mut self, rng: &mut RandomNumberGenerator, build_data: &mut BuilderMap) {
-        let mut maze = Grid::new((build_data.map.width / 2) - 2, (build_data.map.height / 2) - 2, rng);
+        let mut maze = Grid::new(
+            (build_data.map.width / 2) - 2,
+            (build_data.map.height / 2) - 2,
+            rng,
+        );
         maze.generate_maze(build_data);
     }
 }
@@ -150,7 +153,8 @@ impl<'a> Grid<'a> {
                 Some(next) => {
                     self.cells[next].visited = true;
                     self.backtrace.push(self.current);
-                    let (lower_part, higher_part) = self.cells.split_at_mut(cmp::max(self.current, next));
+                    let (lower_part, higher_part) =
+                        self.cells.split_at_mut(cmp::max(self.current, next));
                     let cell1 = &mut lower_part[cmp::min(self.current, next)];
                     let cell2 = &mut higher_part[0];
                     cell1.remove_walls(cell2);
@@ -173,18 +177,28 @@ impl<'a> Grid<'a> {
         }
     }
     fn copy_to_map(&self, map: &mut Map) {
-        for i in map.tiles.iter_mut() { *i = TileType::Wall; }
+        for i in &mut map.tiles {
+            *i = TileType::Wall;
+        }
 
-        for cell in self.cells.iter() {
+        for cell in &self.cells {
             let x = cell.column + 1;
             let y = cell.row + 1;
             let idx = map.xy_idx(x * 2, y * 2);
 
             map.tiles[idx] = TileType::Floor;
-            if !cell.walls[TOP] { map.tiles[idx - map.width as usize] = TileType::Floor; }
-            if !cell.walls[RIGHT] { map.tiles[idx + 1] = TileType::Floor }
-            if !cell.walls[BOTTOM] { map.tiles[idx + map.width as usize] = TileType::Floor }
-            if !cell.walls[LEFT] { map.tiles[idx - 1] = TileType::Floor; }
+            if !cell.walls[TOP] {
+                map.tiles[idx - map.width as usize] = TileType::Floor;
+            }
+            if !cell.walls[RIGHT] {
+                map.tiles[idx + 1] = TileType::Floor
+            }
+            if !cell.walls[BOTTOM] {
+                map.tiles[idx + map.width as usize] = TileType::Floor
+            }
+            if !cell.walls[LEFT] {
+                map.tiles[idx - 1] = TileType::Floor;
+            }
         }
     }
 }

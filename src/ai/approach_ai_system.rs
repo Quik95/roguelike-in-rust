@@ -42,7 +42,7 @@ impl<'a> System<'a> for ApproachAI {
 
         want_approach.clear();
 
-        for done in turn_done.iter() {
+        for done in &turn_done {
             turns.remove(*done);
         }
     }

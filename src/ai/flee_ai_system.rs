@@ -48,7 +48,7 @@ impl<'a> System<'a> for FleeAI {
         }
         want_flee.clear();
 
-        for done in turn_done.iter() {
+        for done in &turn_done {
             turns.remove(*done);
         }
     }
