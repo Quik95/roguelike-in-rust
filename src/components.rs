@@ -1,7 +1,8 @@
 use std::collections::HashMap;
 use std::str::FromStr;
 
-use rltk::RGB;
+use itertools::Itertools;
+use rltk::{to_cp437, FontCharType, RGB};
 use serde::{Deserialize, Serialize};
 #[allow(deprecated)]
 use specs::error::NoError;
@@ -47,29 +48,6 @@ pub struct BlocksTile {}
 #[derive(Component, Debug, ConvertSaveload, Clone)]
 pub struct WantsToMelee {
     pub target: Entity,
-}
-
-#[derive(Component, Debug, ConvertSaveload, Clone)]
-pub struct SufferDamage {
-    pub amount: Vec<(i32, bool)>,
-}
-
-impl SufferDamage {
-    pub fn new_damage(
-        store: &mut WriteStorage<Self>,
-        victim: Entity,
-        amount: i32,
-        from_player: bool,
-    ) {
-        if let Some(damage) = store.get_mut(victim) {
-            damage.amount.push((amount, from_player));
-        } else {
-            let dmg = Self {
-                amount: vec![(amount, from_player)],
-            };
-            store.insert(victim, dmg).expect("Unable to insert damage");
-        }
-    }
 }
 
 #[derive(Component, Serialize, Deserialize, Debug, Clone)]
@@ -442,4 +420,45 @@ pub struct ObfuscatedName {
 #[derive(Component, Debug, Serialize, Deserialize, Clone)]
 pub struct IdentifiedItem {
     pub name: String,
+}
+
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct SpawnParticleLine {
+    pub glyph: FontCharType,
+    pub color: RGB,
+    pub lifetime_ms: f32,
+}
+
+impl FromStr for SpawnParticleLine {
+    type Err = !;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let tokens = s.split(';').collect_vec();
+        Ok(Self {
+            glyph: to_cp437(tokens[0].chars().next().unwrap()),
+            color: RGB::from_hex(tokens[1]).expect("Bad RGB"),
+            lifetime_ms: tokens[2].parse().unwrap(),
+        })
+    }
+}
+
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct SpawnParticleBurst {
+    pub glyph: FontCharType,
+    pub color: RGB,
+    pub lifetime_ms: f32,
+}
+
+impl FromStr for SpawnParticleBurst {
+    type Err = !;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let tokens = s.split(';').collect_vec();
+
+        Ok(Self {
+            glyph: to_cp437(tokens[0].chars().next().unwrap()),
+            color: RGB::from_hex(tokens[1]).expect("Bad RGB"),
+            lifetime_ms: tokens[2].parse().unwrap(),
+        })
+    }
 }

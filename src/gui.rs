@@ -157,7 +157,7 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
     }
 
     y += 1;
-    let green = RGB::from_f32(0.0, 1.0, 0.0);
+    let _green = RGB::from_f32(0.0, 1.0, 0.0);
     let yellow = RGB::named(rltk::YELLOW);
     let consumables = ecs.read_storage::<Consumable>();
     let backpack = ecs.read_storage::<InBackpack>();
@@ -732,7 +732,7 @@ impl Tooltip {
         ctx.draw_box(x, y, self.width() - 1, self.height() - 1, white, box_gray);
         for (i, s) in self.lines.iter().enumerate() {
             let col = if i == 0 { white } else { light_gray };
-            ctx.print_color(x + 1, y + i as i32 + 1, col, black, &s);
+            ctx.print_color(x + 1, y + i as i32 + 1, col, black, s);
         }
     }
 }
@@ -749,8 +749,8 @@ pub enum CheatMenuResult {
 
 pub fn show_cheat_mode(_gs: &mut State, ctx: &mut Rltk) -> CheatMenuResult {
     let count = 4;
-    let mut y = (25 - (count / 2));
-    ctx.draw_box(15, y - 2, 31, (count + 3), RGB::named(WHITE), *BLACK);
+    let mut y = 25 - (count / 2);
+    ctx.draw_box(15, y - 2, 31, count + 3, RGB::named(WHITE), *BLACK);
     ctx.print_color(18, y - 2, RGB::named(YELLOW), *BLACK, "Cheating!");
     ctx.print_color(
         18,

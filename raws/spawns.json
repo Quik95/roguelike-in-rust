@@ -357,7 +357,8 @@
       "consumable": {
         "effects": {
           "ranged": "6",
-          "damage": "20"
+          "damage": "20",
+          "particle_line": "▓;#00FFFF;200.0"
         }
       },
       "weight_lbs": 0.5,
@@ -381,7 +382,8 @@
         "effects": {
           "ranged": "6",
           "damage": "20",
-          "area_of_effect": "3"
+          "area_of_effect": "3",
+          "particle": "▓;#FFA500;200.0"
         }
       },
       "weight_lbs": 0.5,
@@ -442,7 +444,7 @@
       "name": "Town Portal Scroll",
       "renderable": {
         "glyph": ")",
-        "fg": "#FFAAAA",
+        "fg": "#AAAAFF",
         "bg": "#000000",
         "order": 2
       },
@@ -634,6 +636,7 @@
       "initiative_penalty": 2,
       "vendor_category": "weapon"
     },
+
     {
       "name": "Longsword +1",
       "renderable": {
@@ -1840,6 +1843,21 @@
         "order": 2
       },
       "hidden": false
+    },
+    {
+      "name": "Altar",
+      "renderable": {
+        "glyph": "╫",
+        "fg": "#5555FF",
+        "bg": "#000000",
+        "order": 2
+      },
+      "hidden": false,
+      "entry_trigger": {
+        "effects": {
+          "provides_healing": "100"
+        }
+      }
     },
 
     {

@@ -12,7 +12,7 @@ use crate::components::{
     InflictsDamage, Initiative, LightSource, MagicItem, MagicItemClass, MagicMapper, MeleeWeapon,
     MoveMode, Movement, Name, NaturalAttack, NaturalAttackDefense, ObfuscatedName, Pool, Pools,
     Position, ProvidesFood, ProvidesHealing, Ranged, SerializeMe, SingleActivation, Skill, Skills,
-    TownPortal, Vendor, Viewshed, WeaponAttribute, Wearable,
+    SpawnParticleBurst, SpawnParticleLine, TownPortal, Vendor, Viewshed, WeaponAttribute, Wearable,
 };
 use crate::components::{Equipped, LootTable};
 use crate::components::{Quips, Renderable};
@@ -141,6 +141,65 @@ fn get_renderable_component(renderable: &super::item_structs::Renderable) -> Ren
     }
 }
 
+macro_rules! apply_effects {
+    ( $effects:expr, $eb:expr ) => {
+        for effect in $effects.iter() {
+            let effect_name = effect.0.as_str();
+            match effect_name {
+                "provides_healing" => {
+                    $eb = $eb.with(ProvidesHealing {
+                        heal_amount: effect.1.parse::<i32>().unwrap(),
+                    })
+                }
+                "ranged" => {
+                    $eb = $eb.with(Ranged {
+                        range: effect.1.parse::<i32>().unwrap(),
+                    })
+                }
+                "damage" => {
+                    $eb = $eb.with(InflictsDamage {
+                        damage: effect.1.parse::<i32>().unwrap(),
+                    })
+                }
+                "area_of_effect" => {
+                    $eb = $eb.with(AreaOfEffect {
+                        radius: effect.1.parse::<i32>().unwrap(),
+                    })
+                }
+                "confusion" => {
+                    $eb = $eb.with(Confusion {
+                        turns: effect.1.parse::<i32>().unwrap(),
+                    })
+                }
+                "magic_mapping" => $eb = $eb.with(MagicMapper {}),
+                "town_portal" => $eb = $eb.with(TownPortal {}),
+                "food" => $eb = $eb.with(ProvidesFood {}),
+                "single_activation" => $eb = $eb.with(SingleActivation {}),
+                "particle_line" => {
+                    $eb = $eb.with(
+                        effect
+                            .1
+                            .parse::<SpawnParticleLine>()
+                            .expect("Failed to parse SpawnParticleLine"),
+                    )
+                }
+                "particle" => {
+                    $eb = $eb.with(
+                        effect
+                            .1
+                            .parse::<SpawnParticleBurst>()
+                            .expect("Failed to parse SpawnParticleBurst"),
+                    )
+                }
+                _ => console::log(format!(
+                    "Warning: consumable effect {} not implemented.",
+                    effect_name
+                )),
+            }
+        }
+    };
+}
+
 pub fn spawn_named_item(
     raws: &RawMaster,
     ecs: &mut World,
@@ -177,42 +236,7 @@ pub fn spawn_named_item(
 
         if let Some(consumable) = &item_template.consumable {
             eb = eb.with(Consumable {});
-            for effect in consumable.effects.iter() {
-                let effect_name = effect.0.as_str();
-                match effect_name {
-                    "provides_healing" => {
-                        eb = eb.with(ProvidesHealing {
-                            heal_amount: effect.1.parse::<i32>().unwrap(),
-                        })
-                    }
-                    "ranged" => {
-                        eb = eb.with(Ranged {
-                            range: effect.1.parse::<i32>().unwrap(),
-                        })
-                    }
-                    "damage" => {
-                        eb = eb.with(InflictsDamage {
-                            damage: effect.1.parse::<i32>().unwrap(),
-                        })
-                    }
-                    "area_of_effect" => {
-                        eb = eb.with(AreaOfEffect {
-                            radius: effect.1.parse::<i32>().unwrap(),
-                        })
-                    }
-                    "confusion" => {
-                        eb = eb.with(Confusion {
-                            turns: effect.1.parse::<i32>().unwrap(),
-                        })
-                    }
-                    "magic_mapping" => eb = eb.with(MagicMapper {}),
-                    "food" => eb = eb.with(ProvidesFood {}),
-                    "town_portal" => eb = eb.with(TownPortal {}),
-                    _ => console::log(format!(
-                        "Warning: consumable effect {effect_name} not implemented"
-                    )),
-                }
-            }
+            apply_effects!(consumable.effects, eb);
         }
 
         if let Some(weapon) = &item_template.weapon {
@@ -574,17 +598,7 @@ pub fn spawn_named_prop(
         }
         if let Some(entry_trigger) = &prop_template.entry_trigger {
             eb = eb.with(EntryTrigger {});
-            for effect in entry_trigger.effects.iter() {
-                match effect.0.as_str() {
-                    "damage" => {
-                        eb = eb.with(InflictsDamage {
-                            damage: effect.1.parse::<i32>().unwrap(),
-                        })
-                    }
-                    "single_activation" => eb = eb.with(SingleActivation {}),
-                    _ => {}
-                }
-            }
+            apply_effects!(entry_trigger.effects, eb);
         }
 
         if let Some(light) = &prop_template.light {

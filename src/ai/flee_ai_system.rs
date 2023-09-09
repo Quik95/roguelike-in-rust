@@ -20,7 +20,7 @@ impl<'a> System<'a> for FleeAI {
         let (mut turns, mut want_flee, positions, mut map, entities, mut apply_move) = data;
 
         let mut turn_done = vec![];
-        for (entity, mut pos, flee, _myturn) in (&entities, &positions, &want_flee, &turns).join() {
+        for (entity, pos, flee, _myturn) in (&entities, &positions, &want_flee, &turns).join() {
             turn_done.push(entity);
             let my_idx = map.xy_idx(pos.x, pos.y);
             map.populate_blocked();

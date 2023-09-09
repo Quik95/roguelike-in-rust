@@ -19,7 +19,6 @@ pub const fn player_hp_at_level(fitness: i32, level: i32) -> i32 {
 
 pub fn npc_hp(fitness: i32, level: i32) -> i32 {
     1 + (0..level)
-        .into_iter()
         .map(|_| i32::max(1, 8 + attr_bonus(fitness)))
         .sum::<i32>()
 }

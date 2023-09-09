@@ -1,5 +1,6 @@
 pub use adjacent_ai_system::AdjacentAI;
 pub use approach_ai_system::ApproachAI;
+pub use chase_ai_system::ChaseAI;
 pub use default_move_system::DefaultMoveAI;
 pub use encumbrance_system::EncumbranceSystem;
 pub use flee_ai_system::FleeAI;

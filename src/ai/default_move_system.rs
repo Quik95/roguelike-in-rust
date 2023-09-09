@@ -22,9 +22,7 @@ impl<'a> System<'a> for DefaultMoveAI {
             data;
 
         let mut turn_done = vec![];
-        for (entity, pos, mut mode, _myturn) in
-            (&entities, &positions, &mut move_mode, &turns).join()
-        {
+        for (entity, pos, mode, _myturn) in (&entities, &positions, &mut move_mode, &turns).join() {
             turn_done.push(entity);
 
             match &mut mode.mode {

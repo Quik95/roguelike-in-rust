@@ -61,7 +61,6 @@ pub fn save_game(ecs: &mut World) {
             Viewshed,
             Name,
             BlocksTile,
-            SufferDamage,
             WantsToMelee,
             Item,
             Consumable,
@@ -115,7 +114,9 @@ pub fn save_game(ecs: &mut World) {
             ApplyTeleport,
             MagicItem,
             ObfuscatedName,
-            IdentifiedItem
+            IdentifiedItem,
+            SpawnParticleLine,
+            SpawnParticleBurst
         );
     }
 
@@ -174,7 +175,6 @@ pub fn load_game(ecs: &mut World) {
             Viewshed,
             Name,
             BlocksTile,
-            SufferDamage,
             WantsToMelee,
             Item,
             Consumable,
@@ -228,7 +228,9 @@ pub fn load_game(ecs: &mut World) {
             ApplyTeleport,
             MagicItem,
             ObfuscatedName,
-            IdentifiedItem
+            IdentifiedItem,
+            SpawnParticleLine,
+            SpawnParticleBurst
         );
     }
 

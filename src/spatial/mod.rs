@@ -1,5 +1,6 @@
 use std::sync::Mutex;
 
+use itertools::Itertools;
 use lazy_static::lazy_static;
 use specs::Entity;
 
@@ -46,6 +47,11 @@ pub fn index_entity(entity: Entity, idx: usize, blocks_tile: bool) {
     if blocks_tile {
         lock.blocked[idx].1 = true;
     }
+}
+
+pub fn get_tile_content_clone(idx: usize) -> Vec<Entity> {
+    let lock = SPATIAL_MAP.lock().unwrap();
+    lock.tile_content[idx].iter().map(|(e, _)| *e).collect_vec()
 }
 
 pub fn is_blocked(idx: usize) -> bool {

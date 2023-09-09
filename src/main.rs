@@ -2,8 +2,6 @@
 
 extern crate core;
 
-use std::ops::Deref;
-
 use rltk::{GameState, Point, RandomNumberGenerator};
 use specs::prelude::*;
 use specs::saveload::{SimpleMarker, SimpleMarkerAllocator};
@@ -16,7 +14,6 @@ use visibility_system::VisibilitySystem;
 use RunState::PreRun;
 
 use crate::camera::{render_camera, render_debug_map};
-use crate::damage_system::DamageSystem;
 use crate::gamelog::GameLog;
 use crate::gui::{draw_ui, show_cheat_mode, show_vendor_menu, CheatMenuResult, VendorResult};
 use crate::inventory_system::{
@@ -36,6 +33,7 @@ mod camera;
 mod cave_decorator;
 mod components;
 mod damage_system;
+pub mod effects;
 mod gamelog;
 mod gamesystem;
 mod gui;
@@ -72,47 +70,20 @@ pub struct State {
 
 impl State {
     fn run_systems(&mut self) {
-        let mut vis = VisibilitySystem {};
-        vis.run_now(&self.ecs);
-
         let mut mapindex = MapIndexingSystem {};
         mapindex.run_now(&self.ecs);
 
-        let mut melee_combat_system = MeleeCombatSystem {};
-        melee_combat_system.run_now(&self.ecs);
+        let mut vis = VisibilitySystem {};
+        vis.run_now(&self.ecs);
 
-        let mut damage_system = DamageSystem {};
-        damage_system.run_now(&self.ecs);
-
-        let mut pickup = ItemCollectionSystem {};
-        pickup.run_now(&self.ecs);
-
-        let mut potions = ItemUseSystem {};
-        potions.run_now(&self.ecs);
-
-        let mut drop_items = ItemDropSystem {};
-        drop_items.run_now(&self.ecs);
-
-        let mut item_remove = ItemRemoveSystem {};
-        item_remove.run_now(&self.ecs);
-
-        let mut particles = particle_system::ParticleSpawnSystem {};
-        particles.run_now(&self.ecs);
-
-        let mut hunger = hunger_system::HungerSystem {};
-        hunger.run_now(&self.ecs);
-
-        let mut triggers = trigger_system::TriggerSystem {};
-        triggers.run_now(&self.ecs);
-
-        let mut lighting = LightingSystem {};
-        lighting.run_now(&self.ecs);
+        let mut encumbrance = ai::EncumbranceSystem {};
+        encumbrance.run_now(&self.ecs);
 
         let mut initiative = ai::InitiativeSystem {};
         initiative.run_now(&self.ecs);
 
-        let mut turn_status = ai::TurnStatusSystem {};
-        turn_status.run_now(&self.ecs);
+        let mut turnstatus = ai::TurnStatusSystem {};
+        turnstatus.run_now(&self.ecs);
 
         let mut quipper = ai::QuipSystem {};
         quipper.run_now(&self.ecs);
@@ -129,20 +100,48 @@ impl State {
         let mut flee = ai::FleeAI {};
         flee.run_now(&self.ecs);
 
+        let mut chase = ai::ChaseAI {};
+        chase.run_now(&self.ecs);
+
         let mut defaultmove = ai::DefaultMoveAI {};
         defaultmove.run_now(&self.ecs);
-
-        let mut approach = ai::ApproachAI {};
-        approach.run_now(&self.ecs);
-
-        let mut encumbrance = ai::EncumbranceSystem {};
-        encumbrance.run_now(&self.ecs);
 
         let mut moving = movement_system::MovementSystem {};
         moving.run_now(&self.ecs);
 
+        let mut triggers = trigger_system::TriggerSystem {};
+        triggers.run_now(&self.ecs);
+
+        let mut melee = MeleeCombatSystem {};
+        melee.run_now(&self.ecs);
+
+        let mut pickup = ItemCollectionSystem {};
+        pickup.run_now(&self.ecs);
+
+        let mut itemequip = inventory_system::ItemEquipOnUse {};
+        itemequip.run_now(&self.ecs);
+
+        let mut itemuse = ItemUseSystem {};
+        itemuse.run_now(&self.ecs);
+
         let mut item_id = inventory_system::ItemIdentificationSystem {};
         item_id.run_now(&self.ecs);
+
+        let mut drop_items = ItemDropSystem {};
+        drop_items.run_now(&self.ecs);
+
+        let mut item_remove = ItemRemoveSystem {};
+        item_remove.run_now(&self.ecs);
+
+        let mut hunger = hunger_system::HungerSystem {};
+        hunger.run_now(&self.ecs);
+
+        effects::run_effects_queue(&mut self.ecs);
+        let mut particles = particle_system::ParticleSpawnSystem {};
+        particles.run_now(&self.ecs);
+
+        let mut lighting = LightingSystem {};
+        lighting.run_now(&self.ecs);
 
         self.ecs.maintain();
     }
@@ -438,7 +437,7 @@ impl GameState for State {
                     CheatMenuResult::Heal => {
                         let player = self.ecs.fetch::<Entity>();
                         let mut pools = self.ecs.write_storage::<Pools>();
-                        let mut player_pools = pools.get_mut(*player).unwrap();
+                        let player_pools = pools.get_mut(*player).unwrap();
                         player_pools.hit_points.current = player_pools.hit_points.max;
                         newrunstate = RunState::AwaitingInput;
                     }
@@ -452,7 +451,7 @@ impl GameState for State {
                     CheatMenuResult::GodMode => {
                         let player = self.ecs.fetch::<Entity>();
                         let mut pools = self.ecs.write_storage::<Pools>();
-                        let mut player_pools = pools.get_mut(*player).unwrap();
+                        let player_pools = pools.get_mut(*player).unwrap();
                         player_pools.god_mode = true;
                         newrunstate = RunState::AwaitingInput;
                     }
@@ -595,7 +594,6 @@ fn main() -> color_eyre::Result<()> {
     gs.ecs.register::<Name>();
     gs.ecs.register::<BlocksTile>();
     gs.ecs.register::<WantsToMelee>();
-    gs.ecs.register::<SufferDamage>();
     gs.ecs.register::<Item>();
     gs.ecs.register::<ProvidesHealing>();
     gs.ecs.register::<InBackpack>();
@@ -651,6 +649,8 @@ fn main() -> color_eyre::Result<()> {
     gs.ecs.register::<MagicItem>();
     gs.ecs.register::<ObfuscatedName>();
     gs.ecs.register::<IdentifiedItem>();
+    gs.ecs.register::<SpawnParticleLine>();
+    gs.ecs.register::<SpawnParticleBurst>();
     gs.ecs.insert(SimpleMarkerAllocator::<SerializeMe>::new());
 
     raws::load_raws();

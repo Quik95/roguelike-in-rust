@@ -16,7 +16,7 @@ impl<'a> System<'a> for ApproachAI {
     );
 
     fn run(&mut self, data: Self::SystemData) {
-        let (mut turns, mut want_approach, positions, mut map, entities, mut apply_move) = data;
+        let (mut turns, mut want_approach, positions, map, entities, mut apply_move) = data;
 
         let mut turn_done = vec![];
         for (entity, pos, approach, _myturn) in

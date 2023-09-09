@@ -19,7 +19,7 @@ impl<'a> System<'a> for MapIndexingSystem {
     );
 
     fn run(&mut self, data: Self::SystemData) {
-        let (mut map, position, blockers, pools, entities) = data;
+        let (map, position, blockers, pools, entities) = data;
 
         spatial::clear();
         spatial::populate_blocked_from_map(&map);

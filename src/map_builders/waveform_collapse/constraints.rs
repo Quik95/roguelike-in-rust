@@ -1,9 +1,14 @@
 use std::collections::HashSet;
 
-use crate::map::{Map, tiletype::TileType};
-use crate::map_builders::waveform_collapse::common::{MapChunk, tile_idx_in_chunk};
+use crate::map::{tiletype::TileType, Map};
+use crate::map_builders::waveform_collapse::common::{tile_idx_in_chunk, MapChunk};
 
-pub fn build_patterns(map: &Map, chunk_size: i32, include_flipping: bool, dedupe: bool) -> Vec<Vec<TileType>> {
+pub fn build_patterns(
+    map: &Map,
+    chunk_size: i32,
+    include_flipping: bool,
+    dedupe: bool,
+) -> Vec<Vec<TileType>> {
     let chunks_x = map.width / chunk_size;
     let chunks_y = map.height / chunk_size;
     let mut patterns = Vec::new();
@@ -62,16 +67,25 @@ pub fn build_patterns(map: &Map, chunk_size: i32, include_flipping: bool, dedupe
     #[allow(clippy::iter_with_drain)]
     // Dedupe
     if dedupe {
-        rltk::console::log(format!("Pre de-duplication, there are {} patterns", patterns.len()));
+        rltk::console::log(format!(
+            "Pre de-duplication, there are {} patterns",
+            patterns.len()
+        ));
         let set: HashSet<Vec<TileType>> = patterns.drain(..).collect(); // dedup
-        patterns.extend(set.into_iter());
+        patterns.extend(set);
         rltk::console::log(format!("There are {} patterns", patterns.len()));
     }
 
     patterns
 }
 
-pub fn render_pattern_to_map(map: &mut Map, chunk: &MapChunk, chunk_size: i32, start_x: i32, start_y: i32) {
+pub fn render_pattern_to_map(
+    map: &mut Map,
+    chunk: &MapChunk,
+    chunk_size: i32,
+    start_x: i32,
+    start_y: i32,
+) {
     let mut i = 0usize;
     for tile_y in 0..chunk_size {
         for tile_x in 0..chunk_size {
@@ -178,7 +192,7 @@ pub fn patterns_to_constraints(patterns: Vec<Vec<TileType>>, chunk_size: i32) ->
                         0 => 1, // Our North, Their South
                         1 => 0, // Our South, Their North
                         2 => 3, // Our West, Their East
-                        _ => 2 // Our East, Their West
+                        _ => 2, // Our East, Their West
                     };
 
                     let mut it_fits = false;
@@ -197,7 +211,8 @@ pub fn patterns_to_constraints(patterns: Vec<Vec<TileType>>, chunk_size: i32) ->
                     if !has_any {
                         // There's no exits on this side, let's match only if
                         // the other edge also has no exits
-                        let matching_exit_count = potential.exits[opposite].iter().filter(|a| !**a).count();
+                        let matching_exit_count =
+                            potential.exits[opposite].iter().filter(|a| !**a).count();
                         if matching_exit_count == 0 {
                             c.compatible_with[direction].push(j);
                         }

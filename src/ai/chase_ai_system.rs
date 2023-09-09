@@ -18,7 +18,7 @@ impl<'a> System<'a> for ChaseAI {
     );
 
     fn run(&mut self, data: Self::SystemData) {
-        let (mut turns, mut chasing, positions, mut map, entities, mut apply_move) = data;
+        let (mut turns, mut chasing, positions, map, entities, mut apply_move) = data;
 
         let mut targets = HashMap::new();
         let mut end_chase = vec![];

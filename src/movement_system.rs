@@ -26,9 +26,9 @@ impl<'a> System<'a> for MovementSystem {
 
     fn run(&mut self, data: Self::SystemData) {
         let (
-            mut map,
+            map,
             mut position,
-            blockers,
+            _blockers,
             entities,
             mut apply_move,
             mut apply_teleport,
@@ -74,7 +74,7 @@ impl<'a> System<'a> for MovementSystem {
         }
         apply_teleport.clear();
 
-        for (entity, movement, mut pos) in (&entities, &apply_move, &mut position).join() {
+        for (entity, movement, pos) in (&entities, &apply_move, &mut position).join() {
             let start_idx = map.xy_idx(pos.x, pos.y);
             let dest_idx = movement.dest_idx;
             spatial::move_entity(entity, start_idx, dest_idx);
