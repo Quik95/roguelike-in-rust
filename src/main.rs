@@ -109,8 +109,9 @@ impl State {
         let mut visible = ai::VisibleAI {};
         visible.run_now(&self.ecs);
 
-        let mut approach = ai::ApproachAI {};
-        approach.run_now(&self.ecs);
+        // Disabled due to poor performance
+        // let mut approach = ai::ApproachAI {};
+        // approach.run_now(&self.ecs);
 
         let mut flee = ai::FleeAI {};
         flee.run_now(&self.ecs);
