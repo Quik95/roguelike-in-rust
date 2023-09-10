@@ -7,13 +7,14 @@ use specs::saveload::{MarkedBuilder, SimpleMarker};
 use specs::{Builder, Entity, EntityBuilder, World, WorldExt};
 
 use crate::components::{
-    AreaOfEffect, Attribute, Attributes, BlocksTile, BlocksVisibility, Confusion, Consumable,
-    CursedItem, Door, EntryTrigger, EquipmentChanged, EquipmentSlot, Equippable, Faction, Hidden,
-    InBackpack, InflictsDamage, Initiative, LightSource, MagicItem, MagicItemClass, MagicMapper,
-    MeleeWeapon, MoveMode, Movement, Name, NaturalAttack, NaturalAttackDefense, ObfuscatedName,
-    Pool, Pools, Position, ProvidesFood, ProvidesHealing, ProvidesIdentification,
-    ProvidesRemoveCurse, Ranged, SerializeMe, SingleActivation, Skill, Skills, SpawnParticleBurst,
-    SpawnParticleLine, TownPortal, Vendor, Viewshed, WeaponAttribute, Wearable,
+    AreaOfEffect, Attribute, AttributeBonus, Attributes, BlocksTile, BlocksVisibility, Confusion,
+    Consumable, CursedItem, Door, Duration, EntryTrigger, EquipmentChanged, EquipmentSlot,
+    Equippable, Faction, Hidden, InBackpack, InflictsDamage, Initiative, LightSource, MagicItem,
+    MagicItemClass, MagicMapper, MeleeWeapon, MoveMode, Movement, Name, NaturalAttack,
+    NaturalAttackDefense, ObfuscatedName, Pool, Pools, Position, ProvidesFood, ProvidesHealing,
+    ProvidesIdentification, ProvidesRemoveCurse, Ranged, SerializeMe, SingleActivation, Skill,
+    Skills, SpawnParticleBurst, SpawnParticleLine, TownPortal, Vendor, Viewshed, WeaponAttribute,
+    Wearable,
 };
 use crate::components::{Equipped, LootTable};
 use crate::components::{Quips, Renderable};
@@ -168,9 +169,10 @@ macro_rules! apply_effects {
                     })
                 }
                 "confusion" => {
-                    $eb = $eb.with(Confusion {
+                    $eb = $eb.with(Confusion {});
+                    $eb = $eb.with(Duration {
                         turns: effect.1.parse::<i32>().unwrap(),
-                    })
+                    });
                 }
                 "magic_mapping" => $eb = $eb.with(MagicMapper {}),
                 "town_portal" => $eb = $eb.with(TownPortal {}),
@@ -238,7 +240,11 @@ pub fn spawn_named_item(
         });
 
         if let Some(consumable) = &item_template.consumable {
-            eb = eb.with(Consumable {});
+            let max_charges = consumable.charges.unwrap_or(1);
+            eb = eb.with(Consumable {
+                max_charges,
+                charges: max_charges,
+            });
             apply_effects!(consumable.effects, eb);
         }
 
@@ -306,6 +312,15 @@ pub fn spawn_named_item(
                     eb = eb.with(CursedItem {});
                 }
             }
+        }
+
+        if let Some(ab) = &item_template.attributes {
+            eb = eb.with(AttributeBonus {
+                might: ab.might,
+                fitness: ab.fitness,
+                quickness: ab.quickness,
+                intelligence: ab.intelligence,
+            });
         }
 
         return Some(eb.build());

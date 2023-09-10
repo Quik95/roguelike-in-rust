@@ -1,7 +1,10 @@
 use specs::{Entity, Join, ReadExpect, ReadStorage, System, WriteExpect, WriteStorage};
 
-use crate::components::{EquipmentChanged, InBackpack, Name, Position, WantsToPickupItem};
+use crate::components::{
+    EquipmentChanged, InBackpack, MagicItem, Name, ObfuscatedName, Position, WantsToPickupItem,
+};
 use crate::gamelog::GameLog;
+use crate::map::dungeon::MasterDungeonMap;
 
 pub struct ItemCollectionSystem {}
 
@@ -14,6 +17,9 @@ impl<'a> System<'a> for ItemCollectionSystem {
         ReadStorage<'a, Name>,
         WriteStorage<'a, InBackpack>,
         WriteStorage<'a, EquipmentChanged>,
+        ReadStorage<'a, MagicItem>,
+        ReadStorage<'a, ObfuscatedName>,
+        ReadExpect<'a, MasterDungeonMap>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
@@ -25,6 +31,9 @@ impl<'a> System<'a> for ItemCollectionSystem {
             names,
             mut backpack,
             mut dirty,
+            magic_items,
+            obfuscated_names,
+            dm,
         ) = data;
 
         for pickup in wants_pickup.join() {
@@ -44,7 +53,13 @@ impl<'a> System<'a> for ItemCollectionSystem {
             if pickup.collected_by == *player_entity {
                 gamelog.entries.push(format!(
                     "You pick up the {}.",
-                    names.get(pickup.item).unwrap().name
+                    super::obfuscate_name(
+                        pickup.item,
+                        &names,
+                        &magic_items,
+                        &obfuscated_names,
+                        &dm
+                    )
                 ));
             }
         }

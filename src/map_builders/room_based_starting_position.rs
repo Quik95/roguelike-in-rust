@@ -19,7 +19,10 @@ impl RoomBasedStartingPosition {
     fn build(&mut self, _: &mut RandomNumberGenerator, build_data: &mut BuilderMap) {
         if let Some(rooms) = &build_data.rooms {
             let start_pos = rooms[0].center();
-            build_data.starting_position = Some(Position { x: start_pos.0, y: start_pos.1 });
+            build_data.starting_position = Some(Position {
+                x: start_pos.0,
+                y: start_pos.1,
+            });
         } else {
             panic!("Room Based Starting Position only works after rooms have been created");
         }

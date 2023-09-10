@@ -5,8 +5,8 @@ use specs::prelude::*;
 use crate::camera::get_screen_bounds;
 use crate::components::HungerState::{Normal, WellFed};
 use crate::components::{
-    Attribute, Attributes, Consumable, CursedItem, Equipped, Hidden, HungerClock, HungerState,
-    Item, MagicItem, MagicItemClass, ObfuscatedName, Pools, Vendor,
+    Attribute, Attributes, Consumable, CursedItem, Duration, Equipped, Hidden, HungerClock,
+    HungerState, Item, MagicItem, MagicItemClass, ObfuscatedName, Pools, StatusEffect, Vendor,
 };
 use crate::map::dungeon::MasterDungeonMap;
 use crate::player::VendorMode;
@@ -177,13 +177,38 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
         }
     }
 
+    let mut y = 44;
     let hunger = ecs.read_storage::<HungerClock>();
     let hc = hunger.get(*player_entity).unwrap();
     match hc.state {
-        WellFed => ctx.print_color(50, 44, RGB::named(GREEN), *BLACK, "Well Fed"),
+        WellFed => {
+            ctx.print_color(50, y, RGB::named(GREEN), *BLACK, "Well Fed");
+            y -= 1;
+        }
         Normal => {}
-        HungerState::Hungry => ctx.print_color(50, 44, RGB::named(rltk::ORANGE), *BLACK, "Hungry"),
-        HungerState::Starving => ctx.print_color(50, 44, RGB::named(rltk::RED), *BLACK, "Starving"),
+        HungerState::Hungry => {
+            ctx.print_color(50, y, RGB::named(rltk::ORANGE), *BLACK, "Hungry");
+            y -= 1;
+        }
+        HungerState::Starving => {
+            ctx.print_color(50, y, RGB::named(rltk::RED), *BLACK, "Starving");
+            y -= 1;
+        }
+    }
+    let statuses = ecs.read_storage::<StatusEffect>();
+    let durations = ecs.read_storage::<Duration>();
+    let names = ecs.read_storage::<Name>();
+    for (status, duration, name) in (&statuses, &durations, &names).join() {
+        if status.target == *player_entity {
+            ctx.print_color(
+                50,
+                y,
+                RGB::named(RED),
+                *BLACK,
+                &format!("{} ({})", name.name, duration.turns),
+            );
+        };
+        y -= 1;
     }
 
     let log = ecs.fetch::<GameLog>();
@@ -311,6 +336,15 @@ fn draw_tooltips(ecs: &World, ctx: &mut Rltk) {
             let stat = pools.get(entity);
             if let Some(stat) = stat {
                 tip.add(format!("Level: {}", stat.level));
+            }
+
+            let status = ecs.read_storage::<StatusEffect>();
+            let durations = ecs.read_storage::<Duration>();
+            let names = ecs.read_storage::<Name>();
+            for (status, duration, name) in (&status, &durations, &names).join() {
+                if status.target == entity {
+                    tip.add(format!("{} ({})", name.name, duration.turns));
+                }
             }
 
             tip_boxes.push(tip);
@@ -994,7 +1028,15 @@ pub fn get_item_display_name(ecs: &World, item: Entity) -> String {
             if ecs.read_storage::<MagicItem>().get(item).is_some() {
                 let dm = ecs.fetch::<MasterDungeonMap>();
                 if dm.identified_items.contains(&name.name) {
-                    name.name.clone()
+                    if let Some(c) = ecs.read_storage::<Consumable>().get(item) {
+                        if c.max_charges > 1 {
+                            format!("{} ({})", name.name.clone(), c.charges)
+                        } else {
+                            name.name.clone()
+                        }
+                    } else {
+                        name.name.clone()
+                    }
                 } else if let Some(obfuscated) = ecs.read_storage::<ObfuscatedName>().get(item) {
                     obfuscated.name.clone()
                 } else {

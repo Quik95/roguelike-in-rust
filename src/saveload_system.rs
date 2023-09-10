@@ -10,16 +10,16 @@ use specs::saveload::{
 use specs::{Builder, Entity, Join, World, WorldExt};
 
 use crate::components::{
-    ApplyMove, ApplyTeleport, AreaOfEffect, Attributes, BlocksTile, BlocksVisibility, Chasing,
-    Confusion, Consumable, CursedItem, DMSerializationHelper, DefenseBonus, Door, EntityMoved,
-    EntryTrigger, EquipmentChanged, Equippable, Faction, Hidden, HungerClock, IdentifiedItem,
-    InBackpack, InflictsDamage, Initiative, Item, LightSource, LootTable, MagicItem, MagicMapper,
-    MeleePowerBonus, MeleeWeapon, MoveMode, MyTurn, Name, NaturalAttackDefense, ObfuscatedName,
-    OtherLevelPosition, ParticleLifetime, Player, Pools, Position, ProvidesFood, ProvidesHealing,
-    ProvidesIdentification, ProvidesRemoveCurse, Quips, Ranged, Renderable, SingleActivation,
-    Skills, SpawnParticleBurst, SpawnParticleLine, TeleportTo, TownPortal, Vendor, Viewshed,
-    WantsToApproach, WantsToDropItem, WantsToFlee, WantsToMelee, WantsToPickupItem,
-    WantsToRemoveItem, WantsToUseItem, Wearable,
+    ApplyMove, ApplyTeleport, AreaOfEffect, AttributeBonus, Attributes, BlocksTile,
+    BlocksVisibility, Chasing, Confusion, Consumable, CursedItem, DMSerializationHelper,
+    DefenseBonus, Door, Duration, EntityMoved, EntryTrigger, EquipmentChanged, Equippable, Faction,
+    Hidden, HungerClock, IdentifiedItem, InBackpack, InflictsDamage, Initiative, Item, LightSource,
+    LootTable, MagicItem, MagicMapper, MeleePowerBonus, MeleeWeapon, MoveMode, MyTurn, Name,
+    NaturalAttackDefense, ObfuscatedName, OtherLevelPosition, ParticleLifetime, Player, Pools,
+    Position, ProvidesFood, ProvidesHealing, ProvidesIdentification, ProvidesRemoveCurse, Quips,
+    Ranged, Renderable, SingleActivation, Skills, SpawnParticleBurst, SpawnParticleLine,
+    StatusEffect, TeleportTo, TownPortal, Vendor, Viewshed, WantsToApproach, WantsToDropItem,
+    WantsToFlee, WantsToMelee, WantsToPickupItem, WantsToRemoveItem, WantsToUseItem, Wearable,
 };
 use crate::components::{SerializationHelper, SerializeMe};
 use crate::map::dungeon::MasterDungeonMap;
@@ -130,7 +130,10 @@ pub fn save_game(ecs: &mut World) {
             SpawnParticleBurst,
             CursedItem,
             ProvidesRemoveCurse,
-            ProvidesIdentification
+            ProvidesIdentification,
+            AttributeBonus,
+            Duration,
+            StatusEffect
         );
     }
 
@@ -247,7 +250,10 @@ pub fn load_game(ecs: &mut World) {
             SpawnParticleBurst,
             CursedItem,
             ProvidesRemoveCurse,
-            ProvidesIdentification
+            ProvidesIdentification,
+            AttributeBonus,
+            Duration,
+            StatusEffect
         );
     }
 

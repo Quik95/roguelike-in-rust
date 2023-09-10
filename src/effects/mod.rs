@@ -7,6 +7,8 @@ use specs::{Entity, World};
 
 pub use targeting::*;
 
+use crate::components::AttributeBonus;
+
 mod damage;
 mod hunger;
 mod movement;
@@ -49,6 +51,11 @@ pub enum EffectType {
         depth: i32,
         player_only: bool,
     },
+    AttributeEffect {
+        bonus: AttributeBonus,
+        name: String,
+        duration: i32,
+    },
 }
 
 #[derive(Clone)]
@@ -72,7 +79,7 @@ pub fn add_effect(creator: Option<Entity>, effect_type: EffectType, targets: Tar
     });
 }
 
-pub fn run_effects_queue(ecs: &World) {
+pub fn run_effects_queue(ecs: &mut World) {
     loop {
         let effect = EFFECT_QUEUE.lock().unwrap().pop_front();
         if let Some(effect) = effect {
@@ -83,7 +90,7 @@ pub fn run_effects_queue(ecs: &World) {
     }
 }
 
-fn target_applicator(ecs: &World, effect: &EffectSpawner) {
+fn target_applicator(ecs: &mut World, effect: &EffectSpawner) {
     if let EffectType::ItemUse { item } = effect.effect_type {
         triggers::item_trigger(effect.creator, item, &effect.targets, ecs);
     } else if let EffectType::TriggerFire { trigger } = effect.effect_type {
@@ -99,7 +106,7 @@ fn target_applicator(ecs: &World, effect: &EffectSpawner) {
     }
 }
 
-fn affect_entity(ecs: &World, effect: &EffectSpawner, target: Entity) {
+fn affect_entity(ecs: &mut World, effect: &EffectSpawner, target: Entity) {
     match &effect.effect_type {
         EffectType::Damage { .. } => damage::inflict_damage(ecs, effect, target),
         EffectType::Bloodstain { .. } => {
@@ -117,11 +124,12 @@ fn affect_entity(ecs: &World, effect: &EffectSpawner, target: Entity) {
         EffectType::Healing { .. } => damage::heal_damage(ecs, effect, target),
         EffectType::Confusion { .. } => damage::add_confusion(ecs, effect, target),
         EffectType::TeleportTo { .. } => movement::apply_teleport(ecs, effect, target),
+        EffectType::AttributeEffect { .. } => damage::attribute_effect(ecs, effect, target),
         _ => {}
     }
 }
 
-fn affect_tile(ecs: &World, effect: &EffectSpawner, tile_idx: i32) {
+fn affect_tile(ecs: &mut World, effect: &EffectSpawner, tile_idx: i32) {
     if tile_effect_hits_entities(&effect.effect_type) {
         let content = crate::spatial::get_tile_content_clone(tile_idx as usize);
         content
@@ -144,5 +152,6 @@ const fn tile_effect_hits_entities(effect: &EffectType) -> bool {
             | EffectType::Healing { .. }
             | EffectType::Confusion { .. }
             | EffectType::TeleportTo { .. }
+            | EffectType::AttributeEffect { .. }
     )
 }

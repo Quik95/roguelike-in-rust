@@ -117,16 +117,16 @@ impl BspDungeonBuilder {
         for y in expanded.y1..=expanded.y2 {
             for x in expanded.x1..=expanded.x2 {
                 if x > build_data.map.width - 2 {
-                    can_build = false
+                    can_build = false;
                 }
                 if y > build_data.map.height - 2 {
-                    can_build = false
+                    can_build = false;
                 }
                 if x < 1 {
-                    can_build = false
+                    can_build = false;
                 }
                 if y < 1 {
-                    can_build = false
+                    can_build = false;
                 }
                 if can_build {
                     let idx = build_data.map.xy_idx(x, y);

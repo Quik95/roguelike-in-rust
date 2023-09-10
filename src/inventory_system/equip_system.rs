@@ -76,7 +76,7 @@ impl<'a> System<'a> for ItemEquipOnUse {
                             .expect("Unable to insert");
                     }
 
-                    for item in to_unequip.iter() {
+                    for item in &to_unequip {
                         equipped.remove(*item);
                         backpack
                             .insert(*item, InBackpack { owner: target })

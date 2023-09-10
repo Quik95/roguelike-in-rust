@@ -2,7 +2,6 @@
 
 extern crate core;
 
-use gui::ItemMenuResult;
 use rltk::{GameState, Point, RandomNumberGenerator};
 use specs::prelude::*;
 use specs::saveload::{SimpleMarker, SimpleMarkerAllocator};
@@ -19,6 +18,7 @@ use components::{
     WantsToApproach, WantsToDropItem, WantsToFlee, WantsToMelee, WantsToPickupItem,
     WantsToRemoveItem, WantsToUseItem, Wearable,
 };
+use gui::ItemMenuResult;
 use map::Map;
 use map_indexing_system::MapIndexingSystem;
 use player::RunState;
@@ -26,7 +26,9 @@ use visibility_system::VisibilitySystem;
 use RunState::PreRun;
 
 use crate::camera::{render_camera, render_debug_map};
-use crate::components::{CursedItem, ProvidesIdentification};
+use crate::components::{
+    AttributeBonus, CursedItem, Duration, ProvidesIdentification, StatusEffect,
+};
 use crate::gamelog::GameLog;
 use crate::gui::{draw_ui, show_cheat_mode, show_vendor_menu, CheatMenuResult, VendorResult};
 use crate::inventory_system::{
@@ -154,7 +156,7 @@ impl State {
         let mut hunger = hunger_system::HungerSystem {};
         hunger.run_now(&self.ecs);
 
-        effects::run_effects_queue(&self.ecs);
+        effects::run_effects_queue(&mut self.ecs);
         let mut particles = particle_system::ParticleSpawnSystem {};
         particles.run_now(&self.ecs);
 
@@ -661,6 +663,9 @@ fn main() -> color_eyre::Result<()> {
     gs.ecs.register::<CursedItem>();
     gs.ecs.register::<ProvidesRemoveCurse>();
     gs.ecs.register::<ProvidesIdentification>();
+    gs.ecs.register::<AttributeBonus>();
+    gs.ecs.register::<Duration>();
+    gs.ecs.register::<StatusEffect>();
     gs.ecs.insert(SimpleMarkerAllocator::<SerializeMe>::new());
 
     raws::load_raws();

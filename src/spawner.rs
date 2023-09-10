@@ -5,9 +5,10 @@ use specs::saveload::{MarkedBuilder, SimpleMarker};
 use specs::{Builder, Entity, World, WorldExt};
 
 use crate::components::{
-    Attribute, Attributes, EntryTrigger, EquipmentChanged, Faction, HungerClock, HungerState,
-    Initiative, LightSource, Name, OtherLevelPosition, Player, Pool, Pools, Position, Renderable,
-    SerializeMe, SingleActivation, Skill, Skills, TeleportTo, Viewshed,
+    Attribute, AttributeBonus, Attributes, Duration, EntryTrigger, EquipmentChanged, Faction,
+    HungerClock, HungerState, Initiative, LightSource, Name, OtherLevelPosition, Player, Pool,
+    Pools, Position, Renderable, SerializeMe, SingleActivation, Skill, Skills, StatusEffect,
+    TeleportTo, Viewshed,
 };
 use crate::gamesystem::{attr_bonus, mana_at_level, player_hp_at_level};
 use crate::map::dungeon::MasterDungeonMap;
@@ -138,6 +139,21 @@ pub fn player(ecs: &mut World, player_x: i32, player_y: i32) -> Entity {
         "Old Boots",
         SpawnType::Equipped { by: player },
     );
+
+    ecs.create_entity()
+        .with(StatusEffect { target: player })
+        .with(Duration { turns: 10 })
+        .with(Name {
+            name: "Hangover".into(),
+        })
+        .with(AttributeBonus {
+            might: Some(-1),
+            fitness: None,
+            quickness: Some(-1),
+            intelligence: Some(-1),
+        })
+        .marked::<SimpleMarker<SerializeMe>>()
+        .build();
 
     player
 }

@@ -191,10 +191,10 @@ impl<'a> Grid<'a> {
                 map.tiles[idx - map.width as usize] = TileType::Floor;
             }
             if !cell.walls[RIGHT] {
-                map.tiles[idx + 1] = TileType::Floor
+                map.tiles[idx + 1] = TileType::Floor;
             }
             if !cell.walls[BOTTOM] {
-                map.tiles[idx + map.width as usize] = TileType::Floor
+                map.tiles[idx + map.width as usize] = TileType::Floor;
             }
             if !cell.walls[LEFT] {
                 map.tiles[idx - 1] = TileType::Floor;

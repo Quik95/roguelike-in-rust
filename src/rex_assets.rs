@@ -14,6 +14,8 @@ impl RexAssets {
         rltk::link_resource!(WFC_DEMO_IMAGE1, "../resources/wfc-demo1.xp");
         rltk::link_resource!(WFC_POPULATED, "../resources/wfc-populated.xp");
 
-        Self { menu: XpFile::from_resource("../resources/SmallDungeon_80x50.xp").unwrap() }
+        Self {
+            menu: XpFile::from_resource("../resources/SmallDungeon_80x50.xp").unwrap(),
+        }
     }
 }

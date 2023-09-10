@@ -7,7 +7,10 @@ pub struct RandomEntry {
 
 impl RandomEntry {
     pub fn new<S: ToString>(name: S, weight: i32) -> Self {
-        Self { name: name.to_string(), weight }
+        Self {
+            name: name.to_string(),
+            weight,
+        }
     }
 }
 
@@ -19,7 +22,10 @@ pub struct RandomTable {
 
 impl RandomTable {
     pub const fn new() -> Self {
-        Self { entries: Vec::new(), total_weight: 0 }
+        Self {
+            entries: Vec::new(),
+            total_weight: 0,
+        }
     }
 
     pub fn add<S: ToString>(mut self, name: S, weight: i32) -> Self {

@@ -2,8 +2,8 @@ use rltk::{Point, BLACK};
 use specs::{Entity, World, WorldExt};
 
 use crate::components::{
-    Confusion, Consumable, Hidden, InflictsDamage, MagicMapper, Name, ProvidesFood,
-    ProvidesHealing, ProvidesIdentification, ProvidesRemoveCurse, SingleActivation,
+    AttributeBonus, Confusion, Consumable, Duration, Hidden, InflictsDamage, MagicMapper, Name,
+    ProvidesFood, ProvidesHealing, ProvidesIdentification, ProvidesRemoveCurse, SingleActivation,
     SpawnParticleBurst, SpawnParticleLine, TeleportTo, TownPortal,
 };
 use crate::effects::targeting::entity_position;
@@ -13,10 +13,27 @@ use crate::map::Map;
 use crate::player::RunState;
 
 pub fn item_trigger(creator: Option<Entity>, item: Entity, targets: &Targets, ecs: &World) {
+    if let Some(c) = ecs.write_storage::<Consumable>().get_mut(item) {
+        if c.charges < 1 {
+            let mut gamelog = ecs.fetch_mut::<GameLog>();
+            gamelog.entries.push(format!(
+                "{} is out of charges!",
+                ecs.read_storage::<Name>().get(item).unwrap().name
+            ));
+            return;
+        } else {
+            c.charges -= 1;
+        }
+    }
+
     let did_something = event_trigger(creator, item, targets, ecs);
 
-    if did_something && ecs.read_storage::<Consumable>().get(item).is_some() {
-        ecs.entities().delete(item).expect("Delete failed");
+    if did_something {
+        if let Some(c) = ecs.read_storage::<Consumable>().get(item) {
+            if c.charges == 0 {
+                ecs.entities().delete(item).expect("Delete failed");
+            }
+        }
     }
 }
 
@@ -127,15 +144,17 @@ fn event_trigger(creator: Option<Entity>, entity: Entity, targets: &Targets, ecs
         did_something = true;
     }
 
-    if let Some(confusion) = ecs.read_storage::<Confusion>().get(entity) {
-        add_effect(
-            creator,
-            EffectType::Confusion {
-                turns: confusion.turns,
-            },
-            targets.clone(),
-        );
-        did_something = true;
+    if let Some(_confusion) = ecs.read_storage::<Confusion>().get(entity) {
+        if let Some(duration) = ecs.read_storage::<Duration>().get(entity) {
+            add_effect(
+                creator,
+                EffectType::Confusion {
+                    turns: duration.turns,
+                },
+                targets.clone(),
+            );
+            did_something = true;
+        }
     }
 
     if let Some(teleport) = ecs.read_storage::<TeleportTo>().get(entity) {
@@ -146,6 +165,19 @@ fn event_trigger(creator: Option<Entity>, entity: Entity, targets: &Targets, ecs
                 y: teleport.y,
                 depth: teleport.depth,
                 player_only: teleport.player_only,
+            },
+            targets.clone(),
+        );
+        did_something = true;
+    }
+
+    if let Some(attr) = ecs.read_storage::<AttributeBonus>().get(entity) {
+        add_effect(
+            creator,
+            EffectType::AttributeEffect {
+                bonus: attr.clone(),
+                name: ecs.read_storage::<Name>().get(entity).unwrap().name.clone(),
+                duration: 10,
             },
             targets.clone(),
         );

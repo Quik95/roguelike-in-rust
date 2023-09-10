@@ -4,7 +4,11 @@ use crate::map::tiletype::TileType;
 use crate::map_builders::{BuilderMap, InitialMapBuilder};
 
 #[derive(Eq, PartialEq, Copy, Clone)]
-pub enum DistanceAlgorithm { Pythagoras, Manhattan, Chebyshev }
+pub enum DistanceAlgorithm {
+    Pythagoras,
+    Manhattan,
+    Chebyshev,
+}
 
 pub struct VoronoiCellBuilder {
     n_seeds: usize,
@@ -60,19 +64,23 @@ impl VoronoiCellBuilder {
         }
 
         let mut voronoi_distance = vec![(0, 0.0f32); self.n_seeds];
-        let mut voronoi_membership = vec![0; build_data.map.width as usize * build_data.map.height as usize];
+        let mut voronoi_membership =
+            vec![0; build_data.map.width as usize * build_data.map.height as usize];
         for (i, vid) in voronoi_membership.iter_mut().enumerate() {
             let x = i as i32 % build_data.map.width;
             let y = i as i32 / build_data.map.width;
 
             for (seed, pos) in voronoi_seeds.iter().enumerate() {
                 let distance = match self.distance_algorithm {
-                    DistanceAlgorithm::Pythagoras =>
-                        DistanceAlg::PythagorasSquared.distance2d(Point::new(x, y), pos.1),
-                    DistanceAlgorithm::Manhattan =>
-                        DistanceAlg::Manhattan.distance2d(Point::new(x, y), pos.1),
-                    DistanceAlgorithm::Chebyshev =>
+                    DistanceAlgorithm::Pythagoras => {
+                        DistanceAlg::PythagorasSquared.distance2d(Point::new(x, y), pos.1)
+                    }
+                    DistanceAlgorithm::Manhattan => {
+                        DistanceAlg::Manhattan.distance2d(Point::new(x, y), pos.1)
+                    }
+                    DistanceAlgorithm::Chebyshev => {
                         DistanceAlg::Chebyshev.distance2d(Point::new(x, y), pos.1)
+                    }
                 };
                 voronoi_distance[seed] = (seed, distance);
             }
@@ -87,10 +95,18 @@ impl VoronoiCellBuilder {
                 let mut neighbors = 0;
                 let my_idx = build_data.map.xy_idx(x, y);
                 let my_seed = voronoi_membership[my_idx];
-                if voronoi_membership[build_data.map.xy_idx(x - 1, y)] != my_seed { neighbors += 1; }
-                if voronoi_membership[build_data.map.xy_idx(x + 1, y)] != my_seed { neighbors += 1; }
-                if voronoi_membership[build_data.map.xy_idx(x, y - 1)] != my_seed { neighbors += 1; }
-                if voronoi_membership[build_data.map.xy_idx(x, y + 1)] != my_seed { neighbors += 1; }
+                if voronoi_membership[build_data.map.xy_idx(x - 1, y)] != my_seed {
+                    neighbors += 1;
+                }
+                if voronoi_membership[build_data.map.xy_idx(x + 1, y)] != my_seed {
+                    neighbors += 1;
+                }
+                if voronoi_membership[build_data.map.xy_idx(x, y - 1)] != my_seed {
+                    neighbors += 1;
+                }
+                if voronoi_membership[build_data.map.xy_idx(x, y + 1)] != my_seed {
+                    neighbors += 1;
+                }
 
                 if neighbors < 2 {
                     build_data.map.tiles[my_idx] = TileType::Floor;
