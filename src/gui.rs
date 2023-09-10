@@ -577,7 +577,7 @@ pub fn ranged_target(gs: &State, ctx: &mut Rltk, range: i32) -> (ItemMenuResult,
                     && screen_y > 1
                     && screen_y < (max_y - min_y) - 1
                 {
-                    ctx.set_bg(idx.x, idx.y, RGB::named(rltk::BLUE));
+                    ctx.set_bg(screen_x, screen_y, RGB::named(rltk::BLUE));
                     available_cells.push(idx);
                 }
             }
