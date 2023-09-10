@@ -7,12 +7,13 @@ use specs::saveload::{MarkedBuilder, SimpleMarker};
 use specs::{Builder, Entity, EntityBuilder, World, WorldExt};
 
 use crate::components::{
-    AreaOfEffect, Attribute, Attributes, BlocksTile, BlocksVisibility, Confusion, Consumable, Door,
-    EntryTrigger, EquipmentChanged, EquipmentSlot, Equippable, Faction, Hidden, InBackpack,
-    InflictsDamage, Initiative, LightSource, MagicItem, MagicItemClass, MagicMapper, MeleeWeapon,
-    MoveMode, Movement, Name, NaturalAttack, NaturalAttackDefense, ObfuscatedName, Pool, Pools,
-    Position, ProvidesFood, ProvidesHealing, Ranged, SerializeMe, SingleActivation, Skill, Skills,
-    SpawnParticleBurst, SpawnParticleLine, TownPortal, Vendor, Viewshed, WeaponAttribute, Wearable,
+    AreaOfEffect, Attribute, Attributes, BlocksTile, BlocksVisibility, Confusion, Consumable,
+    CursedItem, Door, EntryTrigger, EquipmentChanged, EquipmentSlot, Equippable, Faction, Hidden,
+    InBackpack, InflictsDamage, Initiative, LightSource, MagicItem, MagicItemClass, MagicMapper,
+    MeleeWeapon, MoveMode, Movement, Name, NaturalAttack, NaturalAttackDefense, ObfuscatedName,
+    Pool, Pools, Position, ProvidesFood, ProvidesHealing, ProvidesIdentification,
+    ProvidesRemoveCurse, Ranged, SerializeMe, SingleActivation, Skill, Skills, SpawnParticleBurst,
+    SpawnParticleLine, TownPortal, Vendor, Viewshed, WeaponAttribute, Wearable,
 };
 use crate::components::{Equipped, LootTable};
 use crate::components::{Quips, Renderable};
@@ -191,6 +192,8 @@ macro_rules! apply_effects {
                             .expect("Failed to parse SpawnParticleBurst"),
                     )
                 }
+                "remove_curse" => $eb = $eb.with(ProvidesRemoveCurse {}),
+                "identify" => $eb = $eb.with(ProvidesIdentification {}),
                 _ => console::log(format!(
                     "Warning: consumable effect {} not implemented.",
                     effect_name
@@ -295,6 +298,12 @@ pub fn spawn_named_item(
                             name: magic.naming.clone(),
                         });
                     }
+                }
+            }
+
+            if let Some(cursed) = magic.cursed {
+                if cursed {
+                    eb = eb.with(CursedItem {});
                 }
             }
         }

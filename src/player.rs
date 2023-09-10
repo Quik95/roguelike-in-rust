@@ -53,6 +53,8 @@ pub enum RunState {
         y: i32,
         depth: i32,
     },
+    ShowRemoveCurse,
+    ShowIdentify,
 }
 
 #[derive(PartialEq, Eq, Copy, Clone)]

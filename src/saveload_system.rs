@@ -11,14 +11,15 @@ use specs::{Builder, Entity, Join, World, WorldExt};
 
 use crate::components::{
     ApplyMove, ApplyTeleport, AreaOfEffect, Attributes, BlocksTile, BlocksVisibility, Chasing,
-    Confusion, Consumable, DMSerializationHelper, DefenseBonus, Door, EntityMoved, EntryTrigger,
-    EquipmentChanged, Equippable, Faction, Hidden, HungerClock, IdentifiedItem, InBackpack,
-    InflictsDamage, Initiative, Item, LightSource, LootTable, MagicItem, MagicMapper,
+    Confusion, Consumable, CursedItem, DMSerializationHelper, DefenseBonus, Door, EntityMoved,
+    EntryTrigger, EquipmentChanged, Equippable, Faction, Hidden, HungerClock, IdentifiedItem,
+    InBackpack, InflictsDamage, Initiative, Item, LightSource, LootTable, MagicItem, MagicMapper,
     MeleePowerBonus, MeleeWeapon, MoveMode, MyTurn, Name, NaturalAttackDefense, ObfuscatedName,
     OtherLevelPosition, ParticleLifetime, Player, Pools, Position, ProvidesFood, ProvidesHealing,
-    Quips, Ranged, Renderable, SingleActivation, Skills, SpawnParticleBurst, SpawnParticleLine,
-    TeleportTo, TownPortal, Vendor, Viewshed, WantsToApproach, WantsToDropItem, WantsToFlee,
-    WantsToMelee, WantsToPickupItem, WantsToRemoveItem, WantsToUseItem, Wearable,
+    ProvidesIdentification, ProvidesRemoveCurse, Quips, Ranged, Renderable, SingleActivation,
+    Skills, SpawnParticleBurst, SpawnParticleLine, TeleportTo, TownPortal, Vendor, Viewshed,
+    WantsToApproach, WantsToDropItem, WantsToFlee, WantsToMelee, WantsToPickupItem,
+    WantsToRemoveItem, WantsToUseItem, Wearable,
 };
 use crate::components::{SerializationHelper, SerializeMe};
 use crate::map::dungeon::MasterDungeonMap;
@@ -126,7 +127,10 @@ pub fn save_game(ecs: &mut World) {
             ObfuscatedName,
             IdentifiedItem,
             SpawnParticleLine,
-            SpawnParticleBurst
+            SpawnParticleBurst,
+            CursedItem,
+            ProvidesRemoveCurse,
+            ProvidesIdentification
         );
     }
 
@@ -240,7 +244,10 @@ pub fn load_game(ecs: &mut World) {
             ObfuscatedName,
             IdentifiedItem,
             SpawnParticleLine,
-            SpawnParticleBurst
+            SpawnParticleBurst,
+            CursedItem,
+            ProvidesRemoveCurse,
+            ProvidesIdentification
         );
     }
 

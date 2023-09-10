@@ -2,6 +2,7 @@
 
 extern crate core;
 
+use gui::ItemMenuResult;
 use rltk::{GameState, Point, RandomNumberGenerator};
 use specs::prelude::*;
 use specs::saveload::{SimpleMarker, SimpleMarkerAllocator};
@@ -13,10 +14,10 @@ use components::{
     InBackpack, InflictsDamage, Initiative, Item, LightSource, LootTable, MagicItem, MagicMapper,
     MeleePowerBonus, MeleeWeapon, MoveMode, MyTurn, Name, NaturalAttackDefense, ObfuscatedName,
     OtherLevelPosition, ParticleLifetime, Player, Pools, Position, ProvidesFood, ProvidesHealing,
-    Quips, Ranged, Renderable, SerializationHelper, SerializeMe, SingleActivation, Skills,
-    SpawnParticleBurst, SpawnParticleLine, TeleportTo, Vendor, Viewshed, WantsToApproach,
-    WantsToDropItem, WantsToFlee, WantsToMelee, WantsToPickupItem, WantsToRemoveItem,
-    WantsToUseItem, Wearable,
+    ProvidesRemoveCurse, Quips, Ranged, Renderable, SerializationHelper, SerializeMe,
+    SingleActivation, Skills, SpawnParticleBurst, SpawnParticleLine, TeleportTo, Vendor, Viewshed,
+    WantsToApproach, WantsToDropItem, WantsToFlee, WantsToMelee, WantsToPickupItem,
+    WantsToRemoveItem, WantsToUseItem, Wearable,
 };
 use map::Map;
 use map_indexing_system::MapIndexingSystem;
@@ -25,6 +26,7 @@ use visibility_system::VisibilitySystem;
 use RunState::PreRun;
 
 use crate::camera::{render_camera, render_debug_map};
+use crate::components::{CursedItem, ProvidesIdentification};
 use crate::gamelog::GameLog;
 use crate::gui::{draw_ui, show_cheat_mode, show_vendor_menu, CheatMenuResult, VendorResult};
 use crate::inventory_system::{
@@ -444,6 +446,8 @@ impl GameState for State {
                         RunState::TeleportingToOtherLevel { x, y, depth } => {
                             newrunstate = RunState::TeleportingToOtherLevel { x, y, depth }
                         }
+                        RunState::ShowRemoveCurse => newrunstate = RunState::ShowRemoveCurse,
+                        RunState::ShowIdentify => newrunstate = RunState::ShowIdentify,
                         _ => newrunstate = Ticking,
                     }
                 }
@@ -530,6 +534,33 @@ impl GameState for State {
                 ppos.y = y;
                 self.mapgen_next_state = Some(RunState::PreRun);
                 newrunstate = RunState::MapGeneration;
+            }
+            RunState::ShowRemoveCurse => {
+                let result = gui::remove_curse_menu(self, ctx);
+                match result.0 {
+                    ItemMenuResult::Cancel => newrunstate = RunState::AwaitingInput,
+                    ItemMenuResult::NoResponse => {}
+                    ItemMenuResult::Selected => {
+                        let item_entity = result.1.unwrap();
+                        self.ecs.write_storage::<CursedItem>().remove(item_entity);
+                        newrunstate = RunState::Ticking;
+                    }
+                }
+            }
+            RunState::ShowIdentify => {
+                let result = gui::identify_menu(self, ctx);
+                match result.0 {
+                    ItemMenuResult::Cancel => newrunstate = RunState::AwaitingInput,
+                    ItemMenuResult::NoResponse => {}
+                    ItemMenuResult::Selected => {
+                        let item_entity = result.1.unwrap();
+                        if let Some(name) = self.ecs.read_storage::<Name>().get(item_entity) {
+                            let mut dm = self.ecs.fetch_mut::<MasterDungeonMap>();
+                            dm.identified_items.insert(name.name.clone());
+                        }
+                        newrunstate = RunState::Ticking;
+                    }
+                }
             }
         }
         {
@@ -627,6 +658,9 @@ fn main() -> color_eyre::Result<()> {
     gs.ecs.register::<IdentifiedItem>();
     gs.ecs.register::<SpawnParticleLine>();
     gs.ecs.register::<SpawnParticleBurst>();
+    gs.ecs.register::<CursedItem>();
+    gs.ecs.register::<ProvidesRemoveCurse>();
+    gs.ecs.register::<ProvidesIdentification>();
     gs.ecs.insert(SimpleMarkerAllocator::<SerializeMe>::new());
 
     raws::load_raws();

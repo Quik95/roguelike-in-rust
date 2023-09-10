@@ -3,8 +3,8 @@ use specs::{Entity, World, WorldExt};
 
 use crate::components::{
     Confusion, Consumable, Hidden, InflictsDamage, MagicMapper, Name, ProvidesFood,
-    ProvidesHealing, SingleActivation, SpawnParticleBurst, SpawnParticleLine, TeleportTo,
-    TownPortal,
+    ProvidesHealing, ProvidesIdentification, ProvidesRemoveCurse, SingleActivation,
+    SpawnParticleBurst, SpawnParticleLine, TeleportTo, TownPortal,
 };
 use crate::effects::targeting::entity_position;
 use crate::effects::{add_effect, find_item_position, EffectType, Targets};
@@ -66,6 +66,26 @@ fn event_trigger(creator: Option<Entity>, entity: Entity, targets: &Targets, ecs
         let mut runstate = ecs.fetch_mut::<RunState>();
         gamelog.entries.push("The map is revealed to you!".into());
         *runstate = RunState::MagicMapReveal { row: 0 };
+        did_something = true;
+    }
+
+    if ecs
+        .read_storage::<ProvidesRemoveCurse>()
+        .get(entity)
+        .is_some()
+    {
+        let mut runstate = ecs.fetch_mut::<RunState>();
+        *runstate = RunState::ShowRemoveCurse;
+        did_something = true;
+    }
+
+    if ecs
+        .read_storage::<ProvidesIdentification>()
+        .get(entity)
+        .is_some()
+    {
+        let mut runstate = ecs.fetch_mut::<RunState>();
+        *runstate = RunState::ShowIdentify;
         did_something = true;
     }
 

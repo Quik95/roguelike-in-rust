@@ -462,3 +462,12 @@ impl FromStr for SpawnParticleBurst {
         })
     }
 }
+
+#[derive(Component, Debug, Serialize, Deserialize, Clone)]
+pub struct CursedItem {}
+
+#[derive(Component, Debug, Serialize, Deserialize, Clone)]
+pub struct ProvidesRemoveCurse {}
+
+#[derive(Component, Debug, Serialize, Deserialize, Clone)]
+pub struct ProvidesIdentification {}
