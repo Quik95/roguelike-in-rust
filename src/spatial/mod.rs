@@ -34,6 +34,11 @@ pub fn clear() {
     }
 }
 
+pub fn set_blocked(idx: usize, blocked: bool) {
+    let mut lock = SPATIAL_MAP.lock().unwrap();
+    lock.blocked[idx] = (lock.blocked[idx].0, blocked);
+}
+
 pub fn populate_blocked_from_map(map: &Map) {
     let mut lock = SPATIAL_MAP.lock().unwrap();
     for (i, tile) in map.tiles.iter().enumerate() {

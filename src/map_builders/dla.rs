@@ -110,6 +110,7 @@ impl DlaBuilder {
             .filter(|a| **a == TileType::Floor)
             .count();
 
+        let mut i = 0;
         while floor_tile_count < desired_floor_tiles {
             match self.algorithm {
                 DLAAlgorithm::WalkInwards => {
@@ -229,7 +230,10 @@ impl DlaBuilder {
                 .iter()
                 .filter(|a| **a == TileType::Floor)
                 .count();
-            build_data.take_snapshot();
+            if i % 4 == 0 {
+                build_data.take_snapshot();
+            }
+            i += 1;
         }
     }
 }

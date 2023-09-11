@@ -1,4 +1,4 @@
-use std::collections::VecDeque;
+use std::collections::{HashSet, VecDeque};
 use std::sync::Mutex;
 
 use lazy_static::lazy_static;
@@ -81,6 +81,7 @@ pub struct EffectSpawner {
     pub creator: Option<Entity>,
     pub effect_type: EffectType,
     pub targets: Targets,
+    dedupe: HashSet<Entity>,
 }
 
 pub fn add_effect(creator: Option<Entity>, effect_type: EffectType, targets: Targets) {
@@ -88,21 +89,22 @@ pub fn add_effect(creator: Option<Entity>, effect_type: EffectType, targets: Tar
         creator,
         effect_type,
         targets,
+        dedupe: HashSet::new(),
     });
 }
 
 pub fn run_effects_queue(ecs: &mut World) {
     loop {
         let effect = EFFECT_QUEUE.lock().unwrap().pop_front();
-        if let Some(effect) = effect {
-            target_applicator(ecs, &effect);
+        if let Some(mut effect) = effect {
+            target_applicator(ecs, &mut effect);
         } else {
             break;
         }
     }
 }
 
-fn target_applicator(ecs: &mut World, effect: &EffectSpawner) {
+fn target_applicator(ecs: &mut World, effect: &mut EffectSpawner) {
     if let EffectType::ItemUse { item } = effect.effect_type {
         triggers::item_trigger(effect.creator, item, &effect.targets, ecs);
     } else if let EffectType::SpellUse { spell } = effect.effect_type {
@@ -110,7 +112,7 @@ fn target_applicator(ecs: &mut World, effect: &EffectSpawner) {
     } else if let EffectType::TriggerFire { trigger } = effect.effect_type {
         triggers::trigger(effect.creator, trigger, &effect.targets, ecs);
     } else {
-        match &effect.targets {
+        match &effect.targets.clone() {
             Targets::Single { target } => affect_entity(ecs, effect, *target),
             Targets::Tile { tile_idx } => affect_tile(ecs, effect, *tile_idx),
             Targets::Tiles { tiles } => tiles
@@ -120,7 +122,12 @@ fn target_applicator(ecs: &mut World, effect: &EffectSpawner) {
     }
 }
 
-fn affect_entity(ecs: &mut World, effect: &EffectSpawner, target: Entity) {
+fn affect_entity(ecs: &mut World, effect: &mut EffectSpawner, target: Entity) {
+    if effect.dedupe.contains(&target) {
+        return;
+    }
+
+    effect.dedupe.insert(target);
     match &effect.effect_type {
         EffectType::Damage { .. } => damage::inflict_damage(ecs, effect, target),
         EffectType::Bloodstain { .. } => {
@@ -146,7 +153,7 @@ fn affect_entity(ecs: &mut World, effect: &EffectSpawner, target: Entity) {
     }
 }
 
-fn affect_tile(ecs: &mut World, effect: &EffectSpawner, tile_idx: i32) {
+fn affect_tile(ecs: &mut World, effect: &mut EffectSpawner, tile_idx: i32) {
     if tile_effect_hits_entities(&effect.effect_type) {
         let content = crate::spatial::get_tile_content_clone(tile_idx as usize);
         content

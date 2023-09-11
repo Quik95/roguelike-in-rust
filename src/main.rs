@@ -28,7 +28,7 @@ use RunState::PreRun;
 use crate::camera::{render_camera, render_debug_map};
 use crate::components::{
     AttributeBonus, CursedItem, DamageOverTime, Duration, KnownSpells, ProvidesIdentification,
-    ProvidesMana, Slow, SpecialAbilities, SpellTemplate, StatusEffect, TeachesSpell,
+    ProvidesMana, Slow, SpecialAbilities, SpellTemplate, StatusEffect, TeachesSpell, TileSize,
     WantsToCastSpell,
 };
 use crate::gamelog::GameLog;
@@ -111,7 +111,7 @@ impl State {
 
         let mut adjacent = ai::AdjacentAI {};
         adjacent.run_now(&self.ecs);
-
+        //
         let mut visible = ai::VisibleAI {};
         visible.run_now(&self.ecs);
 
@@ -119,14 +119,14 @@ impl State {
         // let mut approach = ai::ApproachAI {};
         // approach.run_now(&self.ecs);
 
-        let mut flee = ai::FleeAI {};
-        flee.run_now(&self.ecs);
+        // let mut flee = ai::FleeAI {};
+        // flee.run_now(&self.ecs);
 
-        let mut chase = ai::ChaseAI {};
-        chase.run_now(&self.ecs);
+        // let mut chase = ai::ChaseAI {};
+        // chase.run_now(&self.ecs);
 
-        let mut defaultmove = ai::DefaultMoveAI {};
-        defaultmove.run_now(&self.ecs);
+        // let mut defaultmove = ai::DefaultMoveAI {};
+        // defaultmove.run_now(&self.ecs);
 
         let mut moving = movement_system::MovementSystem {};
         moving.run_now(&self.ecs);
@@ -414,7 +414,7 @@ impl GameState for State {
                     }
 
                     self.mapgen_timer += ctx.frame_time_ms;
-                    if self.mapgen_timer > 100.0 {
+                    if self.mapgen_timer > 75.0 {
                         self.mapgen_timer = 0.0;
                         self.mapgen_index += 1;
                         if self.mapgen_index >= self.mapgen_history.len() {
@@ -693,6 +693,7 @@ fn main() -> color_eyre::Result<()> {
     gs.ecs.register::<Slow>();
     gs.ecs.register::<DamageOverTime>();
     gs.ecs.register::<SpecialAbilities>();
+    gs.ecs.register::<TileSize>();
     gs.ecs.insert(SimpleMarkerAllocator::<SerializeMe>::new());
 
     raws::load_raws();

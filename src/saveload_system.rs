@@ -19,7 +19,7 @@ use crate::components::{
     ParticleLifetime, Player, Pools, Position, ProvidesFood, ProvidesHealing,
     ProvidesIdentification, ProvidesMana, ProvidesRemoveCurse, Quips, Ranged, Renderable,
     SingleActivation, Skills, Slow, SpawnParticleBurst, SpawnParticleLine, SpecialAbilities,
-    SpellTemplate, StatusEffect, TeachesSpell, TeleportTo, TownPortal, Vendor, Viewshed,
+    SpellTemplate, StatusEffect, TeachesSpell, TeleportTo, TileSize, TownPortal, Vendor, Viewshed,
     WantsToApproach, WantsToCastSpell, WantsToDropItem, WantsToFlee, WantsToMelee,
     WantsToPickupItem, WantsToRemoveItem, WantsToUseItem, Wearable,
 };
@@ -143,7 +143,8 @@ pub fn save_game(ecs: &mut World) {
             TeachesSpell,
             Slow,
             DamageOverTime,
-            SpecialAbilities
+            SpecialAbilities,
+            TileSize
         );
     }
 
@@ -271,7 +272,8 @@ pub fn load_game(ecs: &mut World) {
             TeachesSpell,
             Slow,
             DamageOverTime,
-            SpecialAbilities
+            SpecialAbilities,
+            TileSize
         );
     }
 

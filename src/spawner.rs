@@ -13,7 +13,7 @@ use crate::components::{
 use crate::gamesystem::{attr_bonus, mana_at_level, player_hp_at_level};
 use crate::map::dungeon::MasterDungeonMap;
 use crate::map::{tiletype::TileType, Map};
-use crate::random_table::RandomTable;
+use crate::random_table::MasterTable;
 use crate::raws::rawmaster::{
     get_spawn_table_for_depth, spawn_all_spells, spawn_named_entity, SpawnType, RAWS,
 };
@@ -238,13 +238,15 @@ pub fn spawn_entity(ecs: &mut World, spawn: &(&usize, &String)) {
         return;
     }
 
-    console::log(format!(
-        "WARNING: We don't know how to spawn [{}]!",
-        spawn.1
-    ));
+    if spawn.1 != "None" {
+        console::log(format!(
+            "WARNING: We don't know how to spawn [{}]!",
+            spawn.1
+        ));
+    }
 }
 
-fn room_table(map_depth: i32) -> RandomTable {
+fn room_table(map_depth: i32) -> MasterTable {
     get_spawn_table_for_depth(&RAWS.lock().unwrap(), map_depth)
 }
 

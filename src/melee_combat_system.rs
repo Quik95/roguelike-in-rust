@@ -73,7 +73,7 @@ impl<'a> System<'a> for MeleeCombatSystem {
                         let attack_index = if nat.attacks.len() == 1 {
                             0
                         } else {
-                            rng.roll_dice(1, nat.attacks.len() as i32)
+                            rng.roll_dice(1, nat.attacks.len() as i32) - 1
                         } as usize;
                         weapon_info.hit_bonus = nat.attacks[attack_index].hit_bonus;
                         weapon_info.damage_n_dice = nat.attacks[attack_index].damage_n_dice;

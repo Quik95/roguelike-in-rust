@@ -14,14 +14,14 @@ use crate::components::{
     NaturalAttack, NaturalAttackDefense, ObfuscatedName, Pool, Pools, Position, ProvidesFood,
     ProvidesHealing, ProvidesIdentification, ProvidesMana, ProvidesRemoveCurse, Ranged,
     SerializeMe, SingleActivation, Skill, Skills, Slow, SpawnParticleBurst, SpawnParticleLine,
-    SpecialAbilities, SpecialAbility, SpellTemplate, TeachesSpell, TownPortal, Vendor, Viewshed,
-    WeaponAttribute, Wearable,
+    SpecialAbilities, SpecialAbility, SpellTemplate, TeachesSpell, TileSize, TownPortal, Vendor,
+    Viewshed, WeaponAttribute, Wearable,
 };
 use crate::components::{Equipped, LootTable};
 use crate::components::{Quips, Renderable};
 use crate::gamesystem::{attr_bonus, mana_at_level, npc_hp, DiceRoll};
 use crate::map::dungeon::MasterDungeonMap;
-use crate::random_table::RandomTable;
+use crate::random_table::{MasterTable, RandomTable};
 use crate::raws::faction_structs::Reaction;
 use crate::raws::spawn_table_structs::SpawnTableEntry;
 use crate::raws::Raws;
@@ -31,6 +31,22 @@ lazy_static! {
 }
 
 pub const LBS_TO_KG_RATIO: f32 = 2.205;
+
+pub enum SpawnTableType {
+    Item,
+    Mob,
+    Prop,
+}
+
+pub fn spawn_type_by_name(raws: &RawMaster, key: &str) -> SpawnTableType {
+    if raws.item_index.contains_key(key) {
+        SpawnTableType::Item
+    } else if raws.mob_index.contains_key(key) {
+        SpawnTableType::Mob
+    } else {
+        SpawnTableType::Prop
+    }
+}
 
 #[derive(Eq, PartialEq, Hash, Copy, Clone)]
 pub enum SpawnType {
@@ -373,6 +389,12 @@ pub fn spawn_named_mob(
 
         if let Some(renderable) = &mob_template.renderable {
             eb = eb.with(get_renderable_component(renderable));
+            if renderable.x_size.is_some() || renderable.y_size.is_some() {
+                eb = eb.with(TileSize {
+                    x: renderable.x_size.unwrap_or(1),
+                    y: renderable.y_size.unwrap_or(1),
+                })
+            }
         }
 
         if let Some(quips) = &mob_template.quips {
@@ -686,7 +708,7 @@ pub fn spawn_named_prop(
     None
 }
 
-pub fn get_spawn_table_for_depth(raws: &RawMaster, depth: i32) -> RandomTable {
+pub fn get_spawn_table_for_depth(raws: &RawMaster, depth: i32) -> MasterTable {
     let available_options: Vec<&SpawnTableEntry> = raws
         .raws
         .spawn_table
@@ -694,13 +716,13 @@ pub fn get_spawn_table_for_depth(raws: &RawMaster, depth: i32) -> RandomTable {
         .filter(|a| depth >= a.min_depth && depth <= a.max_depth)
         .collect();
 
-    let mut rt = RandomTable::new();
+    let mut rt = MasterTable::default();
     for e in &available_options {
         let mut weight = e.weight;
         if e.add_map_depth_to_weight.is_some() {
             weight += depth;
         }
-        rt = rt.add(e.name.clone(), weight);
+        rt.add(e.name.clone(), weight, raws);
     }
 
     rt
@@ -727,10 +749,10 @@ pub fn get_item_drop(
     table: &str,
 ) -> Option<String> {
     if raws.loot_index.contains_key(table) {
-        let mut rt = RandomTable::new();
+        let mut rt = RandomTable::default();
         let available_options = &raws.raws.loot_tables[raws.loot_index[table]];
         for item in &available_options.drops {
-            rt = rt.add(item.name.clone(), item.weight);
+            rt.add(item.name.clone(), item.weight);
         }
         return Some(rt.roll(rng));
     }

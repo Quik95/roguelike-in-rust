@@ -1,6 +1,8 @@
 use rltk::{console, RandomNumberGenerator};
 use specs::World;
 
+pub use dwarf_fort::*;
+
 use crate::components::Position;
 use crate::map::Map;
 use crate::map_builders::area_starting_points::{AreaStartingPosition, XStart, YStart};
@@ -49,6 +51,7 @@ mod distant_exit;
 mod dla;
 mod door_placement;
 mod drunkard;
+mod dwarf_fort;
 mod forest;
 mod limestone_cavern;
 mod maze;
@@ -97,6 +100,7 @@ pub fn level_builder(
         3 => limestone_cavern_builder(new_depth, rng, width, height),
         4 => limestone_deep_cavern_builder(new_depth, rng, width, height),
         5 => limestone_transition_builder(new_depth, rng, width, height),
+        6 => dwarf_fort_builder(new_depth, rng, width, height),
         _ => random_builder(new_depth, rng, width, height),
     }
 }
