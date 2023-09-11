@@ -1,10 +1,10 @@
-use rltk::{to_cp437, Point, BLACK, GOLD, GREEN, ORANGE};
+use rltk::{to_cp437, Point, BLACK, BLUE, GOLD, GREEN, ORANGE};
 use specs::saveload::{MarkedBuilder, SimpleMarker};
 use specs::{Builder, Entity, World, WorldExt};
 
 use crate::components::{
-    Attributes, Confusion, Duration, EquipmentChanged, Name, Player, Pools, SerializeMe,
-    StatusEffect,
+    Attributes, Confusion, DamageOverTime, Duration, EquipmentChanged, Name, Player, Pools,
+    SerializeMe, Slow, StatusEffect,
 };
 use crate::effects::targeting::entity_position;
 use crate::effects::{add_effect, EffectSpawner, EffectType, Targets};
@@ -169,5 +169,60 @@ pub fn attribute_effect(ecs: &mut World, effect: &EffectSpawner, target: Entity)
         ecs.write_storage::<EquipmentChanged>()
             .insert(target, EquipmentChanged {})
             .expect("Insert failed");
+    }
+}
+
+pub(crate) fn restore_mana(ecs: &mut World, mana: &EffectSpawner, target: Entity) {
+    let mut pools = ecs.write_storage::<Pools>();
+    if let Some(pool) = pools.get_mut(target) {
+        if let EffectType::Mana { amount } = mana.effect_type {
+            pool.mana.current = i32::min(pool.mana.max, pool.mana.current + amount);
+            add_effect(
+                None,
+                EffectType::Particle {
+                    glyph: to_cp437('‼'),
+                    fg: BLUE.into(),
+                    bg: BLACK.into(),
+                    lifespan: 200.0,
+                },
+                Targets::Single { target },
+            );
+        }
+    }
+}
+
+pub(crate) fn slow(ecs: &mut World, effect: &EffectSpawner, target: Entity) {
+    if let EffectType::Slow { inititive_penalty } = &effect.effect_type {
+        ecs.create_entity()
+            .with(StatusEffect { target })
+            .with(Slow {
+                initiative_penalty: *inititive_penalty,
+            })
+            .with(Duration { turns: 5 })
+            .with(if *inititive_penalty > 0.0 {
+                Name {
+                    name: "Slowed".into(),
+                }
+            } else {
+                Name {
+                    name: "Hasted".into(),
+                }
+            })
+            .marked::<SimpleMarker<SerializeMe>>()
+            .build();
+    }
+}
+
+pub(crate) fn damage_over_time(ecs: &mut World, effect: &EffectSpawner, target: Entity) {
+    if let EffectType::DamageOverTime { damage } = &effect.effect_type {
+        ecs.create_entity()
+            .with(StatusEffect { target })
+            .with(DamageOverTime { damage: *damage })
+            .with(Duration { turns: 5 })
+            .with(Name {
+                name: "Damage Over Time".into(),
+            })
+            .marked::<SimpleMarker<SerializeMe>>()
+            .build();
     }
 }

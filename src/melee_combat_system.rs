@@ -1,5 +1,5 @@
 use rltk::{to_cp437, RandomNumberGenerator, BLACK, BLUE, CYAN};
-use specs::{Entities, Join, ReadStorage, System, WriteExpect, WriteStorage};
+use specs::{Entities, Entity, Join, ReadStorage, System, WriteExpect, WriteStorage};
 
 use crate::components::{
     Attributes, EquipmentSlot, Equipped, HungerClock, HungerState, MeleeWeapon, Name,
@@ -63,10 +63,9 @@ impl<'a> System<'a> for MeleeCombatSystem {
 
                 let mut weapon_info = MeleeWeapon {
                     attribute: WeaponAttribute::Might,
-                    hit_bonus: 0,
                     damage_n_dice: 1,
                     damage_die_type: 4,
-                    damage_bonus: 0,
+                    ..Default::default()
                 };
 
                 if let Some(nat) = natural.get(entity) {
@@ -83,9 +82,13 @@ impl<'a> System<'a> for MeleeCombatSystem {
                     }
                 }
 
-                for (wielded, melee) in (&equipped_items, &meleeweapons).join() {
+                let mut weapon: Option<Entity> = None;
+                for (weapon_entity, wielded, melee) in
+                    (&entities, &equipped_items, &meleeweapons).join()
+                {
                     if wielded.owner == entity && wielded.slot == EquipmentSlot::Melee {
                         weapon_info = melee.clone();
+                        weapon = Some(weapon_entity);
                     }
                 }
 
@@ -154,6 +157,25 @@ impl<'a> System<'a> for MeleeCombatSystem {
                         "{} hits {}, for {damage} hp.",
                         &name.name, &target_name.name
                     ));
+
+                    if let Some(chance) = &weapon_info.proc_chance {
+                        if rng.roll_dice(1, 100) <= (chance * 100.0) as i32 {
+                            let effect_target = if weapon_info.proc_target.unwrap() == "Self" {
+                                Targets::Single { target: entity }
+                            } else {
+                                Targets::Single {
+                                    target: wants_melee.target,
+                                }
+                            };
+                            add_effect(
+                                Some(entity),
+                                EffectType::ItemUse {
+                                    item: weapon.unwrap(),
+                                },
+                                effect_target,
+                            );
+                        }
+                    }
                 } else if natural_roll == 1 {
                     log.entries.push(format!(
                         "{} considers attarcking {}, but misjudges the timing.",

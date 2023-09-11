@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::str::FromStr;
 
 use itertools::Itertools;
-use rltk::{to_cp437, FontCharType, RGB};
+use rltk::{to_cp437, FontCharType, Point, RGB};
 use serde::{Deserialize, Serialize};
 #[allow(deprecated)]
 use specs::error::NoError;
@@ -292,13 +292,21 @@ pub enum WeaponAttribute {
     Quickness,
 }
 
-#[derive(Component, Serialize, Deserialize, Clone)]
+impl Default for WeaponAttribute {
+    fn default() -> Self {
+        Self::Might
+    }
+}
+
+#[derive(Default, Component, Serialize, Deserialize, Clone)]
 pub struct MeleeWeapon {
     pub attribute: WeaponAttribute,
     pub damage_n_dice: i32,
     pub damage_die_type: i32,
     pub damage_bonus: i32,
     pub hit_bonus: i32,
+    pub proc_chance: Option<f32>,
+    pub proc_target: Option<String>,
 }
 
 #[derive(Component, Serialize, Deserialize, Clone)]
@@ -489,4 +497,59 @@ pub struct AttributeBonus {
     pub fitness: Option<i32>,
     pub quickness: Option<i32>,
     pub intelligence: Option<i32>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct KnownSpell {
+    pub display_name: String,
+    pub mana_cost: i32,
+}
+
+#[derive(Component, Debug, Serialize, Deserialize, Clone)]
+pub struct KnownSpells {
+    pub spells: Vec<KnownSpell>,
+}
+
+#[derive(Component, Debug, Serialize, Deserialize, Clone)]
+pub struct SpellTemplate {
+    pub mana_cost: i32,
+}
+
+#[derive(Component, Debug, ConvertSaveload, Clone)]
+pub struct WantsToCastSpell {
+    pub spell: Entity,
+    pub target: Option<Point>,
+}
+
+#[derive(Component, Debug, Serialize, Deserialize, Clone)]
+pub struct ProvidesMana {
+    pub mana_amount: i32,
+}
+
+#[derive(Component, Debug, Serialize, Deserialize, Clone)]
+pub struct TeachesSpell {
+    pub spell: String,
+}
+
+#[derive(Component, Debug, Serialize, Deserialize, Clone)]
+pub struct Slow {
+    pub initiative_penalty: f32,
+}
+
+#[derive(Component, Debug, Serialize, Deserialize, Clone)]
+pub struct DamageOverTime {
+    pub damage: i32,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct SpecialAbility {
+    pub spell: String,
+    pub chance: f32,
+    pub range: f32,
+    pub min_range: f32,
+}
+
+#[derive(Component, Debug, Serialize, Deserialize, Clone)]
+pub struct SpecialAbilities {
+    pub abilities: Vec<SpecialAbility>,
 }

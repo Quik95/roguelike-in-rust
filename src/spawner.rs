@@ -6,20 +6,24 @@ use specs::{Builder, Entity, World, WorldExt};
 
 use crate::components::{
     Attribute, AttributeBonus, Attributes, Duration, EntryTrigger, EquipmentChanged, Faction,
-    HungerClock, HungerState, Initiative, LightSource, Name, OtherLevelPosition, Player, Pool,
-    Pools, Position, Renderable, SerializeMe, SingleActivation, Skill, Skills, StatusEffect,
-    TeleportTo, Viewshed,
+    HungerClock, HungerState, Initiative, KnownSpells, LightSource, Name, OtherLevelPosition,
+    Player, Pool, Pools, Position, Renderable, SerializeMe, SingleActivation, Skill, Skills,
+    StatusEffect, TeleportTo, Viewshed,
 };
 use crate::gamesystem::{attr_bonus, mana_at_level, player_hp_at_level};
 use crate::map::dungeon::MasterDungeonMap;
 use crate::map::{tiletype::TileType, Map};
 use crate::random_table::RandomTable;
-use crate::raws::rawmaster::{get_spawn_table_for_depth, spawn_named_entity, SpawnType, RAWS};
+use crate::raws::rawmaster::{
+    get_spawn_table_for_depth, spawn_all_spells, spawn_named_entity, SpawnType, RAWS,
+};
 use crate::rect::Rect;
 
 const MAX_MONSTERS: i32 = 4;
 
 pub fn player(ecs: &mut World, player_x: i32, player_y: i32) -> Entity {
+    spawn_all_spells(ecs);
+
     let mut skills = Skills {
         skills: HashMap::new(),
     };
@@ -100,6 +104,7 @@ pub fn player(ecs: &mut World, player_x: i32, player_y: i32) -> Entity {
         .with(Faction {
             name: "Player".to_string(),
         })
+        .with(KnownSpells { spells: vec![] })
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
 

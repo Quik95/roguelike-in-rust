@@ -1,13 +1,14 @@
-use rltk::{to_cp437, Point, VirtualKeyCode};
+use rltk::{to_cp437, Point, RandomNumberGenerator, VirtualKeyCode};
 use specs::prelude::*;
 
+use crate::components::{KnownSpells, WantsToCastSpell};
 use crate::gamelog::GameLog;
 use crate::map::tiletype::TileType;
 use crate::player::RunState::{
     NextLevel, PreviousLevel, SaveGame, ShowCheatMenu, ShowDropItem, ShowInventory, ShowRemoveItem,
     Ticking,
 };
-use crate::raws::rawmaster::{faction_reaction, RAWS};
+use crate::raws::rawmaster::{faction_reaction, find_spell_entity, RAWS};
 use crate::raws::Reaction;
 use crate::{gui, spatial};
 
@@ -212,6 +213,24 @@ impl Player {
             }
         }
 
+        if ctx.control && ctx.key.is_some() {
+            let key: Option<i32> = match ctx.key.unwrap() {
+                VirtualKeyCode::Key1 => Some(1),
+                VirtualKeyCode::Key2 => Some(2),
+                VirtualKeyCode::Key3 => Some(3),
+                VirtualKeyCode::Key4 => Some(4),
+                VirtualKeyCode::Key5 => Some(5),
+                VirtualKeyCode::Key6 => Some(6),
+                VirtualKeyCode::Key7 => Some(7),
+                VirtualKeyCode::Key8 => Some(8),
+                VirtualKeyCode::Key9 => Some(9),
+                _ => None,
+            };
+            if let Some(key) = key {
+                return use_spell_hotkey(gs, key - 1);
+            }
+        }
+
         match ctx.key {
             None => return RunState::AwaitingInput,
             Some(key) => match key {
@@ -361,13 +380,57 @@ impl Player {
         }
         if can_heal {
             let mut health_components = ecs.write_storage::<Pools>();
-            let player_hp = health_components.get_mut(*player_entity).unwrap();
-            player_hp.hit_points.current =
-                i32::min(player_hp.hit_points.current + 1, player_hp.hit_points.max);
+            let pools = health_components.get_mut(*player_entity).unwrap();
+            pools.hit_points.current = i32::min(pools.hit_points.current + 1, pools.hit_points.max);
+            let mut rng = ecs.fetch_mut::<RandomNumberGenerator>();
+            if rng.roll_dice(1, 6) == 1 {
+                pools.mana.current = i32::min(pools.mana.current + 1, pools.mana.max);
+            }
         }
 
         Ticking
     }
+}
+
+fn use_spell_hotkey(gs: &State, key: i32) -> RunState {
+    let player_entity = gs.ecs.fetch::<Entity>();
+    let known_spells_storage = gs.ecs.read_storage::<KnownSpells>();
+    let known_spells = &known_spells_storage.get(*player_entity).unwrap().spells;
+
+    if (key as usize) < known_spells.len() {
+        let pools = gs.ecs.read_storage::<Pools>();
+        let player_pools = pools.get(*player_entity).unwrap();
+        if player_pools.mana.current >= known_spells[key as usize].mana_cost {
+            if let Some(spell_entity) =
+                find_spell_entity(&gs.ecs, &known_spells[key as usize].display_name)
+            {
+                if let Some(range) = gs.ecs.read_storage::<Ranged>().get(spell_entity) {
+                    return RunState::ShowTargeting {
+                        range: range.range,
+                        item: spell_entity,
+                    };
+                }
+                let mut intent = gs.ecs.write_storage::<WantsToCastSpell>();
+                intent
+                    .insert(
+                        *player_entity,
+                        WantsToCastSpell {
+                            spell: spell_entity,
+                            target: None,
+                        },
+                    )
+                    .expect("Unable to insert intent");
+                return RunState::Ticking;
+            }
+        } else {
+            let mut gamelog = gs.ecs.fetch_mut::<GameLog>();
+            gamelog
+                .entries
+                .push("You don't have enough mana to cast that!".into());
+        }
+    }
+
+    RunState::Ticking
 }
 
 fn use_consumable_hotkey(gs: &State, key: i32) -> RunState {

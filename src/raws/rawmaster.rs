@@ -4,17 +4,18 @@ use std::sync::Mutex;
 use lazy_static::lazy_static;
 use rltk::{console, to_cp437, RandomNumberGenerator, RGB};
 use specs::saveload::{MarkedBuilder, SimpleMarker};
-use specs::{Builder, Entity, EntityBuilder, World, WorldExt};
+use specs::{Builder, Entities, Entity, EntityBuilder, Join, ReadStorage, World, WorldExt};
 
 use crate::components::{
     AreaOfEffect, Attribute, AttributeBonus, Attributes, BlocksTile, BlocksVisibility, Confusion,
-    Consumable, CursedItem, Door, Duration, EntryTrigger, EquipmentChanged, EquipmentSlot,
-    Equippable, Faction, Hidden, InBackpack, InflictsDamage, Initiative, LightSource, MagicItem,
-    MagicItemClass, MagicMapper, MeleeWeapon, MoveMode, Movement, Name, NaturalAttack,
-    NaturalAttackDefense, ObfuscatedName, Pool, Pools, Position, ProvidesFood, ProvidesHealing,
-    ProvidesIdentification, ProvidesRemoveCurse, Ranged, SerializeMe, SingleActivation, Skill,
-    Skills, SpawnParticleBurst, SpawnParticleLine, TownPortal, Vendor, Viewshed, WeaponAttribute,
-    Wearable,
+    Consumable, CursedItem, DamageOverTime, Door, Duration, EntryTrigger, EquipmentChanged,
+    EquipmentSlot, Equippable, Faction, Hidden, InBackpack, InflictsDamage, Initiative,
+    LightSource, MagicItem, MagicItemClass, MagicMapper, MeleeWeapon, MoveMode, Movement, Name,
+    NaturalAttack, NaturalAttackDefense, ObfuscatedName, Pool, Pools, Position, ProvidesFood,
+    ProvidesHealing, ProvidesIdentification, ProvidesMana, ProvidesRemoveCurse, Ranged,
+    SerializeMe, SingleActivation, Skill, Skills, Slow, SpawnParticleBurst, SpawnParticleLine,
+    SpecialAbilities, SpecialAbility, SpellTemplate, TeachesSpell, TownPortal, Vendor, Viewshed,
+    WeaponAttribute, Wearable,
 };
 use crate::components::{Equipped, LootTable};
 use crate::components::{Quips, Renderable};
@@ -46,6 +47,7 @@ pub struct RawMaster {
     prop_index: HashMap<String, usize>,
     loot_index: HashMap<String, usize>,
     faction_index: HashMap<String, HashMap<String, Reaction>>,
+    spell_index: HashMap<String, usize>,
 }
 
 impl RawMaster {
@@ -113,6 +115,10 @@ impl RawMaster {
 
             self.faction_index.insert(faction.name.clone(), reactions);
         }
+
+        for (i, spell) in self.raws.spells.iter().enumerate() {
+            self.spell_index.insert(spell.name.clone(), i);
+        }
     }
 }
 
@@ -151,6 +157,11 @@ macro_rules! apply_effects {
                 "provides_healing" => {
                     $eb = $eb.with(ProvidesHealing {
                         heal_amount: effect.1.parse::<i32>().unwrap(),
+                    })
+                }
+                "provides_mana" => {
+                    $eb = $eb.with(ProvidesMana {
+                        mana_amount: effect.1.parse::<i32>().unwrap(),
                     })
                 }
                 "ranged" => {
@@ -196,6 +207,21 @@ macro_rules! apply_effects {
                 }
                 "remove_curse" => $eb = $eb.with(ProvidesRemoveCurse {}),
                 "identify" => $eb = $eb.with(ProvidesIdentification {}),
+                "teach_spell" => {
+                    $eb = $eb.with(TeachesSpell {
+                        spell: effect.1.into(),
+                    })
+                }
+                "slow" => {
+                    $eb = $eb.with(Slow {
+                        initiative_penalty: effect.1.parse::<f32>().unwrap(),
+                    })
+                }
+                "damage_over_time" => {
+                    $eb = $eb.with(DamageOverTime {
+                        damage: effect.1.parse::<i32>().unwrap(),
+                    })
+                }
                 _ => console::log(format!(
                     "Warning: consumable effect {} not implemented.",
                     effect_name
@@ -259,6 +285,8 @@ pub fn spawn_named_item(
                 damage_n_dice: roll.n_dice,
                 damage_die_type: roll.die_type,
                 damage_bonus: roll.die_bonus,
+                proc_chance: weapon.proc_chance,
+                proc_target: weapon.proc_target.clone(),
             };
             match weapon.attribute.as_str() {
                 "Quickness" | "quickness" => wpn.attribute = WeaponAttribute::Quickness,
@@ -267,6 +295,9 @@ pub fn spawn_named_item(
                 unknown => unreachable!("Unknown attribute: {unknown}"),
             }
             eb = eb.with(wpn);
+            if let Some(proc_effects) = &weapon.proc_effects {
+                apply_effects!(proc_effects, eb);
+            }
         }
 
         if let Some(wearable) = &item_template.wearable {
@@ -547,6 +578,18 @@ pub fn spawn_named_mob(
 
         eb = eb.with(Initiative { current: 2 });
 
+        if let Some(ability_list) = &mob_template.abilities {
+            let mut a = SpecialAbilities { abilities: vec![] };
+            for ability in ability_list.iter() {
+                a.abilities.push(SpecialAbility {
+                    spell: ability.spell.clone(),
+                    chance: ability.chance,
+                    range: ability.range,
+                    min_range: ability.min_range,
+                });
+            }
+        }
+
         let new_mob = eb.build();
 
         if let Some(wielding) = &mob_template.equipped {
@@ -762,4 +805,58 @@ pub fn get_potion_tag() -> Vec<String> {
     }
 
     result
+}
+
+pub fn spawn_named_spell(raws: &RawMaster, ecs: &mut World, key: &str) -> Option<Entity> {
+    if !raws.spell_index.contains_key(key) {
+        return None;
+    }
+    let spell_template = &raws.raws.spells[raws.spell_index[key]];
+
+    let mut eb = ecs.create_entity().marked::<SimpleMarker<SerializeMe>>();
+    eb = eb.with(SpellTemplate {
+        mana_cost: spell_template.mana_cost,
+    });
+    eb = eb.with(Name {
+        name: spell_template.name.clone(),
+    });
+    apply_effects!(spell_template.effects, eb);
+
+    Some(eb.build())
+}
+
+pub fn spawn_all_spells(ecs: &mut World) {
+    let raws = &super::RAWS.lock().unwrap();
+    for spell in raws.raws.spells.iter() {
+        spawn_named_spell(raws, ecs, &spell.name);
+    }
+}
+
+pub fn find_spell_entity(ecs: &World, name: &str) -> Option<Entity> {
+    let names = ecs.read_storage::<Name>();
+    let spell_templates = ecs.read_storage::<SpellTemplate>();
+    let entities = ecs.entities();
+
+    for (entity, spell_name, _template) in (&entities, &names, &spell_templates).join() {
+        if name == spell_name.name {
+            return Some(entity);
+        }
+    }
+
+    None
+}
+
+pub fn find_spell_entity_by_name(
+    name: &str,
+    names: &ReadStorage<Name>,
+    spell_templates: &ReadStorage<SpellTemplate>,
+    entities: &Entities,
+) -> Option<Entity> {
+    for (entity, sname, _template) in (entities, names, spell_templates).join() {
+        if name == sname.name {
+            return Some(entity);
+        }
+    }
+
+    None
 }

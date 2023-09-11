@@ -27,12 +27,14 @@ use RunState::PreRun;
 
 use crate::camera::{render_camera, render_debug_map};
 use crate::components::{
-    AttributeBonus, CursedItem, Duration, ProvidesIdentification, StatusEffect,
+    AttributeBonus, CursedItem, DamageOverTime, Duration, KnownSpells, ProvidesIdentification,
+    ProvidesMana, Slow, SpecialAbilities, SpellTemplate, StatusEffect, TeachesSpell,
+    WantsToCastSpell,
 };
 use crate::gamelog::GameLog;
 use crate::gui::{draw_ui, show_cheat_mode, show_vendor_menu, CheatMenuResult, VendorResult};
 use crate::inventory_system::{
-    ItemCollectionSystem, ItemDropSystem, ItemRemoveSystem, ItemUseSystem,
+    ItemCollectionSystem, ItemDropSystem, ItemRemoveSystem, ItemUseSystem, SpellUseSystem,
 };
 use crate::lightning_system::LightingSystem;
 use crate::map::dungeon::{
@@ -137,6 +139,9 @@ impl State {
 
         let mut pickup = ItemCollectionSystem {};
         pickup.run_now(&self.ecs);
+
+        let mut spell = SpellUseSystem {};
+        spell.run_now(&self.ecs);
 
         let mut itemequip = inventory_system::ItemEquipOnUse {};
         itemequip.run_now(&self.ecs);
@@ -291,20 +296,34 @@ impl GameState for State {
             ShowTargeting { range, item } => {
                 let result = gui::ranged_target(self, ctx, range);
                 match result.0 {
-                    gui::ItemMenuResult::Cancel => newrunstate = AwaitingInput,
-                    gui::ItemMenuResult::NoResponse => {}
-                    gui::ItemMenuResult::Selected => {
-                        let mut intent = self.ecs.write_storage::<WantsToUseItem>();
-                        intent
-                            .insert(
-                                *self.ecs.fetch::<Entity>(),
-                                WantsToUseItem {
-                                    item,
-                                    target: result.1,
-                                },
-                            )
-                            .expect("Unable to insert intent");
-                        newrunstate = Ticking;
+                    ItemMenuResult::Cancel => newrunstate = AwaitingInput,
+                    ItemMenuResult::NoResponse => {}
+                    ItemMenuResult::Selected => {
+                        if self.ecs.read_storage::<SpellTemplate>().get(item).is_some() {
+                            let mut intent = self.ecs.write_storage::<WantsToCastSpell>();
+                            intent
+                                .insert(
+                                    *self.ecs.fetch::<Entity>(),
+                                    WantsToCastSpell {
+                                        spell: item,
+                                        target: result.1,
+                                    },
+                                )
+                                .expect("Unable to insert intent");
+                            newrunstate = RunState::Ticking;
+                        } else {
+                            let mut intent = self.ecs.write_storage::<WantsToUseItem>();
+                            intent
+                                .insert(
+                                    *self.ecs.fetch::<Entity>(),
+                                    WantsToUseItem {
+                                        item,
+                                        target: result.1,
+                                    },
+                                )
+                                .expect("Unable to insert intent");
+                            newrunstate = Ticking;
+                        }
                     }
                 }
             }
@@ -666,6 +685,14 @@ fn main() -> color_eyre::Result<()> {
     gs.ecs.register::<AttributeBonus>();
     gs.ecs.register::<Duration>();
     gs.ecs.register::<StatusEffect>();
+    gs.ecs.register::<KnownSpells>();
+    gs.ecs.register::<SpellTemplate>();
+    gs.ecs.register::<WantsToCastSpell>();
+    gs.ecs.register::<ProvidesMana>();
+    gs.ecs.register::<TeachesSpell>();
+    gs.ecs.register::<Slow>();
+    gs.ecs.register::<DamageOverTime>();
+    gs.ecs.register::<SpecialAbilities>();
     gs.ecs.insert(SimpleMarkerAllocator::<SerializeMe>::new());
 
     raws::load_raws();

@@ -21,29 +21,35 @@ lazy_static! {
 }
 
 pub enum EffectType {
+    Bloodstain,
+    EntityDeath,
+    WellFed,
     Damage {
         amount: i32,
     },
-    Bloodstain,
-    Particle {
-        glyph: FontCharType,
-        fg: RGB,
-        bg: RGB,
-        lifespan: f32,
-    },
-    EntityDeath,
-    ItemUse {
-        item: Entity,
-    },
-    WellFed,
     Healing {
+        amount: i32,
+    },
+    Mana {
         amount: i32,
     },
     Confusion {
         turns: i32,
     },
+    ItemUse {
+        item: Entity,
+    },
     TriggerFire {
         trigger: Entity,
+    },
+    SpellUse {
+        spell: Entity,
+    },
+    Slow {
+        inititive_penalty: f32,
+    },
+    DamageOverTime {
+        damage: i32,
     },
     TeleportTo {
         x: i32,
@@ -55,6 +61,12 @@ pub enum EffectType {
         bonus: AttributeBonus,
         name: String,
         duration: i32,
+    },
+    Particle {
+        glyph: FontCharType,
+        fg: RGB,
+        bg: RGB,
+        lifespan: f32,
     },
 }
 
@@ -93,6 +105,8 @@ pub fn run_effects_queue(ecs: &mut World) {
 fn target_applicator(ecs: &mut World, effect: &EffectSpawner) {
     if let EffectType::ItemUse { item } = effect.effect_type {
         triggers::item_trigger(effect.creator, item, &effect.targets, ecs);
+    } else if let EffectType::SpellUse { spell } = effect.effect_type {
+        triggers::spell_trigger(effect.creator, spell, &effect.targets, ecs);
     } else if let EffectType::TriggerFire { trigger } = effect.effect_type {
         triggers::trigger(effect.creator, trigger, &effect.targets, ecs);
     } else {
@@ -125,6 +139,9 @@ fn affect_entity(ecs: &mut World, effect: &EffectSpawner, target: Entity) {
         EffectType::Confusion { .. } => damage::add_confusion(ecs, effect, target),
         EffectType::TeleportTo { .. } => movement::apply_teleport(ecs, effect, target),
         EffectType::AttributeEffect { .. } => damage::attribute_effect(ecs, effect, target),
+        EffectType::Mana { .. } => damage::restore_mana(ecs, effect, target),
+        EffectType::Slow { .. } => damage::slow(ecs, effect, target),
+        EffectType::DamageOverTime { .. } => damage::damage_over_time(ecs, effect, target),
         _ => {}
     }
 }
@@ -149,9 +166,12 @@ const fn tile_effect_hits_entities(effect: &EffectType) -> bool {
         effect,
         EffectType::Damage { .. }
             | EffectType::WellFed
+            | EffectType::Mana { .. }
             | EffectType::Healing { .. }
             | EffectType::Confusion { .. }
             | EffectType::TeleportTo { .. }
             | EffectType::AttributeEffect { .. }
+            | EffectType::Slow { .. }
+            | EffectType::DamageOverTime { .. }
     )
 }

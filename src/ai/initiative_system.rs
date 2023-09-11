@@ -2,8 +2,10 @@ use rltk::{DistanceAlg, Point, RandomNumberGenerator};
 use specs::{Entities, Entity, Join, ReadExpect, ReadStorage, System, WriteExpect, WriteStorage};
 
 use crate::components::{
-    Attributes, Duration, EquipmentChanged, Initiative, MyTurn, Pools, Position, StatusEffect,
+    Attributes, DamageOverTime, Duration, EquipmentChanged, Initiative, MyTurn, Pools, Position,
+    StatusEffect,
 };
+use crate::effects::{add_effect, EffectType, Targets};
 use crate::player::RunState;
 
 pub struct InitiativeSystem {}
@@ -23,6 +25,7 @@ impl<'a> System<'a> for InitiativeSystem {
         WriteStorage<'a, Duration>,
         WriteStorage<'a, EquipmentChanged>,
         ReadStorage<'a, StatusEffect>,
+        ReadStorage<'a, DamageOverTime>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
@@ -40,6 +43,7 @@ impl<'a> System<'a> for InitiativeSystem {
             mut durations,
             mut dirty,
             statuses,
+            dots,
         ) = data;
 
         if *runstate != RunState::Ticking {
@@ -83,7 +87,22 @@ impl<'a> System<'a> for InitiativeSystem {
 
         if *runstate == RunState::AwaitingInput {
             for (effect_entity, duration, status) in (&entities, &mut durations, &statuses).join() {
+                if !entities.is_alive(status.target) {
+                    continue;
+                }
+
                 duration.turns -= 1;
+
+                if let Some(dot) = dots.get(effect_entity) {
+                    add_effect(
+                        None,
+                        EffectType::Damage { amount: dot.damage },
+                        Targets::Single {
+                            target: status.target,
+                        },
+                    );
+                }
+
                 if duration.turns < 1 {
                     dirty
                         .insert(status.target, EquipmentChanged {})

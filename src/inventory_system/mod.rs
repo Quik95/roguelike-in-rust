@@ -6,6 +6,7 @@ pub use equip_system::ItemEquipOnUse;
 pub use identification_system::ItemIdentificationSystem;
 pub use item_use_system::ItemUseSystem;
 pub use remove_system::ItemRemoveSystem;
+pub use spell_system::SpellUseSystem;
 
 use crate::components::{MagicItem, Name, ObfuscatedName};
 use crate::map::dungeon::MasterDungeonMap;
@@ -16,6 +17,7 @@ mod equip_system;
 mod identification_system;
 mod item_use_system;
 mod remove_system;
+mod spell_system;
 
 fn obfuscate_name(
     item: Entity,

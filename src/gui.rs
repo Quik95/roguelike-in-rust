@@ -1,12 +1,15 @@
 use lazy_static::lazy_static;
-use rltk::{to_cp437, Point, Rltk, VirtualKeyCode, GOLD, GREEN, MAGENTA, RED, RGB, WHITE, YELLOW};
+use rltk::{
+    to_cp437, Point, Rltk, VirtualKeyCode, CYAN, GOLD, GREEN, MAGENTA, RED, RGB, WHITE, YELLOW,
+};
 use specs::prelude::*;
 
 use crate::camera::get_screen_bounds;
 use crate::components::HungerState::{Normal, WellFed};
 use crate::components::{
     Attribute, Attributes, Consumable, CursedItem, Duration, Equipped, Hidden, HungerClock,
-    HungerState, Item, MagicItem, MagicItemClass, ObfuscatedName, Pools, StatusEffect, Vendor,
+    HungerState, Item, KnownSpells, MagicItem, MagicItemClass, ObfuscatedName, Pools, StatusEffect,
+    Vendor,
 };
 use crate::map::dungeon::MasterDungeonMap;
 use crate::player::VendorMode;
@@ -175,6 +178,24 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
             y += 1;
             index += 1;
         }
+    }
+
+    y += 1;
+    let blue = RGB::named(CYAN);
+    let known_spells_storage = ecs.read_storage::<KnownSpells>();
+    let known_spells = &known_spells_storage.get(*player_entity).unwrap().spells;
+    let mut index = 1;
+    for spell in known_spells.iter() {
+        ctx.print_color(50, y, blue, *BLACK, &format!("^{}", index));
+        ctx.print_color(
+            53,
+            y,
+            blue,
+            *BLACK,
+            &format!("{} ({})", spell.display_name, spell.mana_cost),
+        );
+        index += 1;
+        y += 1;
     }
 
     let mut y = 44;
