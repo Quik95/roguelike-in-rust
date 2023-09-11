@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use crate::astar::a_star_search;
 use specs::{Entities, Join, ReadStorage, System, WriteExpect, WriteStorage};
 
 use crate::components::{ApplyMove, Chasing, MyTurn, Position, TileSize};
@@ -47,15 +48,15 @@ impl<'a> System<'a> for ChaseAI {
             let path = if let Some(size) = sizes.get(entity) {
                 let mut map_copy = map.clone();
                 map_copy.populate_blocked_multi(size.x, size.y);
-                rltk::a_star_search(
-                    map.xy_idx(pos.x, pos.y) as i32,
-                    map.xy_idx(target_pos.0, target_pos.1) as i32,
+                a_star_search(
+                    map.xy_idx(pos.x, pos.y),
+                    map.xy_idx(target_pos.0, target_pos.1),
                     &map_copy,
                 )
             } else {
-                rltk::a_star_search(
-                    map.xy_idx(pos.x, pos.y) as i32,
-                    map.xy_idx(target_pos.0, target_pos.1) as i32,
+                a_star_search(
+                    map.xy_idx(pos.x, pos.y),
+                    map.xy_idx(target_pos.0, target_pos.1),
                     &*map,
                 )
             };

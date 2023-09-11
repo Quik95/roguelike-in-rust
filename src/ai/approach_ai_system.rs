@@ -1,3 +1,4 @@
+use crate::astar::a_star_search;
 use specs::{Entities, Join, ReadStorage, System, WriteExpect, WriteStorage};
 
 use crate::components::{ApplyMove, MyTurn, Position, WantsToApproach};
@@ -23,9 +24,9 @@ impl<'a> System<'a> for ApproachAI {
             (&entities, &positions, &want_approach, &turns).join()
         {
             turn_done.push(entity);
-            let path = rltk::a_star_search(
-                map.xy_idx(pos.x, pos.y) as i32,
-                map.xy_idx(approach.idx % map.width, approach.idx / map.width) as i32,
+            let path = a_star_search(
+                map.xy_idx(pos.x, pos.y),
+                map.xy_idx(approach.idx % map.width, approach.idx / map.width),
                 &*map,
             );
             if path.success && path.steps.len() > 1 {

@@ -1,5 +1,6 @@
 use std::collections::HashSet;
 
+use crate::astar::a_star_search;
 use itertools::Itertools;
 use rltk::{DistanceAlg, Point, RandomNumberGenerator};
 
@@ -275,7 +276,7 @@ impl TownBuilder {
             nearest_roads.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
 
             let destination = nearest_roads[0].0;
-            let path = rltk::a_star_search(*door_idx, destination, &build_data.map);
+            let path = a_star_search(*door_idx, destination, &build_data.map);
             if path.success {
                 for step in &path.steps {
                     let idx = *step;

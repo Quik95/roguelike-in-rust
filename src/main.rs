@@ -50,6 +50,7 @@ use crate::player::VendorMode;
 use crate::raws::rawmaster::{spawn_named_item, SpawnType, RAWS};
 
 mod ai;
+mod astar;
 mod camera;
 mod cave_decorator;
 mod components;
@@ -79,7 +80,7 @@ mod spawner;
 mod trigger_system;
 mod visibility_system;
 
-const SHOW_MAPGEN_VISUALIZER: bool = true;
+const SHOW_MAPGEN_VISUALIZER: bool = false;
 
 pub struct State {
     ecs: World,
@@ -115,18 +116,17 @@ impl State {
         let mut visible = ai::VisibleAI {};
         visible.run_now(&self.ecs);
 
-        // Disabled due to poor performance
-        // let mut approach = ai::ApproachAI {};
-        // approach.run_now(&self.ecs);
+        let mut approach = ai::ApproachAI {};
+        approach.run_now(&self.ecs);
 
-        // let mut flee = ai::FleeAI {};
-        // flee.run_now(&self.ecs);
+        let mut flee = ai::FleeAI {};
+        flee.run_now(&self.ecs);
 
-        // let mut chase = ai::ChaseAI {};
-        // chase.run_now(&self.ecs);
+        let mut chase = ai::ChaseAI {};
+        chase.run_now(&self.ecs);
 
-        // let mut defaultmove = ai::DefaultMoveAI {};
-        // defaultmove.run_now(&self.ecs);
+        let mut defaultmove = ai::DefaultMoveAI {};
+        defaultmove.run_now(&self.ecs);
 
         let mut moving = movement_system::MovementSystem {};
         moving.run_now(&self.ecs);

@@ -1,3 +1,4 @@
+use crate::astar::a_star_search;
 use rltk::{DistanceAlg, Point, RandomNumberGenerator};
 
 use crate::map::tiletype::TileType;
@@ -65,10 +66,10 @@ impl YellowBrickRoad {
         build_data.map.tiles[end_idx] = TileType::DownStairs;
 
         build_data.map.populate_blocked();
-        let path = rltk::a_star_search(start_idx, end_idx, &build_data.map);
-        //if !path.success {
-        //    panic!("No valid path for the road");
-        //}
+        let path = a_star_search(start_idx, end_idx, &build_data.map);
+        if !path.success {
+            panic!("No valid path for the road");
+        }
         for idx in &path.steps {
             let x = *idx as i32 % build_data.map.width;
             let y = *idx as i32 / build_data.map.width;
@@ -98,7 +99,7 @@ impl YellowBrickRoad {
 
         let (stream_x, stream_y) = self.find_exit(build_data, stream_startx, stream_starty);
         let stream_idx = build_data.map.xy_idx(stream_x, stream_y);
-        let stream = rltk::a_star_search(stairs_idx, stream_idx, &build_data.map);
+        let stream = a_star_search(stairs_idx, stream_idx, &build_data.map);
         for tile in &stream.steps {
             if build_data.map.tiles[*tile] == TileType::Floor {
                 build_data.map.tiles[*tile] = TileType::ShallowWater;
