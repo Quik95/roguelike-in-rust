@@ -1,9 +1,9 @@
-use rltk::{to_cp437, RandomNumberGenerator, BLACK, BLUE, CYAN};
+use rltk::{BLACK, BLUE, CYAN, RandomNumberGenerator, to_cp437};
 use specs::{Entities, Entity, Join, ReadStorage, System, WriteExpect, WriteStorage};
 
 use crate::components::{
-    Attributes, EquipmentSlot, Equipped, HungerClock, HungerState, MeleeWeapon, Name,
-    NaturalAttackDefense, Pools, Skill, Skills, WantsToMelee, WeaponAttribute, Wearable,
+    Attributes, EquipmentSlot, Equipped, HungerClock, HungerState, Name, NaturalAttackDefense,
+    Pools, Skill, Skills, WantsToMelee, Weapon, WeaponAttribute, Wearable,
 };
 use crate::effects::{add_effect, EffectType, Targets};
 use crate::gamelog::GameLog;
@@ -23,7 +23,7 @@ impl<'a> System<'a> for MeleeCombatSystem {
         ReadStorage<'a, Pools>,
         WriteExpect<'a, RandomNumberGenerator>,
         ReadStorage<'a, Equipped>,
-        ReadStorage<'a, MeleeWeapon>,
+        ReadStorage<'a, Weapon>,
         ReadStorage<'a, Wearable>,
         ReadStorage<'a, NaturalAttackDefense>,
     );
@@ -61,7 +61,7 @@ impl<'a> System<'a> for MeleeCombatSystem {
             if attacker_pools.hit_points.current > 0 && target_pools.hit_points.current > 0 {
                 let target_name = names.get(wants_melee.target).unwrap();
 
-                let mut weapon_info = MeleeWeapon {
+                let mut weapon_info = Weapon {
                     attribute: WeaponAttribute::Might,
                     damage_n_dice: 1,
                     damage_die_type: 4,

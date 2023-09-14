@@ -2,26 +2,26 @@ use std::fs;
 use std::fs::File;
 use std::path::Path;
 
+use specs::{Builder, Entity, Join, World, WorldExt};
 #[allow(deprecated)]
 use specs::error::NoError;
 use specs::saveload::{
     DeserializeComponents, MarkedBuilder, SerializeComponents, SimpleMarker, SimpleMarkerAllocator,
 };
-use specs::{Builder, Entity, Join, World, WorldExt};
 
 use crate::components::{
     AlwaysTargetsSelf, ApplyMove, ApplyTeleport, AreaOfEffect, AttributeBonus, Attributes,
     BlocksTile, BlocksVisibility, Chasing, Confusion, Consumable, CursedItem,
-    DMSerializationHelper, DamageOverTime, DefenseBonus, Door, Duration, EntityMoved, EntryTrigger,
+    DamageOverTime, DefenseBonus, DMSerializationHelper, Door, Duration, EntityMoved, EntryTrigger,
     EquipmentChanged, Equippable, Faction, Hidden, HungerClock, IdentifiedItem, InBackpack,
     InflictsDamage, Initiative, Item, KnownSpells, LightSource, LootTable, MagicItem, MagicMapper,
-    MeleePowerBonus, MeleeWeapon, MoveMode, MyTurn, Name, NaturalAttackDefense, ObfuscatedName,
-    OnDeath, OtherLevelPosition, ParticleLifetime, Player, Pools, Position, ProvidesFood,
-    ProvidesHealing, ProvidesIdentification, ProvidesMana, ProvidesRemoveCurse, Quips, Ranged,
-    Renderable, SingleActivation, Skills, Slow, SpawnParticleBurst, SpawnParticleLine,
-    SpecialAbilities, SpellTemplate, StatusEffect, TeachesSpell, TeleportTo, TileSize, TownPortal,
-    Vendor, Viewshed, WantsToApproach, WantsToCastSpell, WantsToDropItem, WantsToFlee,
-    WantsToMelee, WantsToPickupItem, WantsToRemoveItem, WantsToUseItem, Wearable,
+    MeleePowerBonus, MoveMode, MyTurn, Name, NaturalAttackDefense, ObfuscatedName, OnDeath,
+    OtherLevelPosition, ParticleLifetime, Player, Pools, Position, ProvidesFood, ProvidesHealing,
+    ProvidesIdentification, ProvidesMana, ProvidesRemoveCurse, Quips, Ranged, Renderable,
+    SingleActivation, Skills, Slow, SpawnParticleBurst, SpawnParticleLine, SpecialAbilities,
+    SpellTemplate, StatusEffect, Target, TeachesSpell, TeleportTo, TileSize, TownPortal, Vendor,
+    Viewshed, WantsToApproach, WantsToCastSpell, WantsToDropItem, WantsToFlee, WantsToMelee,
+    WantsToPickupItem, WantsToRemoveItem, WantsToShoot, WantsToUseItem, Weapon, Wearable,
 };
 use crate::components::{SerializationHelper, SerializeMe};
 use crate::map::dungeon::MasterDungeonMap;
@@ -105,7 +105,6 @@ pub fn save_game(ecs: &mut World) {
             Attributes,
             Skills,
             Pools,
-            MeleeWeapon,
             Wearable,
             NaturalAttackDefense,
             LootTable,
@@ -146,7 +145,10 @@ pub fn save_game(ecs: &mut World) {
             SpecialAbilities,
             TileSize,
             OnDeath,
-            AlwaysTargetsSelf
+            AlwaysTargetsSelf,
+            Weapon,
+            Target,
+            WantsToShoot
         );
     }
 
@@ -236,7 +238,6 @@ pub fn load_game(ecs: &mut World) {
             Attributes,
             Skills,
             Pools,
-            MeleeWeapon,
             Wearable,
             NaturalAttackDefense,
             LootTable,
@@ -277,7 +278,10 @@ pub fn load_game(ecs: &mut World) {
             SpecialAbilities,
             TileSize,
             OnDeath,
-            AlwaysTargetsSelf
+            AlwaysTargetsSelf,
+            Weapon,
+            Target,
+            WantsToShoot
         );
     }
 

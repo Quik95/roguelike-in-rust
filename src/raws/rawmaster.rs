@@ -1,33 +1,32 @@
 use std::collections::{HashMap, HashSet};
-use std::fmt::format;
 use std::sync::Mutex;
 
-use crate::components;
 use lazy_static::lazy_static;
-use rltk::{console, to_cp437, RandomNumberGenerator, RGB};
-use specs::saveload::{MarkedBuilder, SimpleMarker};
+use rltk::{console, RandomNumberGenerator, RGB, to_cp437};
 use specs::{Builder, Entities, Entity, EntityBuilder, Join, ReadStorage, World, WorldExt};
+use specs::saveload::{MarkedBuilder, SimpleMarker};
 
+use crate::components;
 use crate::components::{
     AlwaysTargetsSelf, AreaOfEffect, Attribute, AttributeBonus, Attributes, BlocksTile,
     BlocksVisibility, Confusion, Consumable, CursedItem, DamageOverTime, Door, Duration,
     EntryTrigger, EquipmentChanged, EquipmentSlot, Equippable, Faction, Hidden, InBackpack,
-    InflictsDamage, Initiative, LightSource, MagicItemClass, MagicMapper, MeleeWeapon, MoveMode,
-    Movement, Name, NaturalAttack, NaturalAttackDefense, ObfuscatedName, OnDeath, Pool, Pools,
-    Position, ProvidesFood, ProvidesHealing, ProvidesIdentification, ProvidesMana,
-    ProvidesRemoveCurse, Ranged, SerializeMe, SingleActivation, Skill, Skills, Slow,
-    SpawnParticleBurst, SpawnParticleLine, SpecialAbilities, SpecialAbility, SpellTemplate,
-    TeachesSpell, TileSize, TownPortal, Vendor, Viewshed, WeaponAttribute, Wearable,
+    InflictsDamage, Initiative, LightSource, MagicItemClass, MagicMapper, Movement, MoveMode, Name,
+    NaturalAttack, NaturalAttackDefense, ObfuscatedName, OnDeath, Pool, Pools, Position,
+    ProvidesFood, ProvidesHealing, ProvidesIdentification, ProvidesMana, ProvidesRemoveCurse,
+    Ranged, SerializeMe, SingleActivation, Skill, Skills, Slow, SpawnParticleBurst,
+    SpawnParticleLine, SpecialAbilities, SpecialAbility, SpellTemplate, TeachesSpell, TileSize,
+    TownPortal, Vendor, Viewshed, WeaponAttribute, Wearable,
 };
 use crate::components::{Equipped, LootTable};
 use crate::components::{Quips, Renderable};
-use crate::gamesystem::{attr_bonus, mana_at_level, npc_hp, DiceRoll};
+use crate::gamesystem::{attr_bonus, DiceRoll, mana_at_level, npc_hp};
 use crate::map::dungeon::MasterDungeonMap;
 use crate::random_table::{MasterTable, RandomTable};
 use crate::raws::faction_structs::Reaction;
 use crate::raws::item_structs::MagicItem;
-use crate::raws::spawn_table_structs::SpawnTableEntry;
 use crate::raws::Raws;
+use crate::raws::spawn_table_structs::SpawnTableEntry;
 
 lazy_static! {
     pub static ref RAWS: Mutex<RawMaster> = Mutex::new(RawMaster::default());
@@ -422,7 +421,7 @@ pub fn spawn_named_item(
                 slot: EquipmentSlot::Melee,
             });
             let roll: DiceRoll = weapon.base_damage.parse().unwrap();
-            let mut wpn = MeleeWeapon {
+            let mut wpn = components::Weapon {
                 attribute: WeaponAttribute::Might,
                 hit_bonus: weapon.hit_bonus,
                 damage_n_dice: roll.n_dice,
@@ -430,6 +429,11 @@ pub fn spawn_named_item(
                 damage_bonus: roll.die_bonus,
                 proc_chance: weapon.proc_chance,
                 proc_target: weapon.proc_target.clone(),
+                range: if weapon.range == "melee" {
+                    None
+                } else {
+                    Some(weapon.range.parse().expect("Not a number"))
+                },
             };
             match weapon.attribute.as_str() {
                 "Quickness" | "quickness" => wpn.attribute = WeaponAttribute::Quickness,

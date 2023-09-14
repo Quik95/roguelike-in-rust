@@ -8,10 +8,10 @@ use specs::saveload::{SimpleMarker, SimpleMarkerAllocator};
 
 use components::{
     ApplyMove, ApplyTeleport, AreaOfEffect, Attributes, BlocksTile, BlocksVisibility, Chasing,
-    Confusion, Consumable, DMSerializationHelper, DefenseBonus, Door, EntityMoved, EntryTrigger,
+    Confusion, Consumable, DefenseBonus, DMSerializationHelper, Door, EntityMoved, EntryTrigger,
     EquipmentChanged, Equippable, Equipped, Faction, Hidden, HungerClock, IdentifiedItem,
     InBackpack, InflictsDamage, Initiative, Item, LightSource, LootTable, MagicItem, MagicMapper,
-    MeleePowerBonus, MeleeWeapon, MoveMode, MyTurn, Name, NaturalAttackDefense, ObfuscatedName,
+    MeleePowerBonus, MoveMode, MyTurn, Name, NaturalAttackDefense, ObfuscatedName,
     OtherLevelPosition, ParticleLifetime, Player, Pools, Position, ProvidesFood, ProvidesHealing,
     ProvidesRemoveCurse, Quips, Ranged, Renderable, SerializationHelper, SerializeMe,
     SingleActivation, Skills, SpawnParticleBurst, SpawnParticleLine, TeleportTo, Vendor, Viewshed,
@@ -22,23 +22,23 @@ use gui::ItemMenuResult;
 use map::Map;
 use map_indexing_system::MapIndexingSystem;
 use player::RunState;
-use visibility_system::VisibilitySystem;
 use RunState::PreRun;
+use visibility_system::VisibilitySystem;
 
 use crate::camera::{render_camera, render_debug_map};
 use crate::components::{
     AlwaysTargetsSelf, AttributeBonus, CursedItem, DamageOverTime, Duration, KnownSpells, OnDeath,
     ProvidesIdentification, ProvidesMana, Slow, SpecialAbilities, SpellTemplate, StatusEffect,
-    TeachesSpell, TileSize, WantsToCastSpell,
+    Target, TeachesSpell, TileSize, WantsToCastSpell, WantsToShoot, Weapon,
 };
 use crate::gamelog::GameLog;
-use crate::gui::{draw_ui, show_cheat_mode, show_vendor_menu, CheatMenuResult, VendorResult};
+use crate::gui::{CheatMenuResult, draw_ui, show_cheat_mode, show_vendor_menu, VendorResult};
 use crate::inventory_system::{
     ItemCollectionSystem, ItemDropSystem, ItemRemoveSystem, ItemUseSystem, SpellUseSystem,
 };
 use crate::lightning_system::LightingSystem;
 use crate::map::dungeon::{
-    freeze_level_entities, level_transition, thaw_level_entities, MasterDungeonMap,
+    freeze_level_entities, level_transition, MasterDungeonMap, thaw_level_entities,
 };
 use crate::melee_combat_system::MeleeCombatSystem;
 use crate::player::RunState::{
@@ -47,7 +47,8 @@ use crate::player::RunState::{
     TownPortal,
 };
 use crate::player::VendorMode;
-use crate::raws::rawmaster::{spawn_named_item, SpawnType, RAWS};
+use crate::range_combat_system::RangedCombatSystem;
+use crate::raws::rawmaster::{RAWS, spawn_named_item, SpawnType};
 
 mod ai;
 mod astar;
@@ -71,6 +72,7 @@ mod movement_system;
 mod particle_system;
 mod player;
 mod random_table;
+mod range_combat_system;
 mod raws;
 mod rect;
 mod rex_assets;
@@ -139,6 +141,9 @@ impl State {
 
         let mut pickup = ItemCollectionSystem {};
         pickup.run_now(&self.ecs);
+
+        let mut ranged = RangedCombatSystem {};
+        ranged.run_now(&self.ecs);
 
         let mut spell = SpellUseSystem {};
         spell.run_now(&self.ecs);
@@ -226,7 +231,7 @@ impl GameState for State {
         }
 
         ctx.cls();
-        particle_system::cull_dead_particles(&mut self.ecs, ctx);
+        particle_system::update_particles(&mut self.ecs, ctx);
 
         match newrunstate {
             GameOver { .. } => {}
@@ -457,11 +462,15 @@ impl GameState for State {
                 }
             }
             Ticking => {
+                let mut should_change_target = false;
                 while newrunstate == RunState::Ticking {
                     self.run_systems();
                     self.ecs.maintain();
                     match *self.ecs.fetch::<RunState>() {
-                        AwaitingInput => newrunstate = AwaitingInput,
+                        AwaitingInput => {
+                            newrunstate = RunState::AwaitingInput;
+                            should_change_target = true;
+                        }
                         MagicMapReveal { .. } => newrunstate = MagicMapReveal { row: 0 },
                         TownPortal => newrunstate = RunState::TownPortal,
                         RunState::TeleportingToOtherLevel { x, y, depth } => {
@@ -471,6 +480,9 @@ impl GameState for State {
                         RunState::ShowIdentify => newrunstate = RunState::ShowIdentify,
                         _ => newrunstate = Ticking,
                     }
+                }
+                if should_change_target {
+                    player::end_turn_targeting(&mut self.ecs);
                 }
             }
             RunState::ShowVendor { vendor, mode } => {
@@ -654,7 +666,6 @@ fn main() -> color_eyre::Result<()> {
     gs.ecs.register::<Attributes>();
     gs.ecs.register::<Skills>();
     gs.ecs.register::<Pools>();
-    gs.ecs.register::<MeleeWeapon>();
     gs.ecs.register::<Wearable>();
     gs.ecs.register::<NaturalAttackDefense>();
     gs.ecs.register::<LootTable>();
@@ -696,6 +707,9 @@ fn main() -> color_eyre::Result<()> {
     gs.ecs.register::<TileSize>();
     gs.ecs.register::<OnDeath>();
     gs.ecs.register::<AlwaysTargetsSelf>();
+    gs.ecs.register::<Weapon>();
+    gs.ecs.register::<Target>();
+    gs.ecs.register::<WantsToShoot>();
     gs.ecs.insert(SimpleMarkerAllocator::<SerializeMe>::new());
 
     raws::load_raws();

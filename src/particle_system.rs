@@ -1,17 +1,32 @@
-use rltk::{FontCharType, Rltk, RGB};
+use rltk::{FontCharType, RGB, Rltk};
 use specs::{Entities, Join, System, World, WorldExt, WriteExpect, WriteStorage};
 
 use crate::components::{ParticleLifetime, Position, Renderable};
+use crate::map::Map;
 
-pub fn cull_dead_particles(ecs: &mut World, ctx: &Rltk) {
+pub fn update_particles(ecs: &mut World, ctx: &Rltk) {
     let mut dead_particles = Vec::new();
     {
         let mut particles = ecs.write_storage::<ParticleLifetime>();
         let entities = ecs.entities();
+        let map = ecs.fetch::<Map>();
 
-        for (entity, particles) in (&entities, &mut particles).join() {
-            particles.lifetime_ms -= ctx.frame_time_ms;
-            if particles.lifetime_ms < 0.0 {
+        for (entity, mut particle) in (&entities, &mut particles).join() {
+            if let Some(animation) = &mut particle.animation {
+                animation.timer += ctx.frame_time_ms;
+                if animation.timer > animation.step_time
+                    && animation.current_step < animation.path.len() - 2
+                {
+                    animation.current_step += 1;
+
+                    if let Some(pos) = ecs.write_storage::<Position>().get_mut(entity) {
+                        pos.x = animation.path[animation.current_step].x;
+                        pos.y = animation.path[animation.current_step].y;
+                    }
+                }
+            }
+            particle.lifetime_ms -= ctx.frame_time_ms;
+            if particle.lifetime_ms < 0.0 {
                 dead_particles.push(entity);
             }
         }
@@ -102,6 +117,7 @@ impl<'a> System<'a> for ParticleSpawnSystem {
                     p,
                     ParticleLifetime {
                         lifetime_ms: new_particle.lifetime,
+                        animation: None,
                     },
                 )
                 .expect("Unable to insert");

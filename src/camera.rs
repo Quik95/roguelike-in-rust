@@ -1,8 +1,8 @@
 use itertools::Itertools;
-use rltk::{Point, Rltk, RGB};
+use rltk::{Point, RED, RGB, Rltk, to_cp437, YELLOW};
 use specs::prelude::*;
 
-use crate::components::TileSize;
+use crate::components::{Target, TileSize};
 use crate::map::tile_glyph;
 
 use super::{Hidden, Map, Position, Renderable};
@@ -61,6 +61,7 @@ pub fn render_camera(ecs: &World, ctx: &mut Rltk) {
     let map = ecs.fetch::<Map>();
     let sizes = ecs.read_storage::<TileSize>();
     let entities = ecs.entities();
+    let targets = ecs.read_storage::<Target>();
 
     let data = (&positions, &renderables, &entities, !&hidden)
         .join()
@@ -111,6 +112,24 @@ pub fn render_camera(ecs: &World, ctx: &mut Rltk) {
                     );
                 }
             }
+        }
+        if targets.get(entity).is_some() {
+            let entity_screen_x = pos.x - min_x;
+            let entity_screen_y = pos.y - min_y;
+            ctx.set(
+                entity_screen_x - 1,
+                entity_screen_y,
+                RGB::named(RED),
+                RGB::named(YELLOW),
+                to_cp437('['),
+            );
+            ctx.set(
+                entity_screen_x + 1,
+                entity_screen_y,
+                RGB::named(RED),
+                RGB::named(YELLOW),
+                to_cp437(']'),
+            );
         }
     }
 }

@@ -1,17 +1,17 @@
 use lazy_static::lazy_static;
 use rltk::{
-    to_cp437, Algorithm2D, Point, Rltk, VirtualKeyCode, CYAN, GOLD, GREEN, MAGENTA, RED, RGB,
+    Algorithm2D, CYAN, GOLD, GREEN, MAGENTA, Point, RED, RGB, Rltk, to_cp437, VirtualKeyCode,
     WHITE, YELLOW,
 };
 use specs::prelude::*;
 
 use crate::camera::get_screen_bounds;
-use crate::components::HungerState::{Normal, WellFed};
 use crate::components::{
     Attribute, Attributes, Consumable, CursedItem, Duration, Equipped, Hidden, HungerClock,
     HungerState, Item, KnownSpells, MagicItem, MagicItemClass, ObfuscatedName, Pools, StatusEffect,
-    Vendor,
+    Vendor, Weapon,
 };
+use crate::components::HungerState::{Normal, WellFed};
 use crate::map::dungeon::MasterDungeonMap;
 use crate::player::VendorMode;
 use crate::raws::rawmaster::{get_vendor_items, RAWS};
@@ -147,7 +147,9 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
     let mut y = 13;
     let entities = ecs.entities();
     let equipped = ecs.read_storage::<Equipped>();
+    let weapon = ecs.read_storage::<Weapon>();
     for (entity, equipped_by) in (&entities, &equipped).join() {
+        let name = get_item_display_name(ecs, entity);
         if equipped_by.owner == *player_entity {
             ctx.print_color(
                 50,
@@ -157,6 +159,31 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
                 &get_item_display_name(ecs, entity),
             );
             y += 1;
+
+            if let Some(weapon) = weapon.get(entity) {
+                let mut weapon_info = if weapon.damage_bonus < 0 {
+                    format!(
+                        "┤ {} ({}d{}{})",
+                        &name, weapon.damage_n_dice, weapon.damage_die_type, weapon.damage_bonus
+                    )
+                } else if weapon.damage_bonus == 0 {
+                    format!(
+                        "┤ {} ({}d{})",
+                        &name, weapon.damage_n_dice, weapon.damage_die_type
+                    )
+                } else {
+                    format!(
+                        "┤ {} ({}d{}+{})",
+                        &name, weapon.damage_n_dice, weapon.damage_die_type, weapon.damage_bonus
+                    )
+                };
+
+                if let Some(range) = weapon.range {
+                    weapon_info += &format!(" (range: {}, F to fire, V cycle targets)", range);
+                }
+                weapon_info += " ├";
+                ctx.print_color(3, 45, RGB::named(YELLOW), *BLACK, &weapon_info);
+            }
         }
     }
 

@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
-use rltk::{console, to_cp437, Point, RandomNumberGenerator, BLACK, CYAN, RGB};
-use specs::saveload::{MarkedBuilder, SimpleMarker};
+use rltk::{BLACK, console, CYAN, Point, RandomNumberGenerator, RGB, to_cp437};
 use specs::{Builder, Entity, World, WorldExt};
+use specs::saveload::{MarkedBuilder, SimpleMarker};
 
 use crate::components::{
     Attribute, AttributeBonus, Attributes, Duration, EntryTrigger, EquipmentChanged, Faction,
@@ -11,11 +11,11 @@ use crate::components::{
     StatusEffect, TeleportTo, Viewshed,
 };
 use crate::gamesystem::{attr_bonus, mana_at_level, player_hp_at_level};
+use crate::map::{Map, tiletype::TileType};
 use crate::map::dungeon::MasterDungeonMap;
-use crate::map::{tiletype::TileType, Map};
 use crate::random_table::MasterTable;
 use crate::raws::rawmaster::{
-    get_spawn_table_for_depth, spawn_all_spells, spawn_named_entity, SpawnType, RAWS,
+    get_spawn_table_for_depth, RAWS, spawn_all_spells, spawn_named_entity, SpawnType,
 };
 use crate::rect::Rect;
 
@@ -108,6 +108,21 @@ pub fn player(ecs: &mut World, player_x: i32, player_y: i32) -> Entity {
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
 
+    ecs.create_entity()
+        .with(StatusEffect { target: player })
+        .with(Duration { turns: 10 })
+        .with(Name {
+            name: "Hangover".into(),
+        })
+        .with(AttributeBonus {
+            might: Some(-1),
+            fitness: None,
+            quickness: Some(-1),
+            intelligence: Some(-1),
+        })
+        .marked::<SimpleMarker<SerializeMe>>()
+        .build();
+
     spawn_named_entity(
         &RAWS.lock().unwrap(),
         ecs,
@@ -144,21 +159,12 @@ pub fn player(ecs: &mut World, player_x: i32, player_y: i32) -> Entity {
         "Old Boots",
         SpawnType::Equipped { by: player },
     );
-
-    ecs.create_entity()
-        .with(StatusEffect { target: player })
-        .with(Duration { turns: 10 })
-        .with(Name {
-            name: "Hangover".into(),
-        })
-        .with(AttributeBonus {
-            might: Some(-1),
-            fitness: None,
-            quickness: Some(-1),
-            intelligence: Some(-1),
-        })
-        .marked::<SimpleMarker<SerializeMe>>()
-        .build();
+    spawn_named_entity(
+        &RAWS.lock().unwrap(),
+        ecs,
+        "Shortbow",
+        SpawnType::Carried { by: player },
+    );
 
     player
 }
