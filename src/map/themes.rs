@@ -1,4 +1,5 @@
-use rltk::{to_cp437, FontCharType, BLACK, RGB};
+use color_eyre::owo_colors::CssColors::Black;
+use rltk::{to_cp437, FontCharType, BLACK, BLUE, CHOCOLATE, CYAN, GREEN, RGB};
 
 use crate::map::tiletype::TileType;
 use crate::map::Map;
@@ -15,6 +16,14 @@ pub fn tile_glyph(idx: usize, map: &Map) -> (FontCharType, RGB, RGB) {
                 get_tile_glyph_default(idx, map)
             }
         }
+        7 => {
+            let x = idx as i32 % map.width;
+            if x > map.width - 16 {
+                get_tile_glyph_default(idx, map)
+            } else {
+                get_mushroom_glyph(idx, map)
+            }
+        }
         _ => get_tile_glyph_default(idx, map),
     };
 
@@ -27,6 +36,57 @@ pub fn tile_glyph(idx: usize, map: &Map) -> (FontCharType, RGB, RGB) {
     } else if !map.natural_light {
         fg = fg * map.light[idx];
         bg = bg * map.light[idx];
+    }
+
+    (glyph, fg, bg)
+}
+
+fn get_mushroom_glyph(idx: usize, map: &Map) -> (FontCharType, RGB, RGB) {
+    let glyph;
+    let fg;
+    let bg = BLACK.into();
+
+    match map.tiles[idx] {
+        TileType::Wall => {
+            glyph = to_cp437('♠');
+            fg = RGB::from_f32(1.0, 0.0, 1.0);
+        }
+        TileType::Bridge => {
+            glyph = to_cp437('.');
+            fg = RGB::named(GREEN);
+        }
+        TileType::Road => {
+            glyph = to_cp437('≡');
+            fg = RGB::named(CHOCOLATE);
+        }
+        TileType::Grass => {
+            glyph = to_cp437('"');
+            fg = RGB::named(GREEN);
+        }
+        TileType::ShallowWater => {
+            glyph = to_cp437('~');
+            fg = RGB::named(CYAN);
+        }
+        TileType::DeepWater => {
+            glyph = to_cp437('~');
+            fg = RGB::named(BLUE);
+        }
+        TileType::Gravel => {
+            glyph = to_cp437(';');
+            fg = RGB::from_f32(0.5, 0.5, 0.5);
+        }
+        TileType::DownStairs => {
+            glyph = to_cp437('>');
+            fg = RGB::from_f32(0., 1.0, 1.0);
+        }
+        TileType::UpStairs => {
+            glyph = to_cp437('<');
+            fg = RGB::from_f32(0., 1.0, 1.0);
+        }
+        _ => {
+            glyph = to_cp437('"');
+            fg = RGB::from_f32(0.0, 0.6, 0.0);
+        }
     }
 
     (glyph, fg, bg)

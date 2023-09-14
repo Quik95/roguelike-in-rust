@@ -1,10 +1,14 @@
-use rltk::RandomNumberGenerator;
+use rltk::{Point, RandomNumberGenerator};
 use specs::{Join, World, WorldExt};
 
-use crate::components::{Equipped, InBackpack, LootTable, Name, Player, Pools, Position};
+use crate::components::{
+    AreaOfEffect, Equipped, InBackpack, LootTable, Name, OnDeath, Player, Pools, Position,
+};
+use crate::effects::{add_effect, aoe_tiles, EffectType, Targets};
 use crate::gamelog::GameLog;
+use crate::map::Map;
 use crate::player::RunState;
-use crate::raws::rawmaster::{get_item_drop, spawn_named_item, SpawnType, RAWS};
+use crate::raws::rawmaster::{find_spell_entity, get_item_drop, spawn_named_item, SpawnType, RAWS};
 
 pub fn delete_the_dead(ecs: &mut World) {
     let mut dead = Vec::new();
@@ -91,6 +95,40 @@ pub fn delete_the_dead(ecs: &mut World) {
                     y: drop.1.y,
                 },
             );
+        }
+    }
+
+    for victim in dead.iter() {
+        let death_effects = ecs.read_storage::<OnDeath>();
+        if let Some(death_effect) = death_effects.get(*victim) {
+            let mut rng = ecs.fetch_mut::<RandomNumberGenerator>();
+            for effect in death_effect.abilities.iter() {
+                if rng.roll_dice(1, 100) <= (effect.chance * 100.0) as i32 {
+                    let map = ecs.fetch::<Map>();
+                    if let Some(pos) = ecs.read_storage::<Position>().get(*victim) {
+                        let spell_entity = find_spell_entity(ecs, &effect.spell).unwrap();
+                        let tile_idx = map.xy_idx(pos.x, pos.y);
+                        let target = if let Some(aoe) =
+                            ecs.read_storage::<AreaOfEffect>().get(spell_entity)
+                        {
+                            Targets::Tiles {
+                                tiles: aoe_tiles(&map, Point::new(pos.x, pos.y), aoe.radius),
+                            }
+                        } else {
+                            Targets::Tile {
+                                tile_idx: tile_idx as i32,
+                            }
+                        };
+                        add_effect(
+                            None,
+                            EffectType::SpellUse {
+                                spell: find_spell_entity(ecs, &effect.spell).unwrap(),
+                            },
+                            target,
+                        );
+                    }
+                }
+            }
         }
     }
 

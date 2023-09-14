@@ -10,18 +10,18 @@ use specs::saveload::{
 use specs::{Builder, Entity, Join, World, WorldExt};
 
 use crate::components::{
-    ApplyMove, ApplyTeleport, AreaOfEffect, AttributeBonus, Attributes, BlocksTile,
-    BlocksVisibility, Chasing, Confusion, Consumable, CursedItem, DMSerializationHelper,
-    DamageOverTime, DefenseBonus, Door, Duration, EntityMoved, EntryTrigger, EquipmentChanged,
-    Equippable, Faction, Hidden, HungerClock, IdentifiedItem, InBackpack, InflictsDamage,
-    Initiative, Item, KnownSpells, LightSource, LootTable, MagicItem, MagicMapper, MeleePowerBonus,
-    MeleeWeapon, MoveMode, MyTurn, Name, NaturalAttackDefense, ObfuscatedName, OtherLevelPosition,
-    ParticleLifetime, Player, Pools, Position, ProvidesFood, ProvidesHealing,
-    ProvidesIdentification, ProvidesMana, ProvidesRemoveCurse, Quips, Ranged, Renderable,
-    SingleActivation, Skills, Slow, SpawnParticleBurst, SpawnParticleLine, SpecialAbilities,
-    SpellTemplate, StatusEffect, TeachesSpell, TeleportTo, TileSize, TownPortal, Vendor, Viewshed,
-    WantsToApproach, WantsToCastSpell, WantsToDropItem, WantsToFlee, WantsToMelee,
-    WantsToPickupItem, WantsToRemoveItem, WantsToUseItem, Wearable,
+    AlwaysTargetsSelf, ApplyMove, ApplyTeleport, AreaOfEffect, AttributeBonus, Attributes,
+    BlocksTile, BlocksVisibility, Chasing, Confusion, Consumable, CursedItem,
+    DMSerializationHelper, DamageOverTime, DefenseBonus, Door, Duration, EntityMoved, EntryTrigger,
+    EquipmentChanged, Equippable, Faction, Hidden, HungerClock, IdentifiedItem, InBackpack,
+    InflictsDamage, Initiative, Item, KnownSpells, LightSource, LootTable, MagicItem, MagicMapper,
+    MeleePowerBonus, MeleeWeapon, MoveMode, MyTurn, Name, NaturalAttackDefense, ObfuscatedName,
+    OnDeath, OtherLevelPosition, ParticleLifetime, Player, Pools, Position, ProvidesFood,
+    ProvidesHealing, ProvidesIdentification, ProvidesMana, ProvidesRemoveCurse, Quips, Ranged,
+    Renderable, SingleActivation, Skills, Slow, SpawnParticleBurst, SpawnParticleLine,
+    SpecialAbilities, SpellTemplate, StatusEffect, TeachesSpell, TeleportTo, TileSize, TownPortal,
+    Vendor, Viewshed, WantsToApproach, WantsToCastSpell, WantsToDropItem, WantsToFlee,
+    WantsToMelee, WantsToPickupItem, WantsToRemoveItem, WantsToUseItem, Wearable,
 };
 use crate::components::{SerializationHelper, SerializeMe};
 use crate::map::dungeon::MasterDungeonMap;
@@ -144,7 +144,9 @@ pub fn save_game(ecs: &mut World) {
             Slow,
             DamageOverTime,
             SpecialAbilities,
-            TileSize
+            TileSize,
+            OnDeath,
+            AlwaysTargetsSelf
         );
     }
 
@@ -273,7 +275,9 @@ pub fn load_game(ecs: &mut World) {
             Slow,
             DamageOverTime,
             SpecialAbilities,
-            TileSize
+            TileSize,
+            OnDeath,
+            AlwaysTargetsSelf
         );
     }
 

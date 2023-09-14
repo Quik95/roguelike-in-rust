@@ -7,15 +7,15 @@ use specs::saveload::{MarkedBuilder, SimpleMarker};
 use specs::{Builder, Entities, Entity, EntityBuilder, Join, ReadStorage, World, WorldExt};
 
 use crate::components::{
-    AreaOfEffect, Attribute, AttributeBonus, Attributes, BlocksTile, BlocksVisibility, Confusion,
-    Consumable, CursedItem, DamageOverTime, Door, Duration, EntryTrigger, EquipmentChanged,
-    EquipmentSlot, Equippable, Faction, Hidden, InBackpack, InflictsDamage, Initiative,
-    LightSource, MagicItem, MagicItemClass, MagicMapper, MeleeWeapon, MoveMode, Movement, Name,
-    NaturalAttack, NaturalAttackDefense, ObfuscatedName, Pool, Pools, Position, ProvidesFood,
-    ProvidesHealing, ProvidesIdentification, ProvidesMana, ProvidesRemoveCurse, Ranged,
-    SerializeMe, SingleActivation, Skill, Skills, Slow, SpawnParticleBurst, SpawnParticleLine,
-    SpecialAbilities, SpecialAbility, SpellTemplate, TeachesSpell, TileSize, TownPortal, Vendor,
-    Viewshed, WeaponAttribute, Wearable,
+    AlwaysTargetsSelf, AreaOfEffect, Attribute, AttributeBonus, Attributes, BlocksTile,
+    BlocksVisibility, Confusion, Consumable, CursedItem, DamageOverTime, Door, Duration,
+    EntryTrigger, EquipmentChanged, EquipmentSlot, Equippable, Faction, Hidden, InBackpack,
+    InflictsDamage, Initiative, LightSource, MagicItem, MagicItemClass, MagicMapper, MeleeWeapon,
+    MoveMode, Movement, Name, NaturalAttack, NaturalAttackDefense, ObfuscatedName, OnDeath, Pool,
+    Pools, Position, ProvidesFood, ProvidesHealing, ProvidesIdentification, ProvidesMana,
+    ProvidesRemoveCurse, Ranged, SerializeMe, SingleActivation, Skill, Skills, Slow,
+    SpawnParticleBurst, SpawnParticleLine, SpecialAbilities, SpecialAbility, SpellTemplate,
+    TeachesSpell, TileSize, TownPortal, Vendor, Viewshed, WeaponAttribute, Wearable,
 };
 use crate::components::{Equipped, LootTable};
 use crate::components::{Quips, Renderable};
@@ -238,6 +238,7 @@ macro_rules! apply_effects {
                         damage: effect.1.parse::<i32>().unwrap(),
                     })
                 }
+                "target_self" => $eb = $eb.with(AlwaysTargetsSelf {}),
                 _ => console::log(format!(
                     "Warning: consumable effect {} not implemented.",
                     effect_name
@@ -610,6 +611,19 @@ pub fn spawn_named_mob(
                     min_range: ability.min_range,
                 });
             }
+        }
+
+        if let Some(ability_list) = &mob_template.on_death {
+            let mut a = OnDeath { abilities: vec![] };
+            for ability in ability_list.iter() {
+                a.abilities.push(SpecialAbility {
+                    spell: ability.spell.clone(),
+                    chance: ability.chance,
+                    range: ability.range,
+                    min_range: ability.min_range,
+                });
+            }
+            eb = eb.with(a);
         }
 
         let new_mob = eb.build();
