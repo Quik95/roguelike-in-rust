@@ -120,7 +120,7 @@ impl Player {
                         swap_entities.push((potential_target, pos.x, pos.y));
 
                         pos.x = (pos.x + delta_x).clamp(0, map.width - 1);
-                        pos.x = (pos.y + delta_y).clamp(0, map.height - 1);
+                        pos.y = (pos.y + delta_y).clamp(0, map.height - 1);
                         entity_moved
                             .insert(entity, EntityMoved {})
                             .expect("Unable to insert marker");
