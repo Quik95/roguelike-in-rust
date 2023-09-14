@@ -67,9 +67,7 @@ impl YellowBrickRoad {
 
         build_data.map.populate_blocked();
         let path = a_star_search(start_idx, end_idx, &build_data.map);
-        if !path.success {
-            panic!("No valid path for the road");
-        }
+        assert!(path.success, "No valid path for the road");
         for idx in &path.steps {
             let x = *idx as i32 % build_data.map.width;
             let y = *idx as i32 / build_data.map.width;

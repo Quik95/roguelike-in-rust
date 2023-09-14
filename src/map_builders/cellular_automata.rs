@@ -75,9 +75,9 @@ impl CellularAutomataBuilder {
                 let roll = rng.roll_dice(1, 100);
                 let idx = build_data.map.xy_idx(x, y);
                 if roll > 55 {
-                    build_data.map.tiles[idx] = TileType::Floor
+                    build_data.map.tiles[idx] = TileType::Floor;
                 } else {
-                    build_data.map.tiles[idx] = TileType::Wall
+                    build_data.map.tiles[idx] = TileType::Wall;
                 }
             }
         }

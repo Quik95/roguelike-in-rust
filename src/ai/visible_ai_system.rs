@@ -84,7 +84,7 @@ impl<'a> System<'a> for VisibleAI {
                             ),
                         );
                         if let Some(abilities) = abilities.get(entity) {
-                            for ability in abilities.abilities.iter() {
+                            for ability in &abilities.abilities {
                                 if range >= ability.min_range
                                     && range <= ability.range
                                     && rng.roll_dice(1, 100) >= (ability.chance * 100.0) as i32
@@ -118,10 +118,7 @@ impl<'a> System<'a> for VisibleAI {
                         for (weapon, equip) in (&weapons, &equipped).join() {
                             if let Some(wrange) = weapon.range {
                                 if equip.owner == entity {
-                                    console::log(format!(
-                                        "Owner found. Ranges: {}/{}",
-                                        wrange, range
-                                    ));
+                                    console::log(format!("Owner found. Ranges: {wrange}/{range}"));
                                     if wrange >= range as i32 {
                                         console::log("Inserting shoot");
                                         wants_shoot
@@ -131,6 +128,10 @@ impl<'a> System<'a> for VisibleAI {
                                     }
                                 }
                             }
+                        }
+
+                        if done {
+                            continue;
                         }
 
                         want_approach

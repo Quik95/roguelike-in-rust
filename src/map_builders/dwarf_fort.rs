@@ -43,7 +43,7 @@ pub struct DragonsLair {}
 
 impl MetaMapBuilder for DragonsLair {
     fn build_map(&mut self, rng: &mut RandomNumberGenerator, build_data: &mut BuilderMap) {
-        self.build(rng, build_data)
+        self.build(rng, build_data);
     }
 }
 
@@ -60,7 +60,7 @@ impl DragonsLair {
         builder.start_with(DlaBuilder::insectoid());
         builder.build_map(rng);
 
-        for h in builder.build_data.history.iter() {
+        for h in &builder.build_data.history {
             build_data.history.push(h.clone());
         }
         build_data.take_snapshot();
@@ -107,9 +107,7 @@ impl DragonSpawner {
                 ),
             ));
         }
-        if available_floors.is_empty() {
-            panic!("No valid floors to start on");
-        }
+        assert!(!available_floors.is_empty(), "No valid floors to start on");
 
         available_floors.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
 
@@ -117,7 +115,7 @@ impl DragonSpawner {
         let start_y = available_floors[0].0 as i32 / build_data.map.width;
         let dragon_pt = Point::new(start_x, start_y);
 
-        let w = build_data.map.width as i32;
+        let w = build_data.map.width;
         build_data.spawn_list.retain(|spawn| {
             let spawn_pt = Point::new(spawn.0 as i32 % w, spawn.0 as i32 / w);
             let distance = DistanceAlg::Pythagoras.distance2d(dragon_pt, spawn_pt);

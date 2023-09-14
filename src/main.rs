@@ -8,7 +8,7 @@ use specs::saveload::{SimpleMarker, SimpleMarkerAllocator};
 
 use components::{
     ApplyMove, ApplyTeleport, AreaOfEffect, Attributes, BlocksTile, BlocksVisibility, Chasing,
-    Confusion, Consumable, DefenseBonus, DMSerializationHelper, Door, EntityMoved, EntryTrigger,
+    Confusion, Consumable, DMSerializationHelper, DefenseBonus, Door, EntityMoved, EntryTrigger,
     EquipmentChanged, Equippable, Equipped, Faction, Hidden, HungerClock, IdentifiedItem,
     InBackpack, InflictsDamage, Initiative, Item, LightSource, LootTable, MagicItem, MagicMapper,
     MeleePowerBonus, MoveMode, MyTurn, Name, NaturalAttackDefense, ObfuscatedName,
@@ -22,8 +22,8 @@ use gui::ItemMenuResult;
 use map::Map;
 use map_indexing_system::MapIndexingSystem;
 use player::RunState;
-use RunState::PreRun;
 use visibility_system::VisibilitySystem;
+use RunState::PreRun;
 
 use crate::camera::{render_camera, render_debug_map};
 use crate::components::{
@@ -32,13 +32,13 @@ use crate::components::{
     Target, TeachesSpell, TileSize, WantsToCastSpell, WantsToShoot, Weapon,
 };
 use crate::gamelog::GameLog;
-use crate::gui::{CheatMenuResult, draw_ui, show_cheat_mode, show_vendor_menu, VendorResult};
+use crate::gui::{draw_ui, show_cheat_mode, show_vendor_menu, CheatMenuResult, VendorResult};
 use crate::inventory_system::{
     ItemCollectionSystem, ItemDropSystem, ItemRemoveSystem, ItemUseSystem, SpellUseSystem,
 };
 use crate::lightning_system::LightingSystem;
 use crate::map::dungeon::{
-    freeze_level_entities, level_transition, MasterDungeonMap, thaw_level_entities,
+    freeze_level_entities, level_transition, thaw_level_entities, MasterDungeonMap,
 };
 use crate::melee_combat_system::MeleeCombatSystem;
 use crate::player::RunState::{
@@ -48,7 +48,7 @@ use crate::player::RunState::{
 };
 use crate::player::VendorMode;
 use crate::range_combat_system::RangedCombatSystem;
-use crate::raws::rawmaster::{RAWS, spawn_named_item, SpawnType};
+use crate::raws::rawmaster::{spawn_named_item, SpawnType, RAWS};
 
 mod ai;
 mod astar;
@@ -482,7 +482,7 @@ impl GameState for State {
                     }
                 }
                 if should_change_target {
-                    player::end_turn_targeting(&mut self.ecs);
+                    player::end_turn_targeting(&self.ecs);
                 }
             }
             RunState::ShowVendor { vendor, mode } => {

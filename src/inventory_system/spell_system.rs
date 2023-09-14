@@ -58,7 +58,7 @@ impl<'a> System<'a> for SpellUseSystem {
                     Some(target) => {
                         if let Some(aoe) = aoe.get(useitem.spell) {
                             Targets::Tiles {
-                                tiles: aoe_tiles(&*map, target, aoe.radius),
+                                tiles: aoe_tiles(&map, target, aoe.radius),
                             }
                         } else {
                             Targets::Tile {

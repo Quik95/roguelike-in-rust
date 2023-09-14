@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
-use rltk::{BLACK, console, CYAN, Point, RandomNumberGenerator, RGB, to_cp437};
-use specs::{Builder, Entity, World, WorldExt};
+use rltk::{console, to_cp437, Point, RandomNumberGenerator, BLACK, CYAN, RGB};
 use specs::saveload::{MarkedBuilder, SimpleMarker};
+use specs::{Builder, Entity, World, WorldExt};
 
 use crate::components::{
     Attribute, AttributeBonus, Attributes, Duration, EntryTrigger, EquipmentChanged, Faction,
@@ -11,11 +11,11 @@ use crate::components::{
     StatusEffect, TeleportTo, Viewshed,
 };
 use crate::gamesystem::{attr_bonus, mana_at_level, player_hp_at_level};
-use crate::map::{Map, tiletype::TileType};
 use crate::map::dungeon::MasterDungeonMap;
+use crate::map::{tiletype::TileType, Map};
 use crate::random_table::MasterTable;
 use crate::raws::rawmaster::{
-    get_spawn_table_for_depth, RAWS, spawn_all_spells, spawn_named_entity, SpawnType,
+    get_spawn_table_for_depth, spawn_all_spells, spawn_named_entity, SpawnType, RAWS,
 };
 use crate::rect::Rect;
 

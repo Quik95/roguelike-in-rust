@@ -98,11 +98,11 @@ pub fn delete_the_dead(ecs: &mut World) {
         }
     }
 
-    for victim in dead.iter() {
+    for victim in &dead {
         let death_effects = ecs.read_storage::<OnDeath>();
         if let Some(death_effect) = death_effects.get(*victim) {
             let mut rng = ecs.fetch_mut::<RandomNumberGenerator>();
-            for effect in death_effect.abilities.iter() {
+            for effect in &death_effect.abilities {
                 if rng.roll_dice(1, 100) <= (effect.chance * 100.0) as i32 {
                     let map = ecs.fetch::<Map>();
                     if let Some(pos) = ecs.read_storage::<Position>().get(*victim) {

@@ -9,7 +9,7 @@ use crate::components::{
     TeleportTo, TownPortal,
 };
 use crate::effects::targeting::entity_position;
-use crate::effects::Targets::Single;
+
 use crate::effects::{add_effect, aoe_tiles, find_item_position, EffectType, Targets};
 use crate::gamelog::GameLog;
 use crate::map::Map;
@@ -206,7 +206,7 @@ fn event_trigger(creator: Option<Entity>, entity: Entity, targets: &Targets, ecs
                     let mut already_known = false;
                     known.spells.iter().for_each(|s| {
                         if s.display_name == spell.spell {
-                            already_known = true
+                            already_known = true;
                         }
                     });
                     if !already_known {
@@ -282,12 +282,7 @@ fn spawn_line_particles(ecs: &World, start: i32, end: i32, part: &SpawnParticleL
     }
 }
 
-pub(crate) fn spell_trigger(
-    creator: Option<Entity>,
-    spell: Entity,
-    targets: &Targets,
-    ecs: &mut World,
-) {
+pub fn spell_trigger(creator: Option<Entity>, spell: Entity, targets: &Targets, ecs: &World) {
     let mut self_destruct = false;
     let mut targeting = targets.clone();
     if let Some(template) = ecs.read_storage::<SpellTemplate>().get(spell) {
@@ -320,9 +315,13 @@ pub(crate) fn spell_trigger(
     }
 
     event_trigger(creator, spell, &targeting, ecs);
-    if self_destruct && creator.is_some() {
+    if !self_destruct {
+        return;
+    }
+
+    if let Some(creator) = creator {
         ecs.entities()
-            .delete(creator.unwrap())
+            .delete(creator)
             .expect("Unable to delete owner");
     }
 }

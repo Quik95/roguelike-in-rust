@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::str::FromStr;
 
 use itertools::Itertools;
-use rltk::{FontCharType, Point, RGB, to_cp437};
+use rltk::{to_cp437, FontCharType, Point, RGB};
 use serde::{Deserialize, Serialize};
 #[allow(deprecated)]
 use specs::error::NoError;

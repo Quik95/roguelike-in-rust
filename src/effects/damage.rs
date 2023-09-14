@@ -77,7 +77,7 @@ pub fn death(ecs: &World, effect: &EffectSpawner, target: Entity) {
             if xp_gain != 0 || gold_gain != 0.0 {
                 let mut log = ecs.fetch_mut::<GameLog>();
                 let player_stats = pools.get_mut(source).unwrap();
-                let mut player_attributes = attributes.get_mut(source).unwrap();
+                let player_attributes = attributes.get_mut(source).unwrap();
                 player_stats.xp += xp_gain;
                 player_stats.gold += gold_gain;
                 if player_stats.xp >= player_stats.level * 1000 {
@@ -112,7 +112,7 @@ pub fn death(ecs: &World, effect: &EffectSpawner, target: Entity) {
 
                     let mut skills = ecs.write_storage::<Skills>();
                     let player_skills = skills.get_mut(*ecs.fetch::<Entity>()).unwrap();
-                    for sk in player_skills.skills.iter_mut() {
+                    for sk in &mut player_skills.skills {
                         *sk.1 += 1;
                     }
 
@@ -211,7 +211,7 @@ pub fn attribute_effect(ecs: &mut World, effect: &EffectSpawner, target: Entity)
     }
 }
 
-pub(crate) fn restore_mana(ecs: &mut World, mana: &EffectSpawner, target: Entity) {
+pub fn restore_mana(ecs: &World, mana: &EffectSpawner, target: Entity) {
     let mut pools = ecs.write_storage::<Pools>();
     if let Some(pool) = pools.get_mut(target) {
         if let EffectType::Mana { amount } = mana.effect_type {
@@ -230,7 +230,7 @@ pub(crate) fn restore_mana(ecs: &mut World, mana: &EffectSpawner, target: Entity
     }
 }
 
-pub(crate) fn slow(ecs: &mut World, effect: &EffectSpawner, target: Entity) {
+pub fn slow(ecs: &mut World, effect: &EffectSpawner, target: Entity) {
     if let EffectType::Slow { inititive_penalty } = &effect.effect_type {
         ecs.create_entity()
             .with(StatusEffect { target })
@@ -252,7 +252,7 @@ pub(crate) fn slow(ecs: &mut World, effect: &EffectSpawner, target: Entity) {
     }
 }
 
-pub(crate) fn damage_over_time(ecs: &mut World, effect: &EffectSpawner, target: Entity) {
+pub fn damage_over_time(ecs: &mut World, effect: &EffectSpawner, target: Entity) {
     if let EffectType::DamageOverTime { damage } = &effect.effect_type {
         ecs.create_entity()
             .with(StatusEffect { target })

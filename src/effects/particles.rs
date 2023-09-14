@@ -31,7 +31,7 @@ pub fn projectile(ecs: &mut World, tile_idx: i32, effect: &&mut EffectSpawner) {
         glyph,
         fg,
         bg,
-        lifespan,
+        lifespan: _,
         speed,
         path,
     } = &effect.effect_type
@@ -53,7 +53,7 @@ pub fn projectile(ecs: &mut World, tile_idx: i32, effect: &&mut EffectSpawner) {
                 lifetime_ms: path.len() as f32 * speed,
                 animation: Some(ParticleAnimation {
                     step_time: *speed,
-                    path: path.to_vec(),
+                    path: path.clone(),
                     current_step: 0,
                     timer: 0.0,
                 }),

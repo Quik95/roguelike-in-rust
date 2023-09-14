@@ -1,5 +1,5 @@
 use itertools::Itertools;
-use rltk::{Point, RED, RGB, Rltk, to_cp437, YELLOW};
+use rltk::{to_cp437, Point, Rltk, RED, RGB, YELLOW};
 use specs::prelude::*;
 
 use crate::components::{Target, TileSize};

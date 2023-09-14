@@ -1,7 +1,6 @@
-use rltk::{DistanceAlg, Point, RandomNumberGenerator, to_cp437, VirtualKeyCode};
+use rltk::{to_cp437, DistanceAlg, Point, RandomNumberGenerator, VirtualKeyCode};
 use specs::prelude::*;
 
-use crate::{gui, spatial};
 use crate::components::{
     Equipped, KnownSpells, Name, Target, WantsToCastSpell, WantsToShoot, Weapon,
 };
@@ -13,6 +12,7 @@ use crate::player::RunState::{
 };
 use crate::raws::rawmaster::{faction_reaction, find_spell_entity, RAWS};
 use crate::raws::Reaction;
+use crate::{gui, spatial};
 
 use super::components::{
     Attributes, BlocksTile, BlocksVisibility, Consumable, Door, EntityMoved, Faction, HungerClock,
@@ -195,7 +195,7 @@ impl Player {
         result
     }
 
-    pub fn player_input(gs: &mut State, ctx: &mut rltk::Rltk) -> RunState {
+    pub fn player_input(gs: &State, ctx: &mut rltk::Rltk) -> RunState {
         // TODO: fix this
         if ctx.shift && ctx.key.is_some() {
             let key: Option<i32> = match ctx.key.unwrap() {
@@ -278,9 +278,9 @@ impl Player {
                 }
                 VirtualKeyCode::Numpad5 | VirtualKeyCode::Space => return Self::skip_turn(&gs.ecs),
                 VirtualKeyCode::R => return ShowRemoveItem,
-                VirtualKeyCode::F => return fire_on_target(&mut gs.ecs),
+                VirtualKeyCode::F => return fire_on_target(&gs.ecs),
                 VirtualKeyCode::V => {
-                    cycle_target(&mut gs.ecs);
+                    cycle_target(&gs.ecs);
                     return RunState::AwaitingInput;
                 }
                 VirtualKeyCode::Q => ctx.quit(),
@@ -479,7 +479,7 @@ fn use_consumable_hotkey(gs: &State, key: i32) -> RunState {
     Ticking
 }
 
-fn get_player_target_list(ecs: &mut World) -> Vec<(f32, Entity)> {
+fn get_player_target_list(ecs: &World) -> Vec<(f32, Entity)> {
     let mut possible_targets = vec![];
     let viewsheds = ecs.read_storage::<Viewshed>();
     let player_entity = ecs.fetch::<Entity>();
@@ -497,7 +497,7 @@ fn get_player_target_list(ecs: &mut World) -> Vec<(f32, Entity)> {
 
         if let Some(vs) = viewsheds.get(*player_entity) {
             let player_pos = positions.get(*player_entity).unwrap();
-            for tile_point in vs.visible_tiles.iter() {
+            for tile_point in &vs.visible_tiles {
                 let tile_idx = map.xy_idx(tile_point.x, tile_point.y);
                 let distance_to_target = DistanceAlg::Pythagoras
                     .distance2d(*tile_point, Point::new(player_pos.x, player_pos.y));
@@ -518,7 +518,7 @@ fn get_player_target_list(ecs: &mut World) -> Vec<(f32, Entity)> {
     possible_targets
 }
 
-pub fn end_turn_targeting(ecs: &mut World) {
+pub fn end_turn_targeting(ecs: &World) {
     let possible_targets = get_player_target_list(ecs);
     let mut targets = ecs.write_storage::<Target>();
     targets.clear();
@@ -530,7 +530,7 @@ pub fn end_turn_targeting(ecs: &mut World) {
     }
 }
 
-fn cycle_target(ecs: &mut World) {
+fn cycle_target(ecs: &World) {
     let possible_targets = get_player_target_list(ecs);
     let mut targets = ecs.write_storage::<Target>();
     let entities = ecs.entities();
@@ -565,7 +565,7 @@ fn cycle_target(ecs: &mut World) {
     }
 }
 
-fn fire_on_target(ecs: &mut World) -> RunState {
+fn fire_on_target(ecs: &World) -> RunState {
     let targets = ecs.write_storage::<Target>();
     let entities = ecs.entities();
     let mut current_target: Option<Entity> = None;

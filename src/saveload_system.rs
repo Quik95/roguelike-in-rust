@@ -2,17 +2,17 @@ use std::fs;
 use std::fs::File;
 use std::path::Path;
 
-use specs::{Builder, Entity, Join, World, WorldExt};
 #[allow(deprecated)]
 use specs::error::NoError;
 use specs::saveload::{
     DeserializeComponents, MarkedBuilder, SerializeComponents, SimpleMarker, SimpleMarkerAllocator,
 };
+use specs::{Builder, Entity, Join, World, WorldExt};
 
 use crate::components::{
     AlwaysTargetsSelf, ApplyMove, ApplyTeleport, AreaOfEffect, AttributeBonus, Attributes,
     BlocksTile, BlocksVisibility, Chasing, Confusion, Consumable, CursedItem,
-    DamageOverTime, DefenseBonus, DMSerializationHelper, Door, Duration, EntityMoved, EntryTrigger,
+    DMSerializationHelper, DamageOverTime, DefenseBonus, Door, Duration, EntityMoved, EntryTrigger,
     EquipmentChanged, Equippable, Faction, Hidden, HungerClock, IdentifiedItem, InBackpack,
     InflictsDamage, Initiative, Item, KnownSpells, LightSource, LootTable, MagicItem, MagicMapper,
     MeleePowerBonus, MoveMode, MyTurn, Name, NaturalAttackDefense, ObfuscatedName, OnDeath,

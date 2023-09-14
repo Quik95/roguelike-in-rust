@@ -1,6 +1,5 @@
 use itertools::Itertools;
 use rltk::{BaseMap, NavigationPath};
-use std::time::Instant;
 
 pub fn a_star_search(start: usize, end: usize, map: &dyn BaseMap) -> NavigationPath {
     let res = pathfinding::directed::astar::astar(

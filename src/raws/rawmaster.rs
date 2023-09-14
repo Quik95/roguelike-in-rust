@@ -1,17 +1,18 @@
+use std::cmp::Ordering;
 use std::collections::{HashMap, HashSet};
 use std::sync::Mutex;
 
 use lazy_static::lazy_static;
-use rltk::{console, RandomNumberGenerator, RGB, to_cp437};
-use specs::{Builder, Entities, Entity, EntityBuilder, Join, ReadStorage, World, WorldExt};
+use rltk::{console, to_cp437, RandomNumberGenerator, RGB};
 use specs::saveload::{MarkedBuilder, SimpleMarker};
+use specs::{Builder, Entities, Entity, EntityBuilder, Join, ReadStorage, World, WorldExt};
 
 use crate::components;
 use crate::components::{
     AlwaysTargetsSelf, AreaOfEffect, Attribute, AttributeBonus, Attributes, BlocksTile,
     BlocksVisibility, Confusion, Consumable, CursedItem, DamageOverTime, Door, Duration,
     EntryTrigger, EquipmentChanged, EquipmentSlot, Equippable, Faction, Hidden, InBackpack,
-    InflictsDamage, Initiative, LightSource, MagicItemClass, MagicMapper, Movement, MoveMode, Name,
+    InflictsDamage, Initiative, LightSource, MagicItemClass, MagicMapper, MoveMode, Movement, Name,
     NaturalAttack, NaturalAttackDefense, ObfuscatedName, OnDeath, Pool, Pools, Position,
     ProvidesFood, ProvidesHealing, ProvidesIdentification, ProvidesMana, ProvidesRemoveCurse,
     Ranged, SerializeMe, SingleActivation, Skill, Skills, Slow, SpawnParticleBurst,
@@ -20,13 +21,13 @@ use crate::components::{
 };
 use crate::components::{Equipped, LootTable};
 use crate::components::{Quips, Renderable};
-use crate::gamesystem::{attr_bonus, DiceRoll, mana_at_level, npc_hp};
+use crate::gamesystem::{attr_bonus, mana_at_level, npc_hp, DiceRoll};
 use crate::map::dungeon::MasterDungeonMap;
 use crate::random_table::{MasterTable, RandomTable};
 use crate::raws::faction_structs::Reaction;
 use crate::raws::item_structs::MagicItem;
-use crate::raws::Raws;
 use crate::raws::spawn_table_structs::SpawnTableEntry;
+use crate::raws::Raws;
 
 lazy_static! {
     pub static ref RAWS: Mutex<RawMaster> = Mutex::new(RawMaster::default());
@@ -188,23 +189,24 @@ impl RawMaster {
             *base_value += (nmw.bonus as f32 + 1.0) * 50.0;
         }
 
-        if let Some(mut weapon) = base_item_copy.weapon.as_mut() {
+        if let Some(weapon) = base_item_copy.weapon.as_mut() {
             weapon.hit_bonus += nmw.bonus;
             let die_roll: DiceRoll = weapon.base_damage.parse().unwrap();
             let final_bonus = die_roll.die_bonus + nmw.bonus;
-            if final_bonus > 0 {
-                weapon.base_damage =
-                    format!("{}d{}+{final_bonus}", die_roll.n_dice, die_roll.die_type);
-            } else if final_bonus < 0 {
-                weapon.base_damage = format!(
+            weapon.base_damage = match final_bonus.cmp(&0) {
+                Ordering::Less => format!(
                     "{}d{}-{}",
                     die_roll.n_dice,
                     die_roll.die_type,
                     i32::abs(final_bonus)
-                );
-            }
+                ),
+                Ordering::Equal => String::new(),
+                Ordering::Greater => {
+                    format!("{}d{}+{final_bonus}", die_roll.n_dice, die_roll.die_type)
+                }
+            };
         }
-        if let Some(mut armor) = base_item_copy.wearable.as_mut() {
+        if let Some(armor) = base_item_copy.wearable.as_mut() {
             armor.armor_class += nmw.bonus as f32;
         }
 
@@ -212,8 +214,8 @@ impl RawMaster {
     }
 
     fn build_magic_weapon_or_armor(&mut self, items_to_build: &[NewMagicItem]) {
-        for nmw in items_to_build.iter() {
-            let base_item_copy = self.build_base_magic_item(&nmw);
+        for nmw in items_to_build {
+            let base_item_copy = self.build_base_magic_item(nmw);
 
             let real_name = base_item_copy.name.clone();
             self.raws.items.push(base_item_copy);
@@ -235,9 +237,9 @@ impl RawMaster {
             .iter()
             .filter(|i| i.bonus > 0)
             .for_each(|nmw| {
-                for wt in self.raws.weapon_traits.iter() {
-                    let mut base_item_copy = self.build_base_magic_item(&nmw);
-                    if let Some(mut weapon) = base_item_copy.weapon.as_mut() {
+                for wt in &self.raws.weapon_traits {
+                    let mut base_item_copy = self.build_base_magic_item(nmw);
+                    if let Some(weapon) = base_item_copy.weapon.as_mut() {
                         base_item_copy.name = format!("{} {}", wt.name, base_item_copy.name);
                         if let Some(base_value) = base_item_copy.base_value.as_mut() {
                             *base_value *= 2.0;
@@ -524,7 +526,7 @@ pub fn spawn_named_mob(
                 eb = eb.with(TileSize {
                     x: renderable.x_size.unwrap_or(1),
                     y: renderable.y_size.unwrap_or(1),
-                })
+                });
             }
         }
 
@@ -733,7 +735,7 @@ pub fn spawn_named_mob(
 
         if let Some(ability_list) = &mob_template.abilities {
             let mut a = SpecialAbilities { abilities: vec![] };
-            for ability in ability_list.iter() {
+            for ability in ability_list {
                 a.abilities.push(SpecialAbility {
                     spell: ability.spell.clone(),
                     chance: ability.chance,
@@ -745,7 +747,7 @@ pub fn spawn_named_mob(
 
         if let Some(ability_list) = &mob_template.on_death {
             let mut a = OnDeath { abilities: vec![] };
-            for ability in ability_list.iter() {
+            for ability in ability_list {
                 a.abilities.push(SpecialAbility {
                     spell: ability.spell.clone(),
                     chance: ability.chance,
@@ -993,7 +995,7 @@ pub fn spawn_named_spell(raws: &RawMaster, ecs: &mut World, key: &str) -> Option
 
 pub fn spawn_all_spells(ecs: &mut World) {
     let raws = &super::RAWS.lock().unwrap();
-    for spell in raws.raws.spells.iter() {
+    for spell in &raws.raws.spells {
         spawn_named_spell(raws, ecs, &spell.name);
     }
 }

@@ -1,4 +1,3 @@
-use color_eyre::owo_colors::CssColors::Black;
 use rltk::{to_cp437, FontCharType, BLACK, BLUE, CHOCOLATE, CYAN, GREEN, RGB};
 
 use crate::map::tiletype::TileType;

@@ -1,4 +1,4 @@
-use rltk::{BLACK, BLUE, CYAN, RandomNumberGenerator, to_cp437};
+use rltk::{to_cp437, RandomNumberGenerator, BLACK, BLUE, CYAN};
 use specs::{Entities, Entity, Join, ReadStorage, System, WriteExpect, WriteStorage};
 
 use crate::components::{

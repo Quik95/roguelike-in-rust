@@ -1,4 +1,4 @@
-use rltk::{FontCharType, RGB, Rltk};
+use rltk::{FontCharType, Rltk, RGB};
 use specs::{Entities, Join, System, World, WorldExt, WriteExpect, WriteStorage};
 
 use crate::components::{ParticleLifetime, Position, Renderable};
@@ -9,9 +9,8 @@ pub fn update_particles(ecs: &mut World, ctx: &Rltk) {
     {
         let mut particles = ecs.write_storage::<ParticleLifetime>();
         let entities = ecs.entities();
-        let map = ecs.fetch::<Map>();
 
-        for (entity, mut particle) in (&entities, &mut particles).join() {
+        for (entity, particle) in (&entities, &mut particles).join() {
             if let Some(animation) = &mut particle.animation {
                 animation.timer += ctx.frame_time_ms;
                 if animation.timer > animation.step_time
