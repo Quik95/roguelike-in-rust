@@ -36,5 +36,13 @@ pub const ORC_CAMP: PrefabSection = PrefabSection {
     placement: (HorizontalPlacement::Center, VerticalPlacement::Center),
 };
 
+pub const DROW_ENTRY: PrefabSection = PrefabSection {
+    template: DROW_ENTRY_TEXT,
+    width: 12,
+    height: 10,
+    placement: (HorizontalPlacement::Center, VerticalPlacement::Center),
+};
+
 const RIGHT_FORT: &str = include_str!("./underground_fort.txt");
 const ORC_CAMP_TEXT: &str = include_str!("./orc_camp.txt");
+const DROW_ENTRY_TEXT: &str = include_str!("./drow_entry.txt");

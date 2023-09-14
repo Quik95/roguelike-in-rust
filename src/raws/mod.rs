@@ -13,6 +13,8 @@ use crate::raws::rawmaster::RAWS;
 use crate::raws::spawn_table_structs::SpawnTableEntry;
 use crate::raws::spell_structs::Spell;
 
+pub use weapon_traits::*;
+
 mod faction_structs;
 mod item_structs;
 mod loot_structs;
@@ -21,6 +23,7 @@ mod prop_structs;
 pub mod rawmaster;
 mod spawn_table_structs;
 mod spell_structs;
+mod weapon_traits;
 
 rltk::embedded_resource!(RAW_FILE, "../../raws/spawns.json");
 
@@ -46,4 +49,5 @@ pub struct Raws {
     pub loot_tables: Vec<LootTable>,
     pub faction_table: Vec<FactionInfo>,
     pub spells: Vec<Spell>,
+    pub weapon_traits: Vec<WeaponTrait>,
 }

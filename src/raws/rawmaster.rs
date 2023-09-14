@@ -1,6 +1,8 @@
 use std::collections::{HashMap, HashSet};
+use std::fmt::format;
 use std::sync::Mutex;
 
+use crate::components;
 use lazy_static::lazy_static;
 use rltk::{console, to_cp437, RandomNumberGenerator, RGB};
 use specs::saveload::{MarkedBuilder, SimpleMarker};
@@ -10,9 +12,9 @@ use crate::components::{
     AlwaysTargetsSelf, AreaOfEffect, Attribute, AttributeBonus, Attributes, BlocksTile,
     BlocksVisibility, Confusion, Consumable, CursedItem, DamageOverTime, Door, Duration,
     EntryTrigger, EquipmentChanged, EquipmentSlot, Equippable, Faction, Hidden, InBackpack,
-    InflictsDamage, Initiative, LightSource, MagicItem, MagicItemClass, MagicMapper, MeleeWeapon,
-    MoveMode, Movement, Name, NaturalAttack, NaturalAttackDefense, ObfuscatedName, OnDeath, Pool,
-    Pools, Position, ProvidesFood, ProvidesHealing, ProvidesIdentification, ProvidesMana,
+    InflictsDamage, Initiative, LightSource, MagicItemClass, MagicMapper, MeleeWeapon, MoveMode,
+    Movement, Name, NaturalAttack, NaturalAttackDefense, ObfuscatedName, OnDeath, Pool, Pools,
+    Position, ProvidesFood, ProvidesHealing, ProvidesIdentification, ProvidesMana,
     ProvidesRemoveCurse, Ranged, SerializeMe, SingleActivation, Skill, Skills, Slow,
     SpawnParticleBurst, SpawnParticleLine, SpecialAbilities, SpecialAbility, SpellTemplate,
     TeachesSpell, TileSize, TownPortal, Vendor, Viewshed, WeaponAttribute, Wearable,
@@ -23,6 +25,7 @@ use crate::gamesystem::{attr_bonus, mana_at_level, npc_hp, DiceRoll};
 use crate::map::dungeon::MasterDungeonMap;
 use crate::random_table::{MasterTable, RandomTable};
 use crate::raws::faction_structs::Reaction;
+use crate::raws::item_structs::MagicItem;
 use crate::raws::spawn_table_structs::SpawnTableEntry;
 use crate::raws::Raws;
 
@@ -66,11 +69,18 @@ pub struct RawMaster {
     spell_index: HashMap<String, usize>,
 }
 
+struct NewMagicItem {
+    name: String,
+    bonus: i32,
+}
+
 impl RawMaster {
     pub fn load(&mut self, raws: Raws) {
         self.raws = raws;
         self.item_index = HashMap::new();
         let mut used_names: HashSet<String> = HashSet::new();
+        let mut items_to_build = vec![];
+
         for (i, item) in self.raws.items.iter().enumerate() {
             if used_names.contains(&item.name) {
                 console::log(format!(
@@ -80,7 +90,10 @@ impl RawMaster {
             }
             self.item_index.insert(item.name.clone(), i);
             used_names.insert(item.name.clone());
+
+            append_magic_template(&mut items_to_build, item);
         }
+
         for (i, mob) in self.raws.mobs.iter().enumerate() {
             if used_names.contains(&mob.name) {
                 console::log(format!(
@@ -135,6 +148,119 @@ impl RawMaster {
         for (i, spell) in self.raws.spells.iter().enumerate() {
             self.spell_index.insert(spell.name.clone(), i);
         }
+
+        self.build_magic_weapon_or_armor(&items_to_build);
+        self.build_traited_weapons(&items_to_build);
+    }
+
+    fn build_base_magic_item(&self, nmw: &NewMagicItem) -> super::Item {
+        let base_item_index = self.item_index[&nmw.name];
+        let mut base_item_copy = self.raws.items[base_item_index].clone();
+        base_item_copy.vendor_category = None;
+
+        if nmw.bonus == -1 {
+            base_item_copy.name = format!("{} -1", nmw.name);
+        } else {
+            base_item_copy.name = format!("{} +{}", nmw.name, nmw.bonus);
+        }
+
+        base_item_copy.magic = Some(MagicItem {
+            class: match nmw.bonus {
+                2 => "rare".into(),
+                3 => "rare".into(),
+                4 => "rare".into(),
+                5 => "legendary".into(),
+                _ => "common".into(),
+            },
+            naming: base_item_copy
+                .template_magic
+                .as_ref()
+                .unwrap()
+                .unidentified_name
+                .clone(),
+            cursed: if nmw.bonus == -1 { Some(true) } else { None },
+        });
+
+        if let Some(initiative_penalty) = base_item_copy.initiative_penalty.as_mut() {
+            *initiative_penalty -= nmw.bonus as f32;
+        }
+
+        if let Some(base_value) = base_item_copy.base_value.as_mut() {
+            *base_value += (nmw.bonus as f32 + 1.0) * 50.0;
+        }
+
+        if let Some(mut weapon) = base_item_copy.weapon.as_mut() {
+            weapon.hit_bonus += nmw.bonus;
+            let die_roll: DiceRoll = weapon.base_damage.parse().unwrap();
+            let final_bonus = die_roll.die_bonus + nmw.bonus;
+            if final_bonus > 0 {
+                weapon.base_damage =
+                    format!("{}d{}+{final_bonus}", die_roll.n_dice, die_roll.die_type);
+            } else if final_bonus < 0 {
+                weapon.base_damage = format!(
+                    "{}d{}-{}",
+                    die_roll.n_dice,
+                    die_roll.die_type,
+                    i32::abs(final_bonus)
+                );
+            }
+        }
+        if let Some(mut armor) = base_item_copy.wearable.as_mut() {
+            armor.armor_class += nmw.bonus as f32;
+        }
+
+        base_item_copy
+    }
+
+    fn build_magic_weapon_or_armor(&mut self, items_to_build: &[NewMagicItem]) {
+        for nmw in items_to_build.iter() {
+            let base_item_copy = self.build_base_magic_item(&nmw);
+
+            let real_name = base_item_copy.name.clone();
+            self.raws.items.push(base_item_copy);
+            self.item_index
+                .insert(real_name.clone(), self.raws.items.len() - 1);
+
+            self.raws.spawn_table.push(SpawnTableEntry {
+                name: real_name.clone(),
+                weight: 10 - i32::abs(nmw.bonus),
+                min_depth: 1 + i32::abs((nmw.bonus - 1) * 3),
+                max_depth: 100,
+                add_map_depth_to_weight: None,
+            });
+        }
+    }
+
+    fn build_traited_weapons(&mut self, items_to_build: &[NewMagicItem]) {
+        items_to_build
+            .iter()
+            .filter(|i| i.bonus > 0)
+            .for_each(|nmw| {
+                for wt in self.raws.weapon_traits.iter() {
+                    let mut base_item_copy = self.build_base_magic_item(&nmw);
+                    if let Some(mut weapon) = base_item_copy.weapon.as_mut() {
+                        base_item_copy.name = format!("{} {}", wt.name, base_item_copy.name);
+                        if let Some(base_value) = base_item_copy.base_value.as_mut() {
+                            *base_value *= 2.0;
+                        }
+                        weapon.proc_chance = Some(0.25);
+                        weapon.proc_effects = Some(wt.effects.clone());
+
+                        let real_name = base_item_copy.name.clone();
+                        self.raws.items.push(base_item_copy);
+                        self.item_index
+                            .insert(real_name.clone(), self.raws.items.len() - 1);
+
+                        self.raws.spawn_table.push(SpawnTableEntry {
+                            name: real_name.clone(),
+                            weight: 9 - i32::abs(nmw.bonus),
+                            min_depth: 2 + i32::abs((nmw.bonus - 1) * 3),
+                            max_depth: 100,
+                            add_map_depth_to_weight: None,
+                        });
+                    }
+                }
+            });
     }
 }
 
@@ -333,7 +459,7 @@ pub fn spawn_named_item(
                 "common" => MagicItemClass::Common,
                 unknown => unreachable!("Unknown magic level: {unknown}"),
             };
-            eb = eb.with(MagicItem { class });
+            eb = eb.with(components::MagicItem { class });
 
             if !identified.contains(&item_template.name) {
                 match magic.naming.as_str() {
@@ -895,4 +1021,28 @@ pub fn find_spell_entity_by_name(
     }
 
     None
+}
+
+fn append_magic_template(items_to_build: &mut Vec<NewMagicItem>, item: &super::Item) {
+    if let Some(template) = &item.template_magic {
+        if item.weapon.is_some() || item.wearable.is_some() {
+            if template.include_cursed {
+                items_to_build.push(NewMagicItem {
+                    name: item.name.clone(),
+                    bonus: -1,
+                });
+            }
+            for bonus in template.bonus_min..=template.bonus_max {
+                items_to_build.push(NewMagicItem {
+                    name: item.name.clone(),
+                    bonus,
+                });
+            }
+        } else {
+            console::log(format!(
+                "{} is marked as templated, but isn't a weapon or armor.",
+                item.name
+            ));
+        }
+    }
 }

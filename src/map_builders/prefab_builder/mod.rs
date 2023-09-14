@@ -146,6 +146,10 @@ impl PrefabBuilder {
                 build_data.map.tiles[idx] = TileType::Floor;
                 build_data.spawn_list.push((idx, "Watch Fire".to_string()));
             }
+            'e' => {
+                build_data.map.tiles[idx] = TileType::Floor;
+                build_data.spawn_list.push((idx, "Dark Elf".into()));
+            }
             unknown => {
                 console::log(format!("Unknown glyph loading map: {unknown}"));
             }
