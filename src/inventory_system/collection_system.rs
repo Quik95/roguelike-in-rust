@@ -1,9 +1,9 @@
-use specs::{Entity, Join, ReadExpect, ReadStorage, System, WriteExpect, WriteStorage};
+use specs::{Entity, Join, ReadExpect, ReadStorage, System, WriteStorage};
 
 use crate::components::{
     EquipmentChanged, InBackpack, MagicItem, Name, ObfuscatedName, Position, WantsToPickupItem,
 };
-use crate::gamelog::GameLog;
+use crate::gamelog;
 use crate::map::dungeon::MasterDungeonMap;
 
 pub struct ItemCollectionSystem {}
@@ -11,7 +11,6 @@ pub struct ItemCollectionSystem {}
 impl<'a> System<'a> for ItemCollectionSystem {
     type SystemData = (
         ReadExpect<'a, Entity>,
-        WriteExpect<'a, GameLog>,
         WriteStorage<'a, WantsToPickupItem>,
         WriteStorage<'a, Position>,
         ReadStorage<'a, Name>,
@@ -25,7 +24,6 @@ impl<'a> System<'a> for ItemCollectionSystem {
     fn run(&mut self, data: Self::SystemData) {
         let (
             player_entity,
-            mut gamelog,
             mut wants_pickup,
             mut positions,
             names,
@@ -51,16 +49,16 @@ impl<'a> System<'a> for ItemCollectionSystem {
                 .expect("Unable to insert");
 
             if pickup.collected_by == *player_entity {
-                gamelog.entries.push(format!(
-                    "You pick up the {}.",
-                    super::obfuscate_name(
+                gamelog::Logger::new()
+                    .append("You pick up the")
+                    .item_name(super::obfuscate_name(
                         pickup.item,
                         &names,
                         &magic_items,
                         &obfuscated_names,
-                        &dm
-                    )
-                ));
+                        &dm,
+                    ))
+                    .log();
             }
         }
 

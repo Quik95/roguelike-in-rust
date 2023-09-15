@@ -1,9 +1,9 @@
-use rltk::Point;
-use specs::{Entities, Join, ReadExpect, ReadStorage, System, WriteExpect, WriteStorage};
+use rltk::{Point, RED, WHITE};
+use specs::{Entities, Join, ReadExpect, ReadStorage, System, WriteStorage};
 
 use crate::components::{AreaOfEffect, EntityMoved, EntryTrigger, Name, Position};
 use crate::effects::{add_effect, aoe_tiles, EffectType, Targets};
-use crate::gamelog::GameLog;
+use crate::gamelog;
 use crate::map::Map;
 
 pub struct TriggerSystem {}
@@ -16,21 +16,12 @@ impl<'a> System<'a> for TriggerSystem {
         ReadStorage<'a, EntryTrigger>,
         ReadStorage<'a, Name>,
         Entities<'a>,
-        WriteExpect<'a, GameLog>,
         ReadStorage<'a, AreaOfEffect>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
-        let (
-            map,
-            mut entity_moved,
-            position,
-            entry_trigger,
-            names,
-            entities,
-            mut log,
-            area_of_effect,
-        ) = data;
+        let (map, mut entity_moved, position, entry_trigger, names, entities, area_of_effect) =
+            data;
 
         for (entity, mut _entity_moved, pos) in (&entities, &mut entity_moved, &position).join() {
             let idx = map.xy_idx(pos.x, pos.y);
@@ -45,7 +36,12 @@ impl<'a> System<'a> for TriggerSystem {
                     Some(_trigger) => {
                         let name = names.get(entity_id);
                         if let Some(name) = name {
-                            log.entries.push(format!("{} triggers!", &name.name));
+                            gamelog::Logger::new()
+                                .color(RED)
+                                .append(&name.name)
+                                .color(WHITE)
+                                .append("triggers!")
+                                .log();
                         }
 
                         add_effect(

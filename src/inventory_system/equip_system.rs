@@ -1,17 +1,16 @@
-use specs::{Entities, Entity, Join, ReadExpect, ReadStorage, System, WriteExpect, WriteStorage};
+use specs::{Entities, Entity, Join, ReadExpect, ReadStorage, System, WriteStorage};
 
 use crate::components::{
     CursedItem, EquipmentChanged, Equippable, Equipped, IdentifiedItem, InBackpack, Name,
     WantsToUseItem,
 };
-use crate::gamelog::GameLog;
+use crate::gamelog;
 
 pub struct ItemEquipOnUse {}
 
 impl<'a> System<'a> for ItemEquipOnUse {
     type SystemData = (
         ReadExpect<'a, Entity>,
-        WriteExpect<'a, GameLog>,
         Entities<'a>,
         WriteStorage<'a, WantsToUseItem>,
         ReadStorage<'a, Name>,
@@ -26,7 +25,6 @@ impl<'a> System<'a> for ItemEquipOnUse {
     fn run(&mut self, data: Self::SystemData) {
         let (
             player_entity,
-            mut gamelog,
             entities,
             mut wants_use,
             names,
@@ -47,19 +45,23 @@ impl<'a> System<'a> for ItemEquipOnUse {
                 // Remove any items the target has in the item's slot
                 let mut can_equip = true;
                 let mut to_unequip: Vec<Entity> = Vec::new();
-                let mut log_entries = vec![];
                 for (item_entity, already_equipped, name) in (&entities, &equipped, &names).join() {
                     if already_equipped.owner == target && already_equipped.slot == target_slot {
                         if cursed.get(item_entity).is_some() {
                             can_equip = false;
-                            gamelog
-                                .entries
-                                .push(format!("You cannot unequip {}, it is cursed.", name.name));
+                            gamelog::Logger::new()
+                                .append("You cannot unequip")
+                                .item_name(&name.name)
+                                .append("- it is cursed!")
+                                .log();
                             continue;
                         }
                         to_unequip.push(item_entity);
                         if target == *player_entity {
-                            log_entries.push(format!("You unequip {}.", name.name));
+                            gamelog::Logger::new()
+                                .append("You unequip")
+                                .item_name(&name.name)
+                                .log();
                         }
                     }
                 }
@@ -83,10 +85,6 @@ impl<'a> System<'a> for ItemEquipOnUse {
                             .expect("Unable to insert backpack entry");
                     }
 
-                    for le in &log_entries {
-                        gamelog.entries.push(le.to_string());
-                    }
-
                     equipped
                         .insert(
                             useitem.item,
@@ -97,12 +95,6 @@ impl<'a> System<'a> for ItemEquipOnUse {
                         )
                         .expect("Unable to insert equipped component");
                     backpack.remove(useitem.item);
-                    if target == *player_entity {
-                        gamelog.entries.push(format!(
-                            "You equip: {}.",
-                            names.get(useitem.item).unwrap().name
-                        ));
-                    }
                 }
 
                 for item in &to_unequip {
@@ -124,10 +116,10 @@ impl<'a> System<'a> for ItemEquipOnUse {
                     .expect("Unable to insert equipped component");
                 backpack.remove(useitem.item);
                 if target == *player_entity {
-                    gamelog.entries.push(format!(
-                        "You equip {}.",
-                        names.get(useitem.item).unwrap().name
-                    ));
+                    gamelog::Logger::new()
+                        .append("You equip")
+                        .item_name(&names.get(useitem.item).unwrap().name)
+                        .log();
                 }
 
                 // Done with item

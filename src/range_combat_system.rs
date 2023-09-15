@@ -6,7 +6,7 @@ use crate::components::{
     Pools, Position, Skill, Skills, WantsToShoot, Weapon, WeaponAttribute, Wearable,
 };
 use crate::effects::{add_effect, EffectType, Targets};
-use crate::gamelog::GameLog;
+use crate::gamelog;
 use crate::gamesystem::skill_bonus;
 use crate::map::Map;
 
@@ -15,7 +15,6 @@ pub struct RangedCombatSystem {}
 impl<'a> System<'a> for RangedCombatSystem {
     type SystemData = (
         Entities<'a>,
-        WriteExpect<'a, GameLog>,
         WriteStorage<'a, WantsToShoot>,
         ReadStorage<'a, Name>,
         ReadStorage<'a, Attributes>,
@@ -34,7 +33,6 @@ impl<'a> System<'a> for RangedCombatSystem {
     fn run(&mut self, data: Self::SystemData) {
         let (
             entities,
-            mut log,
             mut wants_shoot,
             names,
             attributes,
@@ -176,10 +174,14 @@ impl<'a> System<'a> for RangedCombatSystem {
                         target: wants_shoot.target,
                     },
                 );
-                log.entries.push(format!(
-                    "{} hits {}, for {} hp.",
-                    &name.name, &target_name.name, damage
-                ));
+                gamelog::Logger::new()
+                    .npc_name(&name.name)
+                    .append("hits")
+                    .npc_name(&target_name.name)
+                    .append("for")
+                    .damage(damage)
+                    .append("hp.")
+                    .log();
 
                 // Proc effects
                 if let Some(chance) = &weapon_info.proc_chance {
@@ -203,10 +205,13 @@ impl<'a> System<'a> for RangedCombatSystem {
                 }
             } else if natural_roll == 1 {
                 // Natural 1 miss
-                log.entries.push(format!(
-                    "{} considers attacking {}, but misjudges the timing.",
-                    name.name, target_name.name
-                ));
+                gamelog::Logger::new()
+                    .npc_name(&name.name)
+                    .append("considers attacking")
+                    .npc_name(&target_name.name)
+                    .append("but misjudges the timing.")
+                    .log();
+
                 add_effect(
                     None,
                     EffectType::Particle {
@@ -221,10 +226,13 @@ impl<'a> System<'a> for RangedCombatSystem {
                 );
             } else {
                 // Miss
-                log.entries.push(format!(
-                    "{} attacks {}, but can't connect.",
-                    name.name, target_name.name
-                ));
+                gamelog::Logger::new()
+                    .npc_name(&name.name)
+                    .append("attacks")
+                    .npc_name(&target_name.name)
+                    .append("but can't connect.")
+                    .log();
+
                 add_effect(
                     None,
                     EffectType::Particle {

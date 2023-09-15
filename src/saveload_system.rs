@@ -25,7 +25,7 @@ use crate::components::{
 };
 use crate::components::{SerializationHelper, SerializeMe};
 use crate::map::dungeon::MasterDungeonMap;
-use crate::spatial;
+use crate::{gamelog, spatial};
 
 macro_rules! serialize_individually {
     ($ecs:expr, $ser:expr, $data:expr, $( $type:ty),*) => {
@@ -54,6 +54,8 @@ pub fn save_game(ecs: &mut World) {
         .create_entity()
         .with(DMSerializationHelper {
             map: dungeon_master,
+            log: gamelog::clone_log(),
+            events: gamelog::clone_events(),
         })
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
@@ -304,6 +306,8 @@ pub fn load_game(ecs: &mut World) {
             let mut dungeonmaster = ecs.write_resource::<MasterDungeonMap>();
             *dungeonmaster = h.map.clone();
             deleteme2 = Some(e);
+            gamelog::restore_log(&mut h.log.clone());
+            gamelog::load_events(h.events.clone());
         }
 
         for (e, _p, pos) in (&entities, &player, &position).join() {

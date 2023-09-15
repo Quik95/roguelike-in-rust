@@ -2,7 +2,7 @@
 
 extern crate core;
 
-use rltk::{GameState, Point, RandomNumberGenerator};
+use rltk::{GameState, Point, RandomNumberGenerator, CYAN};
 use specs::prelude::*;
 use specs::saveload::{SimpleMarker, SimpleMarkerAllocator};
 
@@ -31,7 +31,6 @@ use crate::components::{
     ProvidesIdentification, ProvidesMana, Slow, SpecialAbilities, SpellTemplate, StatusEffect,
     Target, TeachesSpell, TileSize, WantsToCastSpell, WantsToShoot, Weapon,
 };
-use crate::gamelog::GameLog;
 use crate::gui::{draw_ui, show_cheat_mode, show_vendor_menu, CheatMenuResult, VendorResult};
 use crate::inventory_system::{
     ItemCollectionSystem, ItemDropSystem, ItemRemoveSystem, ItemUseSystem, SpellUseSystem,
@@ -186,6 +185,14 @@ impl State {
         } else {
             thaw_level_entities(&self.ecs);
         }
+
+        gamelog::clear_log();
+        gamelog::Logger::new()
+            .append("Welcome to")
+            .color(CYAN)
+            .append("Rusty Roguelike")
+            .log();
+        gamelog::clear_events();
     }
 
     fn goto_level(&mut self, offset: i32) {
@@ -196,8 +203,7 @@ impl State {
         self.generate_world_map(current_depth + offset, offset);
 
         // Notify the player
-        let mut gamelog = self.ecs.fetch_mut::<gamelog::GameLog>();
-        gamelog.entries.push("You change level.".to_string());
+        gamelog::Logger::new().append("You change level.").log();
     }
 
     fn game_over_cleanup(&mut self) {
@@ -249,6 +255,9 @@ impl GameState for State {
             }
             AwaitingInput => {
                 newrunstate = Player::player_input(self, ctx);
+                if newrunstate != RunState::AwaitingInput {
+                    gamelog::record_event("Turn", 1);
+                }
             }
             ShowInventory => {
                 let result = gui::show_inventory(self, ctx);
@@ -721,9 +730,6 @@ fn main() -> color_eyre::Result<()> {
     let player_entity = spawner::player(&mut gs.ecs, 0, 0);
     gs.ecs.insert(player_entity);
     gs.ecs.insert(MapGeneration {});
-    gs.ecs.insert(GameLog {
-        entries: vec!["Welcome to Rusty Roguelike".to_string()],
-    });
     gs.ecs.insert(particle_system::ParticleBuilder::new());
     gs.ecs.insert(rex_assets::RexAssets::new());
 

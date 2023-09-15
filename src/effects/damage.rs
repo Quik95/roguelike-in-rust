@@ -1,4 +1,4 @@
-use rltk::{to_cp437, Point, RandomNumberGenerator, BLACK, BLUE, GOLD, GREEN, ORANGE};
+use rltk::{to_cp437, Point, RandomNumberGenerator, BLACK, BLUE, GOLD, GREEN, MAGENTA, ORANGE};
 use specs::saveload::{MarkedBuilder, SimpleMarker};
 use specs::{Builder, Entity, World, WorldExt};
 
@@ -8,12 +8,13 @@ use crate::components::{
 };
 use crate::effects::targeting::entity_position;
 use crate::effects::{add_effect, EffectSpawner, EffectType, Targets};
-use crate::gamelog::GameLog;
+use crate::gamelog;
 use crate::gamesystem::{mana_at_level, player_hp_at_level};
 use crate::map::Map;
 
 pub fn inflict_damage(ecs: &World, damage: &EffectSpawner, target: Entity) {
     let mut pools = ecs.write_storage::<Pools>();
+    let player_entity = ecs.fetch::<Entity>();
     if let Some(pool) = pools.get_mut(target) {
         if pool.god_mode {
             return;
@@ -39,6 +40,16 @@ pub fn inflict_damage(ecs: &World, damage: &EffectSpawner, target: Entity) {
                 },
                 Targets::Single { target },
             );
+
+            if target == *player_entity {
+                gamelog::record_event("Damage Taken", amount);
+            }
+
+            if let Some(creator) = damage.creator {
+                if creator == *player_entity {
+                    gamelog::record_event("Damage Inflicted", amount);
+                }
+            }
 
             if pool.hit_points.current < 1 {
                 add_effect(
@@ -75,7 +86,6 @@ pub fn death(ecs: &World, effect: &EffectSpawner, target: Entity) {
             }
 
             if xp_gain != 0 || gold_gain != 0.0 {
-                let mut log = ecs.fetch_mut::<GameLog>();
                 let player_stats = pools.get_mut(source).unwrap();
                 let player_attributes = attributes.get_mut(source).unwrap();
                 player_stats.xp += xp_gain;
@@ -83,29 +93,42 @@ pub fn death(ecs: &World, effect: &EffectSpawner, target: Entity) {
                 if player_stats.xp >= player_stats.level * 1000 {
                     // We've gone up a level!
                     player_stats.level += 1;
-                    log.entries.push(format!(
-                        "Congratulations, you are now level {}",
-                        player_stats.level
-                    ));
+                    gamelog::Logger::new()
+                        .color(MAGENTA)
+                        .append("Congratulations, you are now level")
+                        .append(format!("{}", player_stats.level))
+                        .log();
 
                     let mut rng = ecs.fetch_mut::<RandomNumberGenerator>();
                     let attr_to_boost = rng.roll_dice(1, 4);
                     match attr_to_boost {
                         1 => {
                             player_attributes.might.base += 1;
-                            log.entries.push("You feel stronger!".into());
+                            gamelog::Logger::new()
+                                .color(GREEN)
+                                .append("You feel stronger!")
+                                .log();
                         }
                         2 => {
                             player_attributes.fitness.base += 1;
-                            log.entries.push("You feel healthier!".into());
+                            gamelog::Logger::new()
+                                .color(GREEN)
+                                .append("You feel healthier!")
+                                .log();
                         }
                         3 => {
                             player_attributes.quickness.base += 1;
-                            log.entries.push("You feel quicker!".into());
+                            gamelog::Logger::new()
+                                .color(GREEN)
+                                .append("You feel quicker!")
+                                .log();
                         }
                         4 => {
                             player_attributes.intelligence.base += 1;
-                            log.entries.push("You feel smarter!".into());
+                            gamelog::Logger::new()
+                                .color(GREEN)
+                                .append("You feel smarter!")
+                                .log();
                         }
                         _ => unreachable!(),
                     }

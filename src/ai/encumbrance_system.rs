@@ -1,12 +1,13 @@
+use rltk::ORANGE;
 use std::collections::HashMap;
 
-use specs::{Entities, Entity, Join, ReadExpect, ReadStorage, System, WriteExpect, WriteStorage};
+use specs::{Entities, Entity, Join, ReadExpect, ReadStorage, System, WriteStorage};
 
 use crate::components::{
     AttributeBonus, Attributes, EquipmentChanged, Equipped, InBackpack, Item, Pools, Slow,
     StatusEffect,
 };
-use crate::gamelog::GameLog;
+use crate::gamelog;
 
 pub struct EncumbranceSystem {}
 
@@ -20,7 +21,6 @@ impl<'a> System<'a> for EncumbranceSystem {
         WriteStorage<'a, Pools>,
         WriteStorage<'a, Attributes>,
         ReadExpect<'a, Entity>,
-        WriteExpect<'a, GameLog>,
         ReadStorage<'a, AttributeBonus>,
         ReadStorage<'a, StatusEffect>,
         ReadStorage<'a, Slow>,
@@ -36,7 +36,6 @@ impl<'a> System<'a> for EncumbranceSystem {
             mut pools,
             mut attributes,
             player,
-            mut gamelog,
             attr_bonus,
             statuses,
             slows,
@@ -122,9 +121,12 @@ impl<'a> System<'a> for EncumbranceSystem {
                     if pool.total_weight as u32 > carry_capacity {
                         pool.total_initiative_penalty += 4.0;
                         if *entity == *player {
-                            gamelog.entries.push(
-                                "You are overburdened, and suffering an initiative penalty.".into(),
-                            );
+                            gamelog::Logger::new()
+                                .color(ORANGE)
+                                .append(
+                                    "You are overburdened, and suffering an initiative penalty.",
+                                )
+                                .log();
                         }
                     }
                 }

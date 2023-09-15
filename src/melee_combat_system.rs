@@ -6,7 +6,7 @@ use crate::components::{
     Pools, Skill, Skills, WantsToMelee, Weapon, WeaponAttribute, Wearable,
 };
 use crate::effects::{add_effect, EffectType, Targets};
-use crate::gamelog::GameLog;
+use crate::gamelog;
 use crate::gamesystem::skill_bonus;
 
 pub struct MeleeCombatSystem {}
@@ -14,7 +14,6 @@ pub struct MeleeCombatSystem {}
 impl<'a> System<'a> for MeleeCombatSystem {
     type SystemData = (
         Entities<'a>,
-        WriteExpect<'a, GameLog>,
         WriteStorage<'a, WantsToMelee>,
         ReadStorage<'a, Name>,
         ReadStorage<'a, Attributes>,
@@ -31,7 +30,6 @@ impl<'a> System<'a> for MeleeCombatSystem {
     fn run(&mut self, data: Self::SystemData) {
         let (
             entities,
-            mut log,
             mut wants_melee,
             names,
             attributes,
@@ -153,10 +151,14 @@ impl<'a> System<'a> for MeleeCombatSystem {
                             target: wants_melee.target,
                         },
                     );
-                    log.entries.push(format!(
-                        "{} hits {}, for {damage} hp.",
-                        &name.name, &target_name.name
-                    ));
+                    gamelog::Logger::new()
+                        .npc_name(&name.name)
+                        .append("hits")
+                        .npc_name(&target_name.name)
+                        .append("for")
+                        .damage(damage)
+                        .append("hp.")
+                        .log();
 
                     if let Some(chance) = &weapon_info.proc_chance {
                         if rng.roll_dice(1, 100) <= (chance * 100.0) as i32 {
@@ -177,10 +179,13 @@ impl<'a> System<'a> for MeleeCombatSystem {
                         }
                     }
                 } else if natural_roll == 1 {
-                    log.entries.push(format!(
-                        "{} considers attarcking {}, but misjudges the timing.",
-                        name.name, target_name.name
-                    ));
+                    gamelog::Logger::new()
+                        .npc_name(&name.name)
+                        .append("considers attacking")
+                        .npc_name(&target_name.name)
+                        .append("but misjudges the timing!")
+                        .log();
+
                     add_effect(
                         None,
                         EffectType::Particle {
@@ -194,10 +199,13 @@ impl<'a> System<'a> for MeleeCombatSystem {
                         },
                     );
                 } else {
-                    log.entries.push(format!(
-                        "{} attacks {}, but can't connect.",
-                        name.name, target_name.name
-                    ));
+                    gamelog::Logger::new()
+                        .npc_name(&name.name)
+                        .append("attacks")
+                        .npc_name(&target_name.name)
+                        .append("but can't connect.")
+                        .log();
+
                     add_effect(
                         None,
                         EffectType::Particle {

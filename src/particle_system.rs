@@ -2,7 +2,6 @@ use rltk::{FontCharType, Rltk, RGB};
 use specs::{Entities, Join, System, World, WorldExt, WriteExpect, WriteStorage};
 
 use crate::components::{ParticleLifetime, Position, Renderable};
-use crate::map::Map;
 
 pub fn update_particles(ecs: &mut World, ctx: &Rltk) {
     let mut dead_particles = Vec::new();

@@ -1,9 +1,10 @@
-use specs::{Entities, Entity, Join, ReadExpect, ReadStorage, System, WriteExpect, WriteStorage};
+use specs::{Entities, Entity, Join, ReadExpect, ReadStorage, System, WriteStorage};
 
 use crate::components::{
     EquipmentChanged, InBackpack, MagicItem, Name, ObfuscatedName, Position, WantsToDropItem,
 };
-use crate::gamelog::GameLog;
+use crate::gamelog;
+use crate::inventory_system::obfuscate_name;
 use crate::map::dungeon::MasterDungeonMap;
 
 pub struct ItemDropSystem {}
@@ -11,7 +12,6 @@ pub struct ItemDropSystem {}
 impl<'a> System<'a> for ItemDropSystem {
     type SystemData = (
         ReadExpect<'a, Entity>,
-        WriteExpect<'a, GameLog>,
         Entities<'a>,
         WriteStorage<'a, WantsToDropItem>,
         ReadStorage<'a, Name>,
@@ -26,7 +26,6 @@ impl<'a> System<'a> for ItemDropSystem {
     fn run(&mut self, data: Self::SystemData) {
         let (
             player_entity,
-            mut gamelog,
             entities,
             mut wants_drop,
             names,
@@ -60,16 +59,16 @@ impl<'a> System<'a> for ItemDropSystem {
                 .expect("Unable to insert.");
 
             if entity == *player_entity {
-                gamelog.entries.push(format!(
-                    "You drop the {}.",
-                    super::obfuscate_name(
+                gamelog::Logger::new()
+                    .append("You drop the")
+                    .item_name(obfuscate_name(
                         to_drop.item,
                         &names,
                         &magic_items,
                         &obfuscated_names,
-                        &dm
-                    )
-                ));
+                        &dm,
+                    ))
+                    .log();
             }
         }
 

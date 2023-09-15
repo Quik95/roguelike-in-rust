@@ -1,7 +1,7 @@
 use lazy_static::lazy_static;
 use rltk::{
-    to_cp437, Algorithm2D, Point, Rltk, VirtualKeyCode, CYAN, GOLD, GREEN, MAGENTA, RED, RGB,
-    WHITE, YELLOW,
+    to_cp437, Algorithm2D, Point, Rltk, TextBlock, VirtualKeyCode, BACKEND_INTERNAL, CYAN, GOLD,
+    GREEN, MAGENTA, RED, RGB, WHITE, YELLOW,
 };
 use specs::prelude::*;
 use std::cmp::Ordering;
@@ -13,11 +13,12 @@ use crate::components::{
     HungerState, Item, KnownSpells, MagicItem, MagicItemClass, ObfuscatedName, Pools, StatusEffect,
     Vendor, Weapon,
 };
+use crate::gamelog;
 use crate::map::dungeon::MasterDungeonMap;
 use crate::player::VendorMode;
 use crate::raws::rawmaster::{get_vendor_items, RAWS};
 
-use super::{gamelog::GameLog, InBackpack, Map, Name, State, Viewshed};
+use super::{InBackpack, Map, Name, State, Viewshed};
 
 lazy_static! {
     static ref BLACK: RGB = RGB::named(rltk::BLACK);
@@ -259,14 +260,9 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
         y -= 1;
     }
 
-    let log = ecs.fetch::<GameLog>();
-    let mut y = 46;
-    for s in log.entries.iter().rev() {
-        if y < 59 {
-            ctx.print(2, y, s);
-        }
-        y += 1;
-    }
+    let mut block = TextBlock::new(1, 46, 79, 58);
+    block.print(&gamelog::log_display()).unwrap();
+    block.render(&mut BACKEND_INTERNAL.lock().consoles[0].console);
 
     draw_tooltips(ecs, ctx);
 }
@@ -777,7 +773,34 @@ pub fn game_over(ctx: &mut Rltk) -> GameOverResult {
     );
 
     ctx.print_color_centered(
+        19,
+        RGB::named(WHITE),
+        *BLACK,
+        &format!("You lived for {} turns.", gamelog::get_event_count("Turn")),
+    );
+
+    ctx.print_color_centered(
         20,
+        RGB::named(RED),
+        *BLACK,
+        &format!(
+            "You suffered {} points of damage.",
+            gamelog::get_event_count("Damage Taken")
+        ),
+    );
+
+    ctx.print_color_centered(
+        21,
+        RGB::named(RED),
+        *BLACK,
+        &format!(
+            "You inflicted {} points of damage.",
+            gamelog::get_event_count("Damage Inflicted")
+        ),
+    );
+
+    ctx.print_color_centered(
+        23,
         RGB::named(MAGENTA),
         *BLACK,
         "Press ENTER to return to the menu.",

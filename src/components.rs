@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::str::FromStr;
 
+use crate::gamelog;
 use itertools::Itertools;
 use rltk::{to_cp437, FontCharType, Point, RGB};
 use serde::{Deserialize, Serialize};
@@ -129,6 +130,8 @@ pub struct SerializationHelper {
 #[derive(Component, Serialize, Deserialize, Clone)]
 pub struct DMSerializationHelper {
     pub map: MasterDungeonMap,
+    pub log: Vec<Vec<gamelog::LogFragment>>,
+    pub events: HashMap<String, i32>,
 }
 
 #[derive(PartialEq, Eq, Copy, Clone, Serialize, Deserialize)]

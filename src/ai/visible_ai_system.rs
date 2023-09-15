@@ -1,4 +1,4 @@
-use rltk::{console, DistanceAlg, Point, RandomNumberGenerator};
+use rltk::{DistanceAlg, Point, RandomNumberGenerator};
 use specs::{Entities, Entity, Join, ReadExpect, ReadStorage, System, WriteExpect, WriteStorage};
 
 use crate::components::{
@@ -117,15 +117,11 @@ impl<'a> System<'a> for VisibleAI {
 
                         for (weapon, equip) in (&weapons, &equipped).join() {
                             if let Some(wrange) = weapon.range {
-                                if equip.owner == entity {
-                                    console::log(format!("Owner found. Ranges: {wrange}/{range}"));
-                                    if wrange >= range as i32 {
-                                        console::log("Inserting shoot");
-                                        wants_shoot
-                                            .insert(entity, WantsToShoot { target: reaction.2 })
-                                            .expect("Insert fail");
-                                        done = true;
-                                    }
+                                if equip.owner == entity && wrange >= range as i32 {
+                                    wants_shoot
+                                        .insert(entity, WantsToShoot { target: reaction.2 })
+                                        .expect("Insert fail");
+                                    done = true;
                                 }
                             }
                         }
