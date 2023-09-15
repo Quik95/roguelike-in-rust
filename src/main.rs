@@ -18,20 +18,18 @@ use components::{
     WantsToApproach, WantsToDropItem, WantsToFlee, WantsToMelee, WantsToPickupItem,
     WantsToRemoveItem, WantsToUseItem, Wearable,
 };
-use gui::ItemMenuResult;
+
 use map::Map;
 use map_indexing_system::MapIndexingSystem;
 use player::RunState;
 use visibility_system::VisibilitySystem;
 use RunState::PreRun;
 
-use crate::camera::{render_camera, render_debug_map};
 use crate::components::{
     AlwaysTargetsSelf, AttributeBonus, CursedItem, DamageOverTime, Duration, KnownSpells, OnDeath,
     ProvidesIdentification, ProvidesMana, Slow, SpecialAbilities, SpellTemplate, StatusEffect,
     Target, TeachesSpell, TileSize, WantsToCastSpell, WantsToShoot, Weapon,
 };
-use crate::gui::{draw_ui, show_cheat_mode, show_vendor_menu, CheatMenuResult, VendorResult};
 use crate::inventory_system::{
     ItemCollectionSystem, ItemDropSystem, ItemRemoveSystem, ItemUseSystem, SpellUseSystem,
 };
@@ -48,10 +46,10 @@ use crate::player::RunState::{
 use crate::player::VendorMode;
 use crate::range_combat_system::RangedCombatSystem;
 use crate::raws::rawmaster::{spawn_named_item, SpawnType, RAWS};
+use map::camera::{render_camera, render_debug_map};
 
 mod ai;
 mod astar;
-mod camera;
 mod cave_decorator;
 mod components;
 mod damage_system;
@@ -66,7 +64,6 @@ mod map;
 mod map_builders;
 mod map_indexing_system;
 mod melee_combat_system;
-mod menu;
 mod movement_system;
 mod particle_system;
 mod player;
@@ -236,14 +233,18 @@ impl GameState for State {
             newrunstate = *runstate;
         }
 
+        ctx.set_active_console(1);
+        ctx.cls();
+        ctx.set_active_console(0);
         ctx.cls();
         particle_system::update_particles(&mut self.ecs, ctx);
 
         match newrunstate {
+            RunState::MainMenu { .. } => {}
             GameOver { .. } => {}
             _ => {
                 render_camera(&self.ecs, ctx);
-                draw_ui(&self.ecs, ctx);
+                gui::draw_ui(&self.ecs, ctx);
             }
         }
 
@@ -310,9 +311,9 @@ impl GameState for State {
             ShowTargeting { range, item } => {
                 let result = gui::ranged_target(self, ctx, range);
                 match result.0 {
-                    ItemMenuResult::Cancel => newrunstate = AwaitingInput,
-                    ItemMenuResult::NoResponse => {}
-                    ItemMenuResult::Selected => {
+                    gui::ItemMenuResult::Cancel => newrunstate = AwaitingInput,
+                    gui::ItemMenuResult::NoResponse => {}
+                    gui::ItemMenuResult::Selected => {
                         if self.ecs.read_storage::<SpellTemplate>().get(item).is_some() {
                             let mut intent = self.ecs.write_storage::<WantsToCastSpell>();
                             intent
@@ -342,7 +343,7 @@ impl GameState for State {
                 }
             }
             MainMenu { .. } => {
-                let result = menu::main_menu(self, ctx);
+                let result = gui::main_menu(self, ctx);
                 match result {
                     gui::MainMenuResult::NoSelection { selected } => {
                         newrunstate = MainMenu {
@@ -438,30 +439,30 @@ impl GameState for State {
                 }
             }
             ShowCheatMenu => {
-                let result = show_cheat_mode(self, ctx);
+                let result = gui::show_cheat_mode(self, ctx);
                 match result {
-                    CheatMenuResult::Cancel => newrunstate = AwaitingInput,
-                    CheatMenuResult::NoResponse => {}
-                    CheatMenuResult::TeleportToExit => {
+                    gui::CheatMenuResult::Cancel => newrunstate = AwaitingInput,
+                    gui::CheatMenuResult::NoResponse => {}
+                    gui::CheatMenuResult::TeleportToExit => {
                         self.goto_level(1);
                         self.mapgen_next_state = Some(PreRun);
                         newrunstate = MapGeneration;
                     }
-                    CheatMenuResult::Heal => {
+                    gui::CheatMenuResult::Heal => {
                         let player = self.ecs.fetch::<Entity>();
                         let mut pools = self.ecs.write_storage::<Pools>();
                         let player_pools = pools.get_mut(*player).unwrap();
                         player_pools.hit_points.current = player_pools.hit_points.max;
                         newrunstate = RunState::AwaitingInput;
                     }
-                    CheatMenuResult::Reveal => {
+                    gui::CheatMenuResult::Reveal => {
                         let mut map = self.ecs.fetch_mut::<Map>();
                         for v in &mut map.revealed_tiles {
                             *v = true;
                         }
                         newrunstate = RunState::AwaitingInput;
                     }
-                    CheatMenuResult::GodMode => {
+                    gui::CheatMenuResult::GodMode => {
                         let player = self.ecs.fetch::<Entity>();
                         let mut pools = self.ecs.write_storage::<Pools>();
                         let player_pools = pools.get_mut(*player).unwrap();
@@ -495,11 +496,11 @@ impl GameState for State {
                 }
             }
             RunState::ShowVendor { vendor, mode } => {
-                let result = show_vendor_menu(self, ctx, vendor, mode);
+                let result = gui::show_vendor_menu(self, ctx, vendor, mode);
                 match result.0 {
-                    VendorResult::Cancel => newrunstate = RunState::AwaitingInput,
-                    VendorResult::NoResponse => {}
-                    VendorResult::Sell => {
+                    gui::VendorResult::Cancel => newrunstate = RunState::AwaitingInput,
+                    gui::VendorResult::NoResponse => {}
+                    gui::VendorResult::Sell => {
                         let price = self
                             .ecs
                             .read_storage::<Item>()
@@ -516,7 +517,7 @@ impl GameState for State {
                             .delete_entity(result.1.unwrap())
                             .expect("Unable to delete");
                     }
-                    VendorResult::Buy => {
+                    gui::VendorResult::Buy => {
                         let tag = result.2.unwrap();
                         let price = result.3.unwrap();
                         let mut pools = self.ecs.write_storage::<Pools>();
@@ -541,13 +542,13 @@ impl GameState for State {
                             );
                         }
                     }
-                    VendorResult::BuyMode => {
+                    gui::VendorResult::BuyMode => {
                         newrunstate = RunState::ShowVendor {
                             vendor,
                             mode: VendorMode::Buy,
                         }
                     }
-                    VendorResult::SellMode => {
+                    gui::VendorResult::SellMode => {
                         newrunstate = RunState::ShowVendor {
                             vendor,
                             mode: VendorMode::Sell,
@@ -580,9 +581,9 @@ impl GameState for State {
             RunState::ShowRemoveCurse => {
                 let result = gui::remove_curse_menu(self, ctx);
                 match result.0 {
-                    ItemMenuResult::Cancel => newrunstate = RunState::AwaitingInput,
-                    ItemMenuResult::NoResponse => {}
-                    ItemMenuResult::Selected => {
+                    gui::ItemMenuResult::Cancel => newrunstate = RunState::AwaitingInput,
+                    gui::ItemMenuResult::NoResponse => {}
+                    gui::ItemMenuResult::Selected => {
                         let item_entity = result.1.unwrap();
                         self.ecs.write_storage::<CursedItem>().remove(item_entity);
                         newrunstate = RunState::Ticking;
@@ -592,9 +593,9 @@ impl GameState for State {
             RunState::ShowIdentify => {
                 let result = gui::identify_menu(self, ctx);
                 match result.0 {
-                    ItemMenuResult::Cancel => newrunstate = RunState::AwaitingInput,
-                    ItemMenuResult::NoResponse => {}
-                    ItemMenuResult::Selected => {
+                    gui::ItemMenuResult::Cancel => newrunstate = RunState::AwaitingInput,
+                    gui::ItemMenuResult::NoResponse => {}
+                    gui::ItemMenuResult::Selected => {
                         let item_entity = result.1.unwrap();
                         if let Some(name) = self.ecs.read_storage::<Name>().get(item_entity) {
                             let mut dm = self.ecs.fetch_mut::<MasterDungeonMap>();
@@ -611,6 +612,7 @@ impl GameState for State {
         }
 
         damage_system::delete_the_dead(&mut self.ecs);
+        rltk::render_draw_buffer(ctx).expect("Draw failed");
     }
 }
 
@@ -618,10 +620,14 @@ fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
 
     use rltk::RltkBuilder;
+
     let mut context = RltkBuilder::simple(80, 60)
         .unwrap()
         .with_title("Roguelike Tutorial")
-        .with_fps_cap(60.0)
+        .with_font("vga8x16.png", 8, 16)
+        .with_sparse_console(80, 30, "vga8x16.png")
+        .with_vsync(true)
+        .with_fitscreen(true)
         .build()
         .expect("Failed to construct a builder.");
     context.with_post_scanlines(true);

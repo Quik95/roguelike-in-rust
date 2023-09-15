@@ -1,37 +1,51 @@
-use rltk::{Rltk, VirtualKeyCode, BLACK, CYAN, GRAY, MAGENTA, RGB, WHEAT, WHITE, YELLOW};
-
-use crate::gui::MainMenuResult;
 use crate::gui::MainMenuResult::{NoSelection, Selected};
 use crate::gui::MainMenuSelection::{LoadGame, NewGame, Quit};
 use crate::player::RunState;
 use crate::player::RunState::MainMenu;
 use crate::rex_assets::RexAssets;
-use crate::State;
+use crate::{saveload_system, State};
+use rltk::{ColorPair, DrawBatch, Rect, Rltk, VirtualKeyCode, BLACK, RGB, WHEAT};
+
+#[derive(PartialEq, Eq, Copy, Clone)]
+pub enum MainMenuSelection {
+    NewGame,
+    LoadGame,
+    Quit,
+}
+
+#[derive(PartialEq, Eq, Copy, Clone)]
+pub enum MainMenuResult {
+    NoSelection { selected: MainMenuSelection },
+    Selected { selected: MainMenuSelection },
+}
 
 pub fn main_menu(gs: &State, ctx: &mut Rltk) -> MainMenuResult {
-    let save_exists = super::saveload_system::does_save_exist();
+    let mut draw_batch = DrawBatch::new();
+
+    let save_exists = saveload_system::does_save_exist();
     let runstate = gs.ecs.fetch::<RunState>();
     let assets = gs.ecs.fetch::<RexAssets>();
     ctx.render_xp_sprite(&assets.menu, 0, 0);
 
-    ctx.draw_box_double(24, 18, 31, 10, RGB::named(WHEAT), RGB::named(BLACK));
-    ctx.print_color_centered(
+    draw_batch.draw_double_box(
+        Rect::with_size(24, 18, 31, 10),
+        ColorPair::new(RGB::named(WHEAT), RGB::named(BLACK)),
+    );
+
+    draw_batch.print_color_centered(
         20,
-        RGB::named(YELLOW),
-        RGB::named(BLACK),
         "Rust Roguelike Tutorial",
+        ColorPair::new(RGB::named(rltk::YELLOW), RGB::named(rltk::BLACK)),
     );
-    ctx.print_color_centered(
+    draw_batch.print_color_centered(
         21,
-        RGB::named(CYAN),
-        RGB::named(BLACK),
         "by Herbert Wolverson",
+        ColorPair::new(RGB::named(rltk::CYAN), RGB::named(rltk::BLACK)),
     );
-    ctx.print_color_centered(
+    draw_batch.print_color_centered(
         22,
-        RGB::named(GRAY),
-        RGB::named(BLACK),
         "Use Up/Down Arrows and Enter",
+        ColorPair::new(RGB::named(rltk::GRAY), RGB::named(rltk::BLACK)),
     );
 
     let mut y = 24;
@@ -39,27 +53,53 @@ pub fn main_menu(gs: &State, ctx: &mut Rltk) -> MainMenuResult {
         menu_selection: selection,
     } = *runstate
     {
-        if selection == NewGame {
-            ctx.print_color_centered(y, RGB::named(MAGENTA), RGB::named(BLACK), "Begin New Game");
+        if selection == MainMenuSelection::NewGame {
+            draw_batch.print_color_centered(
+                y,
+                "Begin New Game",
+                ColorPair::new(RGB::named(rltk::MAGENTA), RGB::named(rltk::BLACK)),
+            );
         } else {
-            ctx.print_color_centered(y, RGB::named(WHITE), RGB::named(BLACK), "Begin New Game");
+            draw_batch.print_color_centered(
+                y,
+                "Begin New Game",
+                ColorPair::new(RGB::named(rltk::WHITE), RGB::named(rltk::BLACK)),
+            );
         }
         y += 1;
 
         if save_exists {
-            if selection == LoadGame {
-                ctx.print_color_centered(y, RGB::named(MAGENTA), RGB::named(BLACK), "Load Game");
+            if selection == MainMenuSelection::LoadGame {
+                draw_batch.print_color_centered(
+                    y,
+                    "Load Game",
+                    ColorPair::new(RGB::named(rltk::MAGENTA), RGB::named(rltk::BLACK)),
+                );
             } else {
-                ctx.print_color_centered(y, RGB::named(WHITE), RGB::named(BLACK), "Load Game");
+                draw_batch.print_color_centered(
+                    y,
+                    "Load Game",
+                    ColorPair::new(RGB::named(rltk::WHITE), RGB::named(rltk::BLACK)),
+                );
             }
+            y += 1;
         }
-        y += 1;
 
-        if selection == Quit {
-            ctx.print_color_centered(y, RGB::named(MAGENTA), RGB::named(BLACK), "Quit");
+        if selection == MainMenuSelection::Quit {
+            draw_batch.print_color_centered(
+                y,
+                "Quit",
+                ColorPair::new(RGB::named(rltk::MAGENTA), RGB::named(rltk::BLACK)),
+            );
         } else {
-            ctx.print_color_centered(y, RGB::named(WHITE), RGB::named(BLACK), "Quit");
+            draw_batch.print_color_centered(
+                y,
+                "Quit",
+                ColorPair::new(RGB::named(rltk::WHITE), RGB::named(rltk::BLACK)),
+            );
         }
+
+        draw_batch.submit(6000).expect("Batched draw failed");
 
         match ctx.key {
             None => {

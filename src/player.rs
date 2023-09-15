@@ -4,6 +4,7 @@ use specs::prelude::*;
 use crate::components::{
     Equipped, KnownSpells, Name, Target, WantsToCastSpell, WantsToShoot, Weapon,
 };
+use crate::gui::MainMenuSelection;
 use crate::map::tiletype::TileType;
 use crate::player::RunState::{
     NextLevel, PreviousLevel, SaveGame, ShowCheatMenu, ShowDropItem, ShowInventory, ShowRemoveItem,
@@ -11,7 +12,7 @@ use crate::player::RunState::{
 };
 use crate::raws::rawmaster::{faction_reaction, find_spell_entity, RAWS};
 use crate::raws::Reaction;
-use crate::{gamelog, gui, spatial};
+use crate::{gamelog, spatial};
 
 use super::components::{
     Attributes, BlocksTile, BlocksVisibility, Consumable, Door, EntityMoved, Faction, HungerClock,
@@ -28,33 +29,19 @@ pub enum RunState {
     Ticking,
     ShowInventory,
     ShowDropItem,
-    ShowTargeting {
-        range: i32,
-        item: Entity,
-    },
-    MainMenu {
-        menu_selection: gui::MainMenuSelection,
-    },
+    ShowTargeting { range: i32, item: Entity },
+    MainMenu { menu_selection: MainMenuSelection },
     SaveGame,
     NextLevel,
     PreviousLevel,
     ShowRemoveItem,
     GameOver,
-    MagicMapReveal {
-        row: i32,
-    },
+    MagicMapReveal { row: i32 },
     MapGeneration,
     ShowCheatMenu,
-    ShowVendor {
-        vendor: Entity,
-        mode: VendorMode,
-    },
+    ShowVendor { vendor: Entity, mode: VendorMode },
     TownPortal,
-    TeleportingToOtherLevel {
-        x: i32,
-        y: i32,
-        depth: i32,
-    },
+    TeleportingToOtherLevel { x: i32, y: i32, depth: i32 },
     ShowRemoveCurse,
     ShowIdentify,
 }
