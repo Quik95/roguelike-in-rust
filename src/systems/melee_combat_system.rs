@@ -1,5 +1,5 @@
-use rltk::{to_cp437, RandomNumberGenerator, BLACK, BLUE, CYAN};
-use specs::{Entities, Entity, Join, ReadStorage, System, WriteExpect, WriteStorage};
+use rltk::{to_cp437, BLACK, BLUE, CYAN};
+use specs::{Entities, Entity, Join, ReadStorage, System, WriteStorage};
 
 use crate::components::{
     Attributes, EquipmentSlot, Equipped, HungerClock, HungerState, Name, NaturalAttackDefense,
@@ -8,6 +8,7 @@ use crate::components::{
 use crate::effects::{add_effect, EffectType, Targets};
 use crate::gamelog;
 use crate::gamesystem::skill_bonus;
+use crate::rng::roll_dice;
 
 pub struct MeleeCombatSystem {}
 
@@ -20,7 +21,6 @@ impl<'a> System<'a> for MeleeCombatSystem {
         ReadStorage<'a, Skills>,
         ReadStorage<'a, HungerClock>,
         ReadStorage<'a, Pools>,
-        WriteExpect<'a, RandomNumberGenerator>,
         ReadStorage<'a, Equipped>,
         ReadStorage<'a, Weapon>,
         ReadStorage<'a, Wearable>,
@@ -36,7 +36,6 @@ impl<'a> System<'a> for MeleeCombatSystem {
             skills,
             hunger_clock,
             pools,
-            mut rng,
             equipped_items,
             meleeweapons,
             wearables,
@@ -71,7 +70,7 @@ impl<'a> System<'a> for MeleeCombatSystem {
                         let attack_index = if nat.attacks.len() == 1 {
                             0
                         } else {
-                            rng.roll_dice(1, nat.attacks.len() as i32) - 1
+                            roll_dice(1, nat.attacks.len() as i32) - 1
                         } as usize;
                         weapon_info.hit_bonus = nat.attacks[attack_index].hit_bonus;
                         weapon_info.damage_n_dice = nat.attacks[attack_index].damage_n_dice;
@@ -90,7 +89,7 @@ impl<'a> System<'a> for MeleeCombatSystem {
                     }
                 }
 
-                let natural_roll = rng.roll_dice(1, 20);
+                let natural_roll = roll_dice(1, 20);
                 let attribute_hit_bonus = if weapon_info.attribute == WeaponAttribute::Might {
                     attacker_attributes.might.bonus
                 } else {
@@ -131,7 +130,7 @@ impl<'a> System<'a> for MeleeCombatSystem {
 
                 if natural_roll != 1 && (natural_roll == 20 || modified_hit_roll > armor_class) {
                     let base_damage =
-                        rng.roll_dice(weapon_info.damage_n_dice, weapon_info.damage_die_type);
+                        roll_dice(weapon_info.damage_n_dice, weapon_info.damage_die_type);
                     let attr_damage_bonus = attacker_attributes.might.bonus;
                     let skill_damage_bonus = skill_bonus(Skill::Melee, attacker_skills);
                     let weapon_damage_bonus = weapon_info.damage_bonus;
@@ -161,7 +160,7 @@ impl<'a> System<'a> for MeleeCombatSystem {
                         .log();
 
                     if let Some(chance) = &weapon_info.proc_chance {
-                        if rng.roll_dice(1, 100) <= (chance * 100.0) as i32 {
+                        if roll_dice(1, 100) <= (chance * 100.0) as i32 {
                             let effect_target = if weapon_info.proc_target.unwrap() == "Self" {
                                 Targets::Single { target: entity }
                             } else {

@@ -1,7 +1,8 @@
-use rltk::{DistanceAlg, Point, RandomNumberGenerator};
+use rltk::{DistanceAlg, Point};
 
 use crate::map::tiletype::TileType;
 use crate::map_builders::{BuilderMap, InitialMapBuilder};
+use crate::rng::roll_dice;
 
 #[derive(Eq, PartialEq, Copy, Clone)]
 pub enum DistanceAlgorithm {
@@ -16,8 +17,8 @@ pub struct VoronoiCellBuilder {
 }
 
 impl InitialMapBuilder for VoronoiCellBuilder {
-    fn build_map(&mut self, rng: &mut RandomNumberGenerator, build_data: &mut BuilderMap) {
-        self.build(rng, build_data);
+    fn build_map(&mut self, build_data: &mut BuilderMap) {
+        self.build(build_data);
     }
 }
 
@@ -50,12 +51,12 @@ impl VoronoiCellBuilder {
         })
     }
 
-    fn build(&mut self, rng: &mut RandomNumberGenerator, build_data: &mut BuilderMap) {
+    fn build(&mut self, build_data: &mut BuilderMap) {
         let mut voronoi_seeds = Vec::new();
 
         while voronoi_seeds.len() < self.n_seeds {
-            let vx = rng.roll_dice(1, build_data.map.width - 1);
-            let vy = rng.roll_dice(1, build_data.map.height - 1);
+            let vx = roll_dice(1, build_data.map.width - 1);
+            let vy = roll_dice(1, build_data.map.height - 1);
             let vidx = build_data.map.xy_idx(vx, vy);
             let candidate = (vidx, Point::new(vx, vy));
             if !voronoi_seeds.contains(&candidate) {

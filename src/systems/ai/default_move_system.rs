@@ -1,9 +1,9 @@
 use crate::astar::a_star_search;
-use rltk::RandomNumberGenerator;
-use specs::{Entities, Join, ReadExpect, ReadStorage, System, WriteExpect, WriteStorage};
+use specs::{Entities, Join, ReadExpect, ReadStorage, System, WriteStorage};
 
 use crate::components::{ApplyMove, MoveMode, Movement, MyTurn, Position};
 use crate::map::Map;
+use crate::rng::roll_dice;
 
 pub struct DefaultMoveAI {}
 
@@ -13,13 +13,12 @@ impl<'a> System<'a> for DefaultMoveAI {
         WriteStorage<'a, MoveMode>,
         ReadStorage<'a, Position>,
         ReadExpect<'a, Map>,
-        WriteExpect<'a, RandomNumberGenerator>,
         Entities<'a>,
         WriteStorage<'a, ApplyMove>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
-        let (mut turns, mut move_mode, positions, map, mut rng, entities, mut apply_move) = data;
+        let (mut turns, mut move_mode, positions, map, entities, mut apply_move) = data;
 
         let mut turn_done = vec![];
         for (entity, pos, mode, _myturn) in (&entities, &positions, &mut move_mode, &turns).join() {
@@ -41,8 +40,8 @@ impl<'a> System<'a> for DefaultMoveAI {
                             mode.mode = Movement::RandomWaypoint { path: None };
                         }
                     } else {
-                        let target_x = rng.roll_dice(1, map.width - 2);
-                        let target_y = rng.roll_dice(1, map.height - 2);
+                        let target_x = roll_dice(1, map.width - 2);
+                        let target_y = roll_dice(1, map.height - 2);
                         let idx = map.xy_idx(target_x, target_y);
                         if map.tiles[idx].is_walkable() {
                             let path = a_star_search(
@@ -61,7 +60,7 @@ impl<'a> System<'a> for DefaultMoveAI {
                 Movement::Random => {
                     let mut x = pos.x;
                     let mut y = pos.x;
-                    let move_roll = rng.roll_dice(1, 5);
+                    let move_roll = roll_dice(1, 5);
                     match move_roll {
                         1 => x -= 1,
                         2 => x += 1,

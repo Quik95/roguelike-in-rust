@@ -1,5 +1,5 @@
-use rltk::{DistanceAlg, Point, RandomNumberGenerator};
-use specs::{Entities, Entity, Join, ReadExpect, ReadStorage, System, WriteExpect, WriteStorage};
+use rltk::{DistanceAlg, Point};
+use specs::{Entities, Entity, Join, ReadExpect, ReadStorage, System, WriteStorage};
 
 use crate::components::{
     Chasing, Equipped, Faction, MyTurn, Name, Position, SpecialAbilities, SpellTemplate, Viewshed,
@@ -8,6 +8,7 @@ use crate::components::{
 use crate::map::Map;
 use crate::raws::rawmaster::{faction_reaction, find_spell_entity_by_name, RAWS};
 use crate::raws::Reaction;
+use crate::rng::roll_dice;
 
 pub struct VisibleAI {}
 
@@ -24,7 +25,6 @@ impl<'a> System<'a> for VisibleAI {
         ReadStorage<'a, Viewshed>,
         WriteStorage<'a, Chasing>,
         ReadStorage<'a, SpecialAbilities>,
-        WriteExpect<'a, RandomNumberGenerator>,
         WriteStorage<'a, WantsToCastSpell>,
         ReadStorage<'a, Name>,
         ReadStorage<'a, SpellTemplate>,
@@ -46,7 +46,6 @@ impl<'a> System<'a> for VisibleAI {
             viewsheds,
             mut chasing,
             abilities,
-            mut rng,
             mut casting,
             names,
             spells,
@@ -87,7 +86,7 @@ impl<'a> System<'a> for VisibleAI {
                             for ability in &abilities.abilities {
                                 if range >= ability.min_range
                                     && range <= ability.range
-                                    && rng.roll_dice(1, 100) >= (ability.chance * 100.0) as i32
+                                    && roll_dice(1, 100) >= (ability.chance * 100.0) as i32
                                 {
                                     casting
                                         .insert(

@@ -1,5 +1,5 @@
-use rltk::{to_cp437, Point, RandomNumberGenerator, BLACK, CYAN};
-use specs::{Entities, Entity, Join, ReadExpect, ReadStorage, System, WriteExpect, WriteStorage};
+use rltk::{to_cp437, Point, BLACK, CYAN};
+use specs::{Entities, Entity, Join, ReadExpect, ReadStorage, System, WriteStorage};
 
 use crate::components::{
     Attributes, EquipmentSlot, Equipped, HungerClock, HungerState, Name, NaturalAttackDefense,
@@ -9,6 +9,7 @@ use crate::effects::{add_effect, EffectType, Targets};
 use crate::gamelog;
 use crate::gamesystem::skill_bonus;
 use crate::map::Map;
+use crate::rng::roll_dice;
 
 pub struct RangedCombatSystem {}
 
@@ -21,7 +22,6 @@ impl<'a> System<'a> for RangedCombatSystem {
         ReadStorage<'a, Skills>,
         ReadStorage<'a, HungerClock>,
         ReadStorage<'a, Pools>,
-        WriteExpect<'a, RandomNumberGenerator>,
         ReadStorage<'a, Equipped>,
         ReadStorage<'a, Weapon>,
         ReadStorage<'a, Wearable>,
@@ -39,7 +39,6 @@ impl<'a> System<'a> for RangedCombatSystem {
             skills,
             hunger_clock,
             pools,
-            mut rng,
             equipped_items,
             weapon,
             wearables,
@@ -99,7 +98,7 @@ impl<'a> System<'a> for RangedCombatSystem {
                     let attack_index = if nat.attacks.len() == 1 {
                         0
                     } else {
-                        rng.roll_dice(1, nat.attacks.len() as i32) as usize - 1
+                        roll_dice(1, nat.attacks.len() as i32) as usize - 1
                     };
                     weapon_info.hit_bonus = nat.attacks[attack_index].hit_bonus;
                     weapon_info.damage_n_dice = nat.attacks[attack_index].damage_n_dice;
@@ -116,7 +115,7 @@ impl<'a> System<'a> for RangedCombatSystem {
                 }
             }
 
-            let natural_roll = rng.roll_dice(1, 20);
+            let natural_roll = roll_dice(1, 20);
             let attribute_hit_bonus = if weapon_info.attribute == WeaponAttribute::Might {
                 attacker_attributes.might.bonus
             } else {
@@ -156,8 +155,7 @@ impl<'a> System<'a> for RangedCombatSystem {
 
             if natural_roll != 1 && (natural_roll == 20 || modified_hit_roll > armor_class) {
                 // Target hit! Until we support weapons, we're going with 1d4
-                let base_damage =
-                    rng.roll_dice(weapon_info.damage_n_dice, weapon_info.damage_die_type);
+                let base_damage = roll_dice(weapon_info.damage_n_dice, weapon_info.damage_die_type);
                 let attr_damage_bonus = attacker_attributes.might.bonus;
                 let skill_damage_bonus = skill_bonus(Skill::Melee, attacker_skills);
                 let weapon_damage_bonus = weapon_info.damage_bonus;
@@ -185,7 +183,7 @@ impl<'a> System<'a> for RangedCombatSystem {
 
                 // Proc effects
                 if let Some(chance) = &weapon_info.proc_chance {
-                    let roll = rng.roll_dice(1, 100);
+                    let roll = roll_dice(1, 100);
                     if roll <= (chance * 100.0) as i32 {
                         let effect_target = if weapon_info.proc_target.unwrap() == "Self" {
                             Targets::Single { target: entity }

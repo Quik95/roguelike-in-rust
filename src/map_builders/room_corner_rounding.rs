@@ -1,13 +1,11 @@
-use rltk::RandomNumberGenerator;
-
 use crate::map::tiletype::TileType;
 use crate::map_builders::{BuilderMap, MetaMapBuilder};
 
 pub struct RoomCornerRounder {}
 
 impl MetaMapBuilder for RoomCornerRounder {
-    fn build_map(&mut self, rng: &mut RandomNumberGenerator, build_data: &mut BuilderMap) {
-        self.build(rng, build_data);
+    fn build_map(&mut self, build_data: &mut BuilderMap) {
+        self.build(build_data);
     }
 }
 
@@ -39,7 +37,7 @@ impl RoomCornerRounder {
         }
     }
 
-    fn build(&mut self, _: &mut RandomNumberGenerator, build_data: &mut BuilderMap) {
+    fn build(&mut self, build_data: &mut BuilderMap) {
         let rooms = build_data.rooms.as_ref().map_or_else(
             || panic!("Room rounding requires a builder with room structures"),
             std::clone::Clone::clone,

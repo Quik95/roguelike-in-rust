@@ -1,4 +1,4 @@
-use rltk::{to_cp437, Point, RandomNumberGenerator, BLACK, BLUE, GOLD, GREEN, MAGENTA, ORANGE};
+use rltk::{to_cp437, Point, BLACK, BLUE, GOLD, GREEN, MAGENTA, ORANGE};
 use specs::saveload::{MarkedBuilder, SimpleMarker};
 use specs::{Builder, Entity, World, WorldExt};
 
@@ -11,6 +11,7 @@ use crate::effects::{add_effect, EffectSpawner, EffectType, Targets};
 use crate::gamelog;
 use crate::gamesystem::{mana_at_level, player_hp_at_level};
 use crate::map::Map;
+use crate::rng::roll_dice;
 
 pub fn inflict_damage(ecs: &World, damage: &EffectSpawner, target: Entity) {
     let mut pools = ecs.write_storage::<Pools>();
@@ -99,8 +100,7 @@ pub fn death(ecs: &World, effect: &EffectSpawner, target: Entity) {
                         .append(format!("{}", player_stats.level))
                         .log();
 
-                    let mut rng = ecs.fetch_mut::<RandomNumberGenerator>();
-                    let attr_to_boost = rng.roll_dice(1, 4);
+                    let attr_to_boost = roll_dice(1, 4);
                     match attr_to_boost {
                         1 => {
                             player_attributes.might.base += 1;

@@ -32,9 +32,15 @@ pub fn show_cheat_mode(_gs: &mut State, ctx: &Rltk) -> CheatMenuResult {
         to_cp437('T'),
         "Teleport to next level",
     );
-    menu_option(&mut draw_batch, 17, y, to_cp437('H'), "Heal all wounds");
-    menu_option(&mut draw_batch, 17, y, to_cp437('R'), "Reveal the map");
-    menu_option(&mut draw_batch, 17, y, to_cp437('G'), "God Mode (No Death)");
+    menu_option(&mut draw_batch, 17, y + 1, to_cp437('H'), "Heal all wounds");
+    menu_option(&mut draw_batch, 17, y + 2, to_cp437('R'), "Reveal the map");
+    menu_option(
+        &mut draw_batch,
+        17,
+        y + 3,
+        to_cp437('G'),
+        "God Mode (No Death)",
+    );
 
     draw_batch.submit(6000).expect("Draw batch failed");
 

@@ -1,8 +1,7 @@
-use rltk::RandomNumberGenerator;
-
 use crate::map::tiletype::TileType;
 use crate::map_builders::common::{paint, Symmetry};
 use crate::map_builders::{BuilderMap, MetaMapBuilder};
+use crate::rng::roll_dice;
 
 pub struct RoomExploder {}
 
@@ -11,7 +10,7 @@ impl RoomExploder {
         Box::new(Self {})
     }
 
-    pub(crate) fn build(&self, rng: &mut RandomNumberGenerator, build_data: &mut BuilderMap) {
+    pub(crate) fn build(&self, build_data: &mut BuilderMap) {
         let rooms = build_data.rooms.as_ref().map_or_else(
             || {
                 panic!("Room Explosion requires a builder with room structures");
@@ -21,7 +20,7 @@ impl RoomExploder {
 
         for room in &rooms {
             let start = room.center();
-            let n_diggers = rng.roll_dice(1, 20) - 5;
+            let n_diggers = roll_dice(1, 20) - 5;
             if n_diggers > 0 {
                 for _ in 0..n_diggers {
                     let mut drunk_x = start.0;
@@ -38,7 +37,7 @@ impl RoomExploder {
                         paint(&mut build_data.map, Symmetry::None, 1, drunk_x, drunk_y);
                         build_data.map.tiles[drunk_idx] = TileType::DownStairs;
 
-                        let stagger_direction = rng.roll_dice(1, 4);
+                        let stagger_direction = roll_dice(1, 4);
                         match stagger_direction {
                             1 => {
                                 if drunk_x > 2 {
@@ -80,7 +79,7 @@ impl RoomExploder {
 }
 
 impl MetaMapBuilder for RoomExploder {
-    fn build_map(&mut self, rng: &mut RandomNumberGenerator, build_data: &mut BuilderMap) {
-        self.build(rng, build_data);
+    fn build_map(&mut self, build_data: &mut BuilderMap) {
+        self.build(build_data);
     }
 }

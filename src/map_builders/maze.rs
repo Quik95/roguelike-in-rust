@@ -1,6 +1,6 @@
 use std::cmp;
 
-use rltk::RandomNumberGenerator;
+use crate::rng::roll_dice;
 
 use crate::map::{tiletype::TileType, Map};
 use crate::map_builders::{BuilderMap, InitialMapBuilder};
@@ -13,8 +13,8 @@ const LEFT: usize = 3;
 pub struct MazeBuilder {}
 
 impl InitialMapBuilder for MazeBuilder {
-    fn build_map(&mut self, rng: &mut RandomNumberGenerator, build_data: &mut BuilderMap) {
-        self.build(rng, build_data);
+    fn build_map(&mut self, build_data: &mut BuilderMap) {
+        self.build(build_data);
     }
 }
 
@@ -23,11 +23,10 @@ impl MazeBuilder {
         Box::new(Self {})
     }
 
-    pub(crate) fn build(&mut self, rng: &mut RandomNumberGenerator, build_data: &mut BuilderMap) {
+    pub(crate) fn build(&mut self, build_data: &mut BuilderMap) {
         let mut maze = Grid::new(
             (build_data.map.width / 2) - 2,
             (build_data.map.height / 2) - 2,
-            rng,
         );
         maze.generate_maze(build_data);
     }
@@ -71,24 +70,22 @@ impl Cell {
     }
 }
 
-struct Grid<'a> {
+struct Grid {
     width: i32,
     height: i32,
     cells: Vec<Cell>,
     backtrace: Vec<usize>,
     current: usize,
-    rng: &'a mut RandomNumberGenerator,
 }
 
-impl<'a> Grid<'a> {
-    fn new(width: i32, height: i32, rng: &mut RandomNumberGenerator) -> Grid {
-        let mut grid = Grid {
+impl Grid {
+    fn new(width: i32, height: i32) -> Self {
+        let mut grid = Self {
             width,
             height,
             cells: Vec::new(),
             backtrace: Vec::new(),
             current: 0,
-            rng,
         };
 
         for row in 0..height {
@@ -136,7 +133,7 @@ impl<'a> Grid<'a> {
             return if neighbors.len() == 1 {
                 Some(neighbors[0])
             } else {
-                Some(neighbors[(self.rng.roll_dice(1, neighbors.len() as i32) - 1) as usize])
+                Some(neighbors[(roll_dice(1, neighbors.len() as i32) - 1) as usize])
             };
         }
 

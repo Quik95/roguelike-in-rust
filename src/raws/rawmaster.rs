@@ -3,7 +3,7 @@ use std::collections::{HashMap, HashSet};
 use std::sync::Mutex;
 
 use lazy_static::lazy_static;
-use rltk::{console, to_cp437, RandomNumberGenerator, RGB};
+use rltk::{console, to_cp437, RGB};
 use specs::saveload::{MarkedBuilder, SimpleMarker};
 use specs::{Builder, Entities, Entity, EntityBuilder, Join, ReadStorage, World, WorldExt};
 
@@ -28,6 +28,7 @@ use crate::raws::faction_structs::Reaction;
 use crate::raws::item_structs::MagicItem;
 use crate::raws::spawn_table_structs::SpawnTableEntry;
 use crate::raws::Raws;
+use crate::rng::roll_dice;
 
 lazy_static! {
     pub static ref RAWS: Mutex<RawMaster> = Mutex::new(RawMaster::default());
@@ -628,9 +629,8 @@ pub fn spawn_named_mob(
             total_weight: 0.0,
             total_initiative_penalty: 0.0,
             gold: mob_template.gold.as_ref().map_or(0.0, |gold| {
-                let mut rng = RandomNumberGenerator::new();
                 let roll: DiceRoll = gold.parse().unwrap();
-                (rng.roll_dice(roll.n_dice, roll.die_type) + roll.die_bonus) as f32
+                (roll_dice(roll.n_dice, roll.die_type) + roll.die_bonus) as f32
             }),
             god_mode: false,
         };
@@ -889,18 +889,14 @@ fn find_slot_for_equippable_item(tag: &str, raws: &RawMaster) -> EquipmentSlot {
     panic!("Trying to equip {tag}, but it has no slot tag.");
 }
 
-pub fn get_item_drop(
-    raws: &RawMaster,
-    rng: &mut RandomNumberGenerator,
-    table: &str,
-) -> Option<String> {
+pub fn get_item_drop(raws: &RawMaster, table: &str) -> Option<String> {
     if raws.loot_index.contains_key(table) {
         let mut rt = RandomTable::default();
         let available_options = &raws.raws.loot_tables[raws.loot_index[table]];
         for item in &available_options.drops {
             rt.add(item.name.clone(), item.weight);
         }
-        return Some(rt.roll(rng));
+        return Some(rt.roll());
     }
 
     None

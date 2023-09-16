@@ -1,4 +1,4 @@
-use rltk::{DistanceAlg, Point, RandomNumberGenerator};
+use rltk::{DistanceAlg, Point};
 use specs::{Entities, Entity, Join, ReadExpect, ReadStorage, System, WriteExpect, WriteStorage};
 
 use crate::components::{
@@ -7,6 +7,7 @@ use crate::components::{
 };
 use crate::effects::{add_effect, EffectType, Targets};
 use crate::player::RunState;
+use crate::rng::roll_dice;
 
 pub struct InitiativeSystem {}
 
@@ -16,7 +17,6 @@ impl<'a> System<'a> for InitiativeSystem {
         ReadStorage<'a, Position>,
         WriteStorage<'a, MyTurn>,
         Entities<'a>,
-        WriteExpect<'a, RandomNumberGenerator>,
         ReadStorage<'a, Attributes>,
         WriteExpect<'a, RunState>,
         ReadExpect<'a, Entity>,
@@ -34,7 +34,6 @@ impl<'a> System<'a> for InitiativeSystem {
             positions,
             mut turns,
             entities,
-            mut rng,
             attributes,
             mut runstate,
             player,
@@ -57,7 +56,7 @@ impl<'a> System<'a> for InitiativeSystem {
             if initiative.current < 1 {
                 let mut myturn = true;
 
-                initiative.current = 6 + rng.roll_dice(1, 6);
+                initiative.current = 6 + roll_dice(1, 6);
 
                 if let Some(attr) = attributes.get(entity) {
                     initiative.current -= attr.quickness.bonus;

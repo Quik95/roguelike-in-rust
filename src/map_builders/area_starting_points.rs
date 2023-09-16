@@ -1,5 +1,5 @@
 use rltk::DistanceAlg::PythagorasSquared;
-use rltk::{DistanceAlg, Point, RandomNumberGenerator};
+use rltk::{DistanceAlg, Point};
 
 use crate::components::Position;
 use crate::map::tiletype::TileType;
@@ -44,14 +44,14 @@ pub struct AreaEndingPosition {
 }
 
 impl MetaMapBuilder for AreaStartingPosition {
-    fn build_map(&mut self, rng: &mut RandomNumberGenerator, build_data: &mut BuilderMap) {
-        self.build(rng, build_data);
+    fn build_map(&mut self, build_data: &mut BuilderMap) {
+        self.build(build_data);
     }
 }
 
 impl MetaMapBuilder for AreaEndingPosition {
-    fn build_map(&mut self, rng: &mut RandomNumberGenerator, build_data: &mut BuilderMap) {
-        self.build(rng, build_data);
+    fn build_map(&mut self, build_data: &mut BuilderMap) {
+        self.build(build_data);
     }
 }
 
@@ -60,7 +60,7 @@ impl AreaEndingPosition {
         Box::new(Self { x, y })
     }
 
-    fn build(&mut self, _rng: &mut RandomNumberGenerator, build_data: &mut BuilderMap) {
+    fn build(&mut self, build_data: &mut BuilderMap) {
         let seed_x = match self.x {
             XEnd::Left => 1,
             XEnd::Center => build_data.map.width / 2,
@@ -100,7 +100,7 @@ impl AreaStartingPosition {
         Box::new(Self { x, y })
     }
 
-    fn build(&mut self, _: &mut RandomNumberGenerator, build_data: &mut BuilderMap) {
+    fn build(&mut self, build_data: &mut BuilderMap) {
         let seed_x = match self.x {
             XStart::Left => 1,
             XStart::Center => build_data.map.width / 2,

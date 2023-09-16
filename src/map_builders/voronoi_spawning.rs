@@ -1,16 +1,17 @@
 use std::collections::{hash_map, HashMap};
 
-use rltk::{CellularDistanceFunction, FastNoise, NoiseType, RandomNumberGenerator};
+use rltk::{CellularDistanceFunction, FastNoise, NoiseType};
 
 use crate::map::tiletype::TileType;
 use crate::map_builders::{BuilderMap, MetaMapBuilder};
+use crate::rng::roll_dice;
 use crate::spawner;
 
 pub struct VoronoiSpawning {}
 
 impl MetaMapBuilder for VoronoiSpawning {
-    fn build_map(&mut self, rng: &mut RandomNumberGenerator, build_data: &mut BuilderMap) {
-        self.build(rng, build_data);
+    fn build_map(&mut self, build_data: &mut BuilderMap) {
+        self.build(build_data);
     }
 }
 
@@ -19,9 +20,9 @@ impl VoronoiSpawning {
         Box::new(Self {})
     }
 
-    fn build(&mut self, rng: &mut RandomNumberGenerator, build_data: &mut BuilderMap) {
+    fn build(&mut self, build_data: &mut BuilderMap) {
         let mut noise_areas: HashMap<i32, Vec<usize>> = HashMap::new();
-        let mut noise = FastNoise::seeded(rng.roll_dice(1, 65536) as u64);
+        let mut noise = FastNoise::seeded(roll_dice(1, 65536) as u64);
         noise.set_noise_type(NoiseType::Cellular);
         noise.set_frequency(0.08);
         noise.set_cellular_distance_function(CellularDistanceFunction::Manhattan);
@@ -45,7 +46,6 @@ impl VoronoiSpawning {
         for area in &noise_areas {
             spawner::spawn_region(
                 &build_data.map,
-                rng,
                 area.1,
                 build_data.map.depth,
                 &mut build_data.spawn_list,

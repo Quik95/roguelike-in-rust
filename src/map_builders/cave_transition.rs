@@ -1,5 +1,3 @@
-use rltk::RandomNumberGenerator;
-
 use crate::map_builders::bsp_dungeon::BspDungeonBuilder;
 use crate::map_builders::room_based_spawner::RoomBasedSpawner;
 use crate::map_builders::room_draw::RoomDrawer;
@@ -11,8 +9,8 @@ use crate::map_builders::{BuilderChain, BuilderMap, MetaMapBuilder};
 pub struct CaveTransition {}
 
 impl MetaMapBuilder for CaveTransition {
-    fn build_map(&mut self, rng: &mut RandomNumberGenerator, build_data: &mut BuilderMap) {
-        self.build(rng, build_data);
+    fn build_map(&mut self, build_data: &mut BuilderMap) {
+        self.build(build_data);
     }
 }
 
@@ -21,7 +19,7 @@ impl CaveTransition {
         Box::new(Self {})
     }
 
-    fn build(&mut self, rng: &mut RandomNumberGenerator, build_data: &mut BuilderMap) {
+    fn build(&mut self, build_data: &mut BuilderMap) {
         build_data.map.depth = 5;
         build_data.take_snapshot();
 
@@ -32,7 +30,7 @@ impl CaveTransition {
         builder.with(NearestCorridors::new());
         builder.with(RoomExploder::new());
         builder.with(RoomBasedSpawner::new());
-        builder.build_map(rng);
+        builder.build_map();
 
         for h in &builder.build_data.history {
             build_data.history.push(h.clone());

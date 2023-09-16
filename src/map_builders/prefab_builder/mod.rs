@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use itertools::Itertools;
-use rltk::{console, RandomNumberGenerator, XpFile};
+use rltk::{console, XpFile};
 
 use crate::components::Position;
 use crate::map::tiletype::TileType;
@@ -13,6 +13,7 @@ use crate::map_builders::prefab_builder::prefab_section::{
     HorizontalPlacement, PrefabSection, VerticalPlacement,
 };
 use crate::map_builders::{BuilderMap, InitialMapBuilder, MetaMapBuilder};
+use crate::rng::roll_dice;
 
 pub mod prefab_level;
 pub mod prefab_rooms;
@@ -32,14 +33,14 @@ pub struct PrefabBuilder {
 }
 
 impl MetaMapBuilder for PrefabBuilder {
-    fn build_map(&mut self, rng: &mut RandomNumberGenerator, build_data: &mut BuilderMap) {
-        self.build(rng, build_data);
+    fn build_map(&mut self, build_data: &mut BuilderMap) {
+        self.build(build_data);
     }
 }
 
 impl InitialMapBuilder for PrefabBuilder {
-    fn build_map(&mut self, rng: &mut RandomNumberGenerator, build_data: &mut BuilderMap) {
-        self.build(rng, build_data);
+    fn build_map(&mut self, build_data: &mut BuilderMap) {
+        self.build(build_data);
     }
 }
 
@@ -169,12 +170,7 @@ impl PrefabBuilder {
         string_vec
     }
 
-    pub fn apply_sectional(
-        &mut self,
-        section: &PrefabSection,
-        rng: &mut RandomNumberGenerator,
-        build_data: &mut BuilderMap,
-    ) {
+    pub fn apply_sectional(&mut self, section: &PrefabSection, build_data: &mut BuilderMap) {
         let string_vec = Self::read_ascii_to_vec(section.template);
 
         // Place the new section
@@ -198,7 +194,6 @@ impl PrefabBuilder {
                     || y < chunk_y
                     || y > (chunk_y + section.height as i32)
             },
-            rng,
             build_data,
         );
 
@@ -228,12 +223,8 @@ impl PrefabBuilder {
         build_data.take_snapshot();
     }
 
-    fn apply_previous_iteration<F>(
-        &mut self,
-        mut filter: F,
-        _rng: &mut RandomNumberGenerator,
-        build_data: &mut BuilderMap,
-    ) where
+    fn apply_previous_iteration<F>(&mut self, mut filter: F, build_data: &mut BuilderMap)
+    where
         F: FnMut(i32, i32) -> bool,
     {
         let width = build_data.map.width;
@@ -245,10 +236,10 @@ impl PrefabBuilder {
         build_data.take_snapshot();
     }
 
-    fn apply_room_vaults(&mut self, rng: &mut RandomNumberGenerator, build_data: &mut BuilderMap) {
-        self.apply_previous_iteration(|_, _| true, rng, build_data);
+    fn apply_room_vaults(&mut self, build_data: &mut BuilderMap) {
+        self.apply_previous_iteration(|_, _| true, build_data);
 
-        let vault_roll = rng.roll_dice(1, 6) + build_data.map.depth;
+        let vault_roll = roll_dice(1, 6) + build_data.map.depth;
         if vault_roll < 4 {
             return;
         }
@@ -275,14 +266,14 @@ impl PrefabBuilder {
             return;
         }
 
-        let n_vaults = i32::min(rng.roll_dice(1, 3), possible_vaults.len() as i32);
+        let n_vaults = i32::min(roll_dice(1, 3), possible_vaults.len() as i32);
         let mut used_tiles = HashSet::new();
 
         for _ in 0..n_vaults {
             let vault_index = if possible_vaults.len() == 1 {
                 0
             } else {
-                (rng.roll_dice(1, possible_vaults.len() as i32) - 1) as usize
+                (roll_dice(1, possible_vaults.len() as i32) - 1) as usize
             };
             let vault = possible_vaults[vault_index];
 
@@ -327,7 +318,7 @@ impl PrefabBuilder {
                 let pos_idx = if vault_positions.len() == 1 {
                     0
                 } else {
-                    (rng.roll_dice(1, vault_positions.len() as i32) - 1) as usize
+                    (roll_dice(1, vault_positions.len() as i32) - 1) as usize
                 };
                 let pos = &vault_positions[pos_idx];
 
@@ -369,12 +360,12 @@ impl PrefabBuilder {
         }
     }
 
-    fn build(&mut self, rng: &mut RandomNumberGenerator, build_data: &mut BuilderMap) {
+    fn build(&mut self, build_data: &mut BuilderMap) {
         match self.mode {
             PrefabMode::RexLevel { template } => self.load_rex_map(template, build_data),
             PrefabMode::Constant { level } => self.load_ascii_map(&level, build_data),
-            PrefabMode::Sectional { section } => self.apply_sectional(&section, rng, build_data),
-            PrefabMode::RoomVaults => self.apply_room_vaults(rng, build_data),
+            PrefabMode::Sectional { section } => self.apply_sectional(&section, build_data),
+            PrefabMode::RoomVaults => self.apply_room_vaults(build_data),
         }
         build_data.take_snapshot();
     }

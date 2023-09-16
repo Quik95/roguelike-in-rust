@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use rltk::{DistanceAlg, LineAlg, Point, RandomNumberGenerator};
+use rltk::{DistanceAlg, LineAlg, Point};
 
 use crate::map::tiletype::TileType;
 use crate::map_builders::{BuilderMap, MetaMapBuilder};
@@ -8,8 +8,8 @@ use crate::map_builders::{BuilderMap, MetaMapBuilder};
 pub struct StraightLineCorridors {}
 
 impl MetaMapBuilder for StraightLineCorridors {
-    fn build_map(&mut self, rng: &mut RandomNumberGenerator, build_data: &mut BuilderMap) {
-        self.corridors(rng, build_data);
+    fn build_map(&mut self, build_data: &mut BuilderMap) {
+        self.corridors(build_data);
     }
 }
 
@@ -19,7 +19,7 @@ impl StraightLineCorridors {
         Box::new(Self {})
     }
 
-    fn corridors(&mut self, _: &mut RandomNumberGenerator, build_data: &mut BuilderMap) {
+    fn corridors(&mut self, build_data: &mut BuilderMap) {
         let rooms = build_data.rooms.as_ref().map_or_else(
             || panic!("Straight Line Corridors require a builder with room structures."),
             std::clone::Clone::clone,

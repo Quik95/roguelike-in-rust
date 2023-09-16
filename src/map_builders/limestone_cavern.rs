@@ -1,5 +1,3 @@
-use rltk::RandomNumberGenerator;
-
 use crate::cave_decorator::CaveDecorator;
 use crate::map_builders::area_starting_points::{
     AreaEndingPosition, AreaStartingPosition, XEnd, XStart, YEnd, YStart,
@@ -14,12 +12,7 @@ use crate::map_builders::prefab_builder::{prefab_section, PrefabBuilder};
 use crate::map_builders::voronoi_spawning::VoronoiSpawning;
 use crate::map_builders::BuilderChain;
 
-pub fn limestone_cavern_builder(
-    new_depth: i32,
-    _rng: &mut RandomNumberGenerator,
-    width: i32,
-    height: i32,
-) -> BuilderChain {
+pub fn limestone_cavern_builder(new_depth: i32, width: i32, height: i32) -> BuilderChain {
     let mut chain = BuilderChain::new(new_depth, width, height, "Limestone Caverns");
     chain.start_with(DrunkardsWalkBuilder::winding_passages());
     chain.with(AreaStartingPosition::new(XStart::Center, YStart::Center));
@@ -31,12 +24,7 @@ pub fn limestone_cavern_builder(
     chain
 }
 
-pub fn limestone_deep_cavern_builder(
-    new_depth: i32,
-    _rng: &mut RandomNumberGenerator,
-    width: i32,
-    height: i32,
-) -> BuilderChain {
+pub fn limestone_deep_cavern_builder(new_depth: i32, width: i32, height: i32) -> BuilderChain {
     let mut chain = BuilderChain::new(new_depth, width, height, "Deep Limestone Caverns");
     chain.start_with(DlaBuilder::central_attractor());
     chain.with(AreaStartingPosition::new(XStart::Left, YStart::Top));
@@ -48,12 +36,7 @@ pub fn limestone_deep_cavern_builder(
     chain
 }
 
-pub fn limestone_transition_builder(
-    new_depth: i32,
-    _rng: &mut RandomNumberGenerator,
-    width: i32,
-    height: i32,
-) -> BuilderChain {
+pub fn limestone_transition_builder(new_depth: i32, width: i32, height: i32) -> BuilderChain {
     let mut chain = BuilderChain::new(new_depth, width, height, "Dwarf Fort - Upper Reaches");
     chain.start_with(CellularAutomataBuilder::new());
     chain.with(AreaStartingPosition::new(XStart::Center, YStart::Center));

@@ -8,14 +8,8 @@ use crate::map_builders::prefab_builder::PrefabBuilder;
 use crate::map_builders::voronoi_spawning::VoronoiSpawning;
 use crate::map_builders::waveform_collapse::WaveformCollapseBuilder;
 use crate::map_builders::BuilderChain;
-use rltk::RandomNumberGenerator;
 
-pub fn mushroom_entrance(
-    new_depth: i32,
-    _rng: &mut RandomNumberGenerator,
-    width: i32,
-    height: i32,
-) -> BuilderChain {
+pub fn mushroom_entrance(new_depth: i32, width: i32, height: i32) -> BuilderChain {
     let mut chain = BuilderChain::new(new_depth, width, height, "Into the Mushroom Grove");
     chain.start_with(CellularAutomataBuilder::new());
     chain.with(WaveformCollapseBuilder::new());
@@ -29,12 +23,7 @@ pub fn mushroom_entrance(
     chain
 }
 
-pub fn mushroom_builder(
-    new_depth: i32,
-    _rng: &mut RandomNumberGenerator,
-    width: i32,
-    height: i32,
-) -> BuilderChain {
+pub fn mushroom_builder(new_depth: i32, width: i32, height: i32) -> BuilderChain {
     let mut chain = BuilderChain::new(new_depth, width, height, "Into the Mushroom Grove");
     chain.start_with(CellularAutomataBuilder::new());
     chain.with(WaveformCollapseBuilder::new());
@@ -47,12 +36,7 @@ pub fn mushroom_builder(
     chain
 }
 
-pub fn mushroom_exit(
-    new_depth: i32,
-    _rng: &mut RandomNumberGenerator,
-    width: i32,
-    height: i32,
-) -> BuilderChain {
+pub fn mushroom_exit(new_depth: i32, width: i32, height: i32) -> BuilderChain {
     let mut chain = BuilderChain::new(new_depth, width, height, "Into the Mushroom Grove");
     chain.start_with(CellularAutomataBuilder::new());
     chain.with(WaveformCollapseBuilder::new());

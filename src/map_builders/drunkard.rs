@@ -1,9 +1,8 @@
-use rltk::RandomNumberGenerator;
-
 use crate::components::Position;
 use crate::map::tiletype::TileType;
 use crate::map_builders::common::{paint, Symmetry};
 use crate::map_builders::{BuilderMap, InitialMapBuilder, MetaMapBuilder};
+use crate::rng::roll_dice;
 
 pub struct DrunkardsWalkBuilder {
     settings: DrunkardSettings,
@@ -24,14 +23,14 @@ pub struct DrunkardSettings {
 }
 
 impl InitialMapBuilder for DrunkardsWalkBuilder {
-    fn build_map(&mut self, rng: &mut RandomNumberGenerator, build_data: &mut BuilderMap) {
-        self.build(rng, build_data);
+    fn build_map(&mut self, build_data: &mut BuilderMap) {
+        self.build(build_data);
     }
 }
 
 impl MetaMapBuilder for DrunkardsWalkBuilder {
-    fn build_map(&mut self, rng: &mut RandomNumberGenerator, build_data: &mut BuilderMap) {
-        self.build(rng, build_data);
+    fn build_map(&mut self, build_data: &mut BuilderMap) {
+        self.build(build_data);
     }
 }
 
@@ -101,7 +100,7 @@ impl DrunkardsWalkBuilder {
         Self::new(settings)
     }
 
-    fn build(&mut self, rng: &mut RandomNumberGenerator, build_data: &mut BuilderMap) {
+    fn build(&mut self, build_data: &mut BuilderMap) {
         let starting_position = Position {
             x: build_data.map.width / 2,
             y: build_data.map.height / 2,
@@ -136,8 +135,8 @@ impl DrunkardsWalkBuilder {
                         drunk_x = starting_position.x;
                         drunk_y = starting_position.y;
                     } else {
-                        drunk_x = rng.roll_dice(1, build_data.map.width - 3) + 1;
-                        drunk_y = rng.roll_dice(1, build_data.map.height - 3) + 1;
+                        drunk_x = roll_dice(1, build_data.map.width - 3) + 1;
+                        drunk_y = roll_dice(1, build_data.map.height - 3) + 1;
                     }
                 }
             }
@@ -158,7 +157,7 @@ impl DrunkardsWalkBuilder {
                 );
                 build_data.map.tiles[drunk_idx] = TileType::DownStairs;
 
-                let stagger_direction = rng.roll_dice(1, 4);
+                let stagger_direction = roll_dice(1, 4);
                 match stagger_direction {
                     1 => {
                         if drunk_x > 2 {

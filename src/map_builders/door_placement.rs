@@ -1,18 +1,13 @@
-use rltk::RandomNumberGenerator;
-
 use crate::map::tiletype::TileType;
+use crate::rng::roll_dice;
 
 use super::{BuilderMap, MetaMapBuilder};
 
 pub struct DoorPlacement {}
 
 impl MetaMapBuilder for DoorPlacement {
-    fn build_map(
-        &mut self,
-        rng: &mut rltk::RandomNumberGenerator,
-        build_data: &mut super::BuilderMap,
-    ) {
-        self.doors(rng, build_data);
+    fn build_map(&mut self, build_data: &mut super::BuilderMap) {
+        self.doors(build_data);
     }
 }
 
@@ -21,7 +16,7 @@ impl DoorPlacement {
         Box::new(Self {})
     }
 
-    fn doors(&mut self, rng: &mut RandomNumberGenerator, build_data: &mut BuilderMap) {
+    fn doors(&mut self, build_data: &mut BuilderMap) {
         if let Some(halls_original) = &build_data.corridors {
             let halls = halls_original.clone();
             for hall in &halls {
@@ -34,7 +29,7 @@ impl DoorPlacement {
             for (i, tile) in tiles.iter().enumerate() {
                 if *tile == TileType::Floor
                     && self.door_possible(build_data, i)
-                    && rng.roll_dice(1, 3) == 1
+                    && roll_dice(1, 3) == 1
                 {
                     build_data.spawn_list.push((i, "Door".to_string()));
                 }

@@ -1,4 +1,4 @@
-use rltk::{to_cp437, DistanceAlg, Point, RandomNumberGenerator, VirtualKeyCode};
+use rltk::{to_cp437, DistanceAlg, Point, VirtualKeyCode};
 use specs::prelude::*;
 
 use crate::components::{
@@ -12,6 +12,7 @@ use crate::player::RunState::{
 };
 use crate::raws::rawmaster::{faction_reaction, find_spell_entity, RAWS};
 use crate::raws::Reaction;
+use crate::rng::roll_dice;
 use crate::{gamelog, spatial};
 
 use super::components::{
@@ -372,8 +373,7 @@ impl Player {
             let mut health_components = ecs.write_storage::<Pools>();
             let pools = health_components.get_mut(*player_entity).unwrap();
             pools.hit_points.current = i32::min(pools.hit_points.current + 1, pools.hit_points.max);
-            let mut rng = ecs.fetch_mut::<RandomNumberGenerator>();
-            if rng.roll_dice(1, 6) == 1 {
+            if roll_dice(1, 6) == 1 {
                 pools.mana.current = i32::min(pools.mana.current + 1, pools.mana.max);
             }
         }

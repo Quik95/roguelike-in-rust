@@ -1,8 +1,9 @@
-use rltk::{Point, RandomNumberGenerator};
-use specs::{Join, ReadExpect, ReadStorage, System, WriteExpect, WriteStorage};
+use rltk::Point;
+use specs::{Join, ReadExpect, ReadStorage, System, WriteStorage};
 
 use crate::components::{MyTurn, Name, Quips, Viewshed};
 use crate::gamelog;
+use crate::rng::roll_dice;
 
 pub struct QuipSystem {}
 
@@ -13,21 +14,20 @@ impl<'a> System<'a> for QuipSystem {
         ReadStorage<'a, MyTurn>,
         ReadExpect<'a, Point>,
         ReadStorage<'a, Viewshed>,
-        WriteExpect<'a, RandomNumberGenerator>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
-        let (mut quips, names, turns, player_pos, viewsheds, mut rng) = data;
+        let (mut quips, names, turns, player_pos, viewsheds) = data;
 
         for (quip, name, viewshed, _turn) in (&mut quips, &names, &viewsheds, &turns).join() {
             if !quip.available.is_empty()
                 && viewshed.visible_tiles.contains(&player_pos)
-                && rng.roll_dice(1, 6) == 1
+                && roll_dice(1, 6) == 1
             {
                 let quip_index = if quip.available.len() == 1 {
                     0
                 } else {
-                    (rng.roll_dice(1, quip.available.len() as i32) - 1) as usize
+                    (roll_dice(1, quip.available.len() as i32) - 1) as usize
                 };
 
                 gamelog::Logger::new()

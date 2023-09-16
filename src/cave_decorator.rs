@@ -1,13 +1,12 @@
-use rltk::RandomNumberGenerator;
-
 use crate::map::tiletype::TileType;
 use crate::map_builders::{BuilderMap, MetaMapBuilder};
+use crate::rng::roll_dice;
 
 pub struct CaveDecorator {}
 
 impl MetaMapBuilder for CaveDecorator {
-    fn build_map(&mut self, rng: &mut RandomNumberGenerator, build_data: &mut BuilderMap) {
-        self.build(rng, build_data);
+    fn build_map(&mut self, build_data: &mut BuilderMap) {
+        self.build(build_data);
     }
 }
 
@@ -16,12 +15,12 @@ impl CaveDecorator {
         Box::new(Self {})
     }
 
-    pub fn build(&mut self, rng: &mut RandomNumberGenerator, build_data: &mut BuilderMap) {
+    pub fn build(&mut self, build_data: &mut BuilderMap) {
         let old_map = build_data.map.clone();
         for (idx, tt) in build_data.map.tiles.iter_mut().enumerate() {
-            if *tt == TileType::Floor && rng.roll_dice(1, 6) == 1 {
+            if *tt == TileType::Floor && roll_dice(1, 6) == 1 {
                 *tt = TileType::Gravel;
-            } else if *tt == TileType::Floor && rng.roll_dice(1, 10) == 1 {
+            } else if *tt == TileType::Floor && roll_dice(1, 10) == 1 {
                 *tt = TileType::ShallowWater;
             } else if *tt == TileType::Wall {
                 let mut neighbors = 0;
@@ -44,7 +43,7 @@ impl CaveDecorator {
                 if neighbors == 2 {
                     *tt = TileType::DeepWater;
                 } else if neighbors == 1 {
-                    let roll = rng.roll_dice(1, 4);
+                    let roll = roll_dice(1, 4);
                     match roll {
                         1 => *tt = TileType::Stalactite,
                         2 => *tt = TileType::Stalagmite,
