@@ -10,7 +10,7 @@ use crate::map_builders::bsp_dungeon::BspDungeonBuilder;
 use crate::map_builders::bsp_interior::BspInteriorBuilder;
 use crate::map_builders::cellular_automata::CellularAutomataBuilder;
 use crate::map_builders::cull_unreachable::CullUnreachable;
-use crate::map_builders::dark_elves::dark_elf_city;
+use crate::map_builders::dark_elves::{dark_elf_city, dark_elf_plaza};
 use crate::map_builders::distant_exit::DistantExit;
 use crate::map_builders::dla::DlaBuilder;
 use crate::map_builders::door_placement::DoorPlacement;
@@ -105,6 +105,7 @@ pub fn level_builder(new_depth: i32, width: i32, height: i32) -> BuilderChain {
         8 => mushroom_builder(new_depth, width, height),
         9 => mushroom_exit(new_depth, width, height),
         10 => dark_elf_city(new_depth, width, height),
+        11 => dark_elf_plaza(new_depth, width, height),
         _ => random_builder(new_depth, width, height),
     }
 }
